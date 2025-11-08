@@ -412,4 +412,76 @@ export class SemanticRouter {
       avgToolsPerCategory: categoriesWithTools > 0 ? totalTools / categoriesWithTools : 0
     };
   }
+
+  /**
+   * Health check for readiness probe
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      // Check FAISS indices are loaded
+      if (this._categoryIndex.size === 0 || this._toolIndex.size === 0) {
+        return false;
+      }
+
+      // Check cache connection
+      const cacheHealthy = await this._cache.healthCheck();
+      return cacheHealthy;
+    } catch (error) {
+      logger.error('SemanticRouter health check failed', { error });
+      return false;
+    }
+  }
+
+  /**
+   * List all available tools
+   */
+  async listAllTools(options: {
+    category?: string;
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<ToolSelection[]> {
+    const { category, limit = 100, offset = 0 } = options;
+
+    let tools = Array.from(this._toolEmbeddings.values());
+
+    // Filter by category if specified
+    if (category) {
+      tools = tools.filter(t => t.category === category);
+    }
+
+    // Apply pagination
+    const paginatedTools = tools.slice(offset, offset + limit);
+
+    return paginatedTools.map(t => ({
+      toolId: t.toolId,
+      name: t.name,
+      description: t.description,
+      category: t.category,
+      score: 1.0,
+      tokenCost: this._tokenOptimizer.estimateTokens({
+        name: t.name,
+        description: t.description,
+        parameters: {},
+      }),
+    }));
+  }
+
+  /**
+   * List all categories
+   */
+  async listCategories(): Promise<Array<{ name: string; description: string; toolCount: number }>> {
+    return Array.from(this._categoryEmbeddings.values()).map(cat => ({
+      name: cat.category,
+      description: cat.description,
+      toolCount: this._toolsByCategory.get(cat.category)?.size || 0,
+    }));
+  }
+
+  /**
+   * Close connections
+   */
+  async close(): Promise<void> {
+    logger.info('Closing semantic router');
+    await this._cache.disconnect();
+  }
 }

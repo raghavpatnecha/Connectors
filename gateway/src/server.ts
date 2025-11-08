@@ -1,0 +1,527 @@
+/**
+ * Express HTTP Server for MCP Gateway
+ *
+ * Provides REST API endpoints for:
+ * - Health checks and readiness probes
+ * - Tool selection via semantic routing
+ * - MCP tool invocation with OAuth proxy
+ * - Metrics and monitoring
+ */
+
+import express, { Application, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import { SemanticRouter } from './routing/semantic-router';
+import { EmbeddingService } from './routing/embedding-service';
+import { TokenOptimizer } from './optimization/token-optimizer';
+import { ProgressiveLoader } from './optimization/progressive-loader';
+import { OAuthProxy } from './auth/oauth-proxy';
+import { RedisCache } from './caching/redis-cache';
+import { logger } from './logging/logger';
+import { ToolSelectionError, OAuthError } from './errors/gateway-errors';
+import type { ToolSelection, QueryContext } from './types/routing.types';
+
+// Server configuration
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const CORS_ORIGINS = process.env.CORS_ORIGINS?.split(',') || ['*'];
+
+/**
+ * Request interfaces
+ */
+interface SelectToolsRequest {
+  query: string;
+  context?: {
+    allowedCategories?: string[];
+    tokenBudget?: number;
+    tenantId?: string;
+    maxTools?: number;
+  };
+}
+
+interface InvokeToolRequest {
+  toolId: string;
+  integration: string;
+  parameters: Record<string, unknown>;
+  tenantId: string;
+}
+
+/**
+ * MCP Gateway Server
+ */
+export class MCPGatewayServer {
+  private readonly app: Application;
+  private readonly semanticRouter: SemanticRouter;
+  private readonly tokenOptimizer: TokenOptimizer;
+  private readonly progressiveLoader: ProgressiveLoader;
+  private readonly oauthProxy: OAuthProxy;
+
+  constructor() {
+    this.app = express();
+
+    // Initialize core services with proper configuration
+    const categoryIndexPath = process.env.CATEGORY_INDEX_PATH || 'data/indices/categories.faiss';
+    const toolIndexPath = process.env.TOOL_INDEX_PATH || 'data/indices/tools.faiss';
+
+    const embeddingService = new EmbeddingService();
+    const cache = new RedisCache();
+
+    this.semanticRouter = new SemanticRouter(
+      categoryIndexPath,
+      toolIndexPath,
+      embeddingService,
+      cache
+    );
+
+    this.tokenOptimizer = new TokenOptimizer();
+    this.progressiveLoader = new ProgressiveLoader(this.tokenOptimizer);
+    this.oauthProxy = new OAuthProxy();
+
+    this.setupMiddleware();
+    this.setupRoutes();
+    this.setupErrorHandlers();
+  }
+
+  /**
+   * Configure Express middleware
+   */
+  private setupMiddleware(): void {
+    // Security middleware
+    this.app.use(helmet({
+      contentSecurityPolicy: NODE_ENV === 'production',
+      crossOriginEmbedderPolicy: NODE_ENV === 'production',
+    }));
+
+    // CORS configuration
+    this.app.use(cors({
+      origin: CORS_ORIGINS,
+      credentials: true,
+    }));
+
+    // Body parsing
+    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    // Compression
+    this.app.use(compression());
+
+    // Request logging
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      const startTime = Date.now();
+
+      res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        logger.info('http_request', {
+          method: req.method,
+          path: req.path,
+          status: res.statusCode,
+          duration_ms: duration,
+          user_agent: req.get('user-agent'),
+        });
+      });
+
+      next();
+    });
+  }
+
+  /**
+   * Setup API routes
+   */
+  private setupRoutes(): void {
+    // Health check endpoints
+    this.app.get('/health', this.handleHealth.bind(this));
+    this.app.get('/ready', this.handleReadiness.bind(this));
+
+    // API v1 routes
+    const apiV1 = express.Router();
+
+    apiV1.post('/tools/select', this.handleSelectTools.bind(this));
+    apiV1.post('/tools/invoke', this.handleInvokeTool.bind(this));
+    apiV1.get('/tools/list', this.handleListTools.bind(this));
+    apiV1.get('/categories', this.handleListCategories.bind(this));
+    apiV1.get('/metrics', this.handleMetrics.bind(this));
+
+    this.app.use('/api/v1', apiV1);
+
+    // Root endpoint
+    this.app.get('/', (req: Request, res: Response) => {
+      res.json({
+        name: 'MCP Gateway',
+        version: '1.0.0',
+        status: 'operational',
+        endpoints: {
+          health: '/health',
+          ready: '/ready',
+          api: '/api/v1',
+          docs: '/api/v1/docs',
+        },
+      });
+    });
+
+    // 404 handler
+    this.app.use((req: Request, res: Response) => {
+      res.status(404).json({
+        error: 'Not Found',
+        message: `Route ${req.method} ${req.path} not found`,
+      });
+    });
+  }
+
+  /**
+   * Health check endpoint
+   */
+  private async handleHealth(req: Request, res: Response): Promise<void> {
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    });
+  }
+
+  /**
+   * Readiness probe endpoint
+   */
+  private async handleReadiness(req: Request, res: Response): Promise<void> {
+    try {
+      // Check service dependencies
+      const checks = await Promise.allSettled([
+        this.semanticRouter.healthCheck(),
+        this.oauthProxy.healthCheck(),
+      ]);
+
+      const allHealthy = checks.every(
+        (check) => check.status === 'fulfilled' && check.value === true
+      );
+
+      if (allHealthy) {
+        res.status(200).json({
+          status: 'ready',
+          checks: {
+            semanticRouter: 'ok',
+            oauthProxy: 'ok',
+          },
+        });
+      } else {
+        res.status(503).json({
+          status: 'not_ready',
+          checks: checks.map((check, idx) => ({
+            service: ['semanticRouter', 'oauthProxy'][idx],
+            status: check.status === 'fulfilled' ? 'ok' : 'failed',
+            error: check.status === 'rejected' ? (check.reason as Error).message : undefined,
+          })),
+        });
+      }
+    } catch (error) {
+      logger.error('Readiness check failed', { error });
+      res.status(503).json({
+        status: 'not_ready',
+        error: (error as Error).message,
+      });
+    }
+  }
+
+  /**
+   * Tool selection endpoint
+   * POST /api/v1/tools/select
+   */
+  private async handleSelectTools(req: Request, res: Response): Promise<void> {
+    try {
+      const { query, context }: SelectToolsRequest = req.body;
+
+      if (!query || typeof query !== 'string') {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: 'Query parameter is required and must be a string',
+        });
+        return;
+      }
+
+      // Build query context
+      const queryContext: QueryContext = {
+        query,
+        allowedCategories: context?.allowedCategories || [],
+        tokenBudget: context?.tokenBudget || 5000,
+        maxTools: context?.maxTools || 5,
+        tenantId: context?.tenantId,
+      };
+
+      // Select tools using semantic routing
+      const startTime = Date.now();
+      const selectedTools = await this.semanticRouter.selectTools(query, queryContext);
+      const selectionLatency = Date.now() - startTime;
+
+      // Optimize token usage with progressive loading
+      const optimized = await this.tokenOptimizer.optimize(selectedTools, queryContext.tokenBudget);
+      const tiered = await this.progressiveLoader.loadTiered(optimized, queryContext);
+
+      // Log performance metrics
+      logger.info('tool_selection_completed', {
+        query,
+        tools_selected: selectedTools.length,
+        tools_optimized: optimized.length,
+        token_budget: queryContext.tokenBudget,
+        token_usage: tiered.totalTokens,
+        latency_ms: selectionLatency,
+        token_reduction_pct: ((queryContext.tokenBudget - tiered.totalTokens) / queryContext.tokenBudget) * 100,
+      });
+
+      res.status(200).json({
+        success: true,
+        query,
+        tools: {
+          tier1: tiered.tier1,
+          tier2: tiered.tier2,
+          tier3: tiered.tier3,
+        },
+        metadata: {
+          totalTools: selectedTools.length,
+          tokenUsage: tiered.totalTokens,
+          tokenBudget: queryContext.tokenBudget,
+          latency_ms: selectionLatency,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ToolSelectionError) {
+        logger.error('Tool selection failed', {
+          query: error.query,
+          error: error.message,
+        });
+        res.status(500).json({
+          error: 'Tool Selection Failed',
+          message: error.message,
+          query: error.query,
+        });
+      } else {
+        throw error; // Pass to error handler
+      }
+    }
+  }
+
+  /**
+   * Tool invocation endpoint
+   * POST /api/v1/tools/invoke
+   */
+  private async handleInvokeTool(req: Request, res: Response): Promise<void> {
+    try {
+      const { toolId, integration, parameters, tenantId }: InvokeToolRequest = req.body;
+
+      if (!toolId || !integration || !tenantId) {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: 'toolId, integration, and tenantId are required',
+        });
+        return;
+      }
+
+      // Invoke tool via OAuth proxy
+      const startTime = Date.now();
+      const result = await this.oauthProxy.proxyRequest({
+        tenantId,
+        integration,
+        method: 'POST',
+        path: `/tools/${toolId}/invoke`,
+        body: parameters,
+        headers: {},
+      });
+      const invocationLatency = Date.now() - startTime;
+
+      logger.info('tool_invocation_completed', {
+        toolId,
+        integration,
+        tenantId,
+        latency_ms: invocationLatency,
+        success: true,
+      });
+
+      res.status(200).json({
+        success: true,
+        toolId,
+        result: result.data,
+        metadata: {
+          latency_ms: invocationLatency,
+        },
+      });
+    } catch (error) {
+      if (error instanceof OAuthError) {
+        logger.error('OAuth error during tool invocation', {
+          integration: error.integration,
+          tenantId: error.tenantId,
+          error: error.message,
+        });
+        res.status(401).json({
+          error: 'Authentication Failed',
+          message: error.message,
+          integration: error.integration,
+        });
+      } else {
+        throw error; // Pass to error handler
+      }
+    }
+  }
+
+  /**
+   * List all available tools
+   * GET /api/v1/tools/list
+   */
+  private async handleListTools(req: Request, res: Response): Promise<void> {
+    try {
+      const category = req.query.category as string | undefined;
+      const limit = parseInt(req.query.limit as string || '100', 10);
+      const offset = parseInt(req.query.offset as string || '0', 10);
+
+      const tools = await this.semanticRouter.listAllTools({
+        category,
+        limit,
+        offset,
+      });
+
+      res.status(200).json({
+        success: true,
+        tools,
+        metadata: {
+          total: tools.length,
+          limit,
+          offset,
+        },
+      });
+    } catch (error) {
+      throw error; // Pass to error handler
+    }
+  }
+
+  /**
+   * List all categories
+   * GET /api/v1/categories
+   */
+  private async handleListCategories(req: Request, res: Response): Promise<void> {
+    try {
+      const categories = await this.semanticRouter.listCategories();
+
+      res.status(200).json({
+        success: true,
+        categories,
+      });
+    } catch (error) {
+      throw error; // Pass to error handler
+    }
+  }
+
+  /**
+   * Metrics endpoint
+   * GET /api/v1/metrics
+   */
+  private async handleMetrics(req: Request, res: Response): Promise<void> {
+    try {
+      const metrics = {
+        requests: {
+          total: 0, // TODO: Implement metrics tracking
+          success: 0,
+          failed: 0,
+        },
+        latency: {
+          p50: 0,
+          p95: 0,
+          p99: 0,
+        },
+        tokenUsage: {
+          total: 0,
+          average: 0,
+          reduction: 0,
+        },
+      };
+
+      res.status(200).json({
+        success: true,
+        metrics,
+      });
+    } catch (error) {
+      throw error; // Pass to error handler
+    }
+  }
+
+  /**
+   * Setup error handlers
+   */
+  private setupErrorHandlers(): void {
+    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      logger.error('Unhandled error', {
+        error: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+      });
+
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
+        ...(NODE_ENV === 'development' && { stack: err.stack }),
+      });
+    });
+  }
+
+  /**
+   * Start the server
+   */
+  public async start(): Promise<void> {
+    try {
+      // Initialize services
+      await this.semanticRouter.initialize();
+      await this.oauthProxy.initialize();
+
+      // Start HTTP server
+      this.app.listen(PORT, () => {
+        logger.info('MCP Gateway started', {
+          port: PORT,
+          environment: NODE_ENV,
+          cors_origins: CORS_ORIGINS,
+        });
+        console.log(`🚀 MCP Gateway running on http://localhost:${PORT}`);
+        console.log(`📊 Health: http://localhost:${PORT}/health`);
+        console.log(`🔧 API: http://localhost:${PORT}/api/v1`);
+      });
+    } catch (error) {
+      logger.error('Failed to start server', { error });
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Graceful shutdown
+   */
+  public async shutdown(): Promise<void> {
+    logger.info('Shutting down MCP Gateway...');
+
+    // Close service connections
+    await this.semanticRouter.close();
+    await this.oauthProxy.close();
+
+    logger.info('MCP Gateway shutdown complete');
+    process.exit(0);
+  }
+}
+
+/**
+ * Main entry point
+ */
+async function main() {
+  const server = new MCPGatewayServer();
+
+  // Handle shutdown signals
+  process.on('SIGTERM', () => server.shutdown());
+  process.on('SIGINT', () => server.shutdown());
+
+  // Start server
+  await server.start();
+}
+
+// Run if executed directly
+if (require.main === module) {
+  main().catch((error) => {
+    logger.error('Fatal error', { error });
+    process.exit(1);
+  });
+}
+
+export { MCPGatewayServer };

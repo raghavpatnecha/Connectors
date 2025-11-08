@@ -394,4 +394,35 @@ export class OAuthProxy {
       logger.warn('Scheduled refresh retry', { tenantId, integration, retryCount });
     });
   }
+
+  /**
+   * Initialize OAuth proxy
+   */
+  async initialize(): Promise<void> {
+    logger.info('Initializing OAuth proxy');
+    await this._vault.healthCheck();
+    await this._scheduler.start();
+    logger.info('OAuth proxy initialized');
+  }
+
+  /**
+   * Health check for readiness probe
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      const vaultHealthy = await this._vault.healthCheck();
+      return vaultHealthy;
+    } catch (error) {
+      logger.error('OAuthProxy health check failed', { error });
+      return false;
+    }
+  }
+
+  /**
+   * Close connections
+   */
+  async close(): Promise<void> {
+    logger.info('Closing OAuth proxy');
+    await this._scheduler.stop();
+  }
 }

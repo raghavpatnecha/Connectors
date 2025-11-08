@@ -55,6 +55,23 @@ export class RedisCache {
   }
 
   /**
+   * Health check
+   */
+  async healthCheck(): Promise<boolean> {
+    if (!this._client) {
+      return false;
+    }
+
+    try {
+      await this._client.ping();
+      return true;
+    } catch (error) {
+      logger.error('Redis health check failed', { error });
+      return false;
+    }
+  }
+
+  /**
    * Get cached tool selection
    */
   async getToolSelection(
