@@ -128,10 +128,14 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionscreateHostedRunnerForOrg(params: {
     name: string;
-    image: any;
+    image: {
+  id?: string;
+  source?: "github" | "partner" | "custom";
+  version?: string;
+};
     size: string;
-    runner_group_id: integer;
-    maximum_runners?: integer;
+    runner_group_id: number;
+    maximum_runners?: number;
     enable_static_ip?: boolean;
     image_gen?: boolean;
   }): Promise<any> {
@@ -439,8 +443,8 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsupdateHostedRunnerForOrg(params: {
     name?: string;
-    runner_group_id?: integer;
-    maximum_runners?: integer;
+    runner_group_id?: number;
+    maximum_runners?: number;
     enable_static_ip?: boolean;
     image_version?: string;
   }): Promise<any> {
@@ -505,9 +509,9 @@ class GitHubv3RESTAPIactionsClient {
    * Set GitHub Actions permissions for an organization
    */
   async actionssetGithubActionsPermissionsOrganization(params: {
-    enabled_repositories: ;
-    allowed_actions?: ;
-    sha_pinning_required?: ;
+    enabled_repositories: any;
+    allowed_actions?: any;
+    sha_pinning_required?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -676,7 +680,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set selected repositories enabled for GitHub Actions in an organization
    */
   async actionssetSelectedRepositoriesEnabledGithubActions(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -804,7 +808,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set self-hosted runners settings for an organization
    */
   async actionssetSelfHostedRunnersPermissionsOrganization(params: {
-    enabled_repositories: string;
+    enabled_repositories: "all" | "selected" | "none";
   }): Promise<any> {
 
     // Build path with parameters
@@ -847,7 +851,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set repositories allowed to use self-hosted runners in an organization
    */
   async actionssetSelectedRepositoriesSelfHostedRunnersOrg(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -979,12 +983,12 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionscreateSelfHostedRunnerGroupForOrg(params: {
     name: string;
-    visibility?: string;
-    selected_repository_ids?: array;
-    runners?: array;
+    visibility?: "selected" | "all" | "private";
+    selected_repository_ids?: Array<number>;
+    runners?: Array<number>;
     allows_public_repositories?: boolean;
     restricted_to_workflows?: boolean;
-    selected_workflows?: array;
+    selected_workflows?: Array<string>;
     network_configuration_id?: string;
   }): Promise<any> {
 
@@ -1028,10 +1032,10 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsupdateSelfHostedRunnerGroupForOrg(params: {
     name: string;
-    visibility?: string;
+    visibility?: "selected" | "all" | "private";
     allows_public_repositories?: boolean;
     restricted_to_workflows?: boolean;
-    selected_workflows?: array;
+    selected_workflows?: Array<string>;
     network_configuration_id?: string;
   }): Promise<any> {
 
@@ -1126,7 +1130,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set repository access for a self-hosted runner group in an organization
    */
   async actionssetRepoAccessToSelfHostedRunnerGroupInOrg(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1221,7 +1225,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set self-hosted runners in a group for an organization
    */
   async actionssetSelfHostedRunnersInGroupForOrg(params: {
-    runners: array;
+    runners: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1337,8 +1341,8 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsgenerateRunnerJitconfigForOrg(params: {
     name: string;
-    runner_group_id: integer;
-    labels: array;
+    runner_group_id: number;
+    labels: Array<string>;
     work_folder?: string;
   }): Promise<any> {
 
@@ -1469,7 +1473,7 @@ class GitHubv3RESTAPIactionsClient {
    * Add custom labels to a self-hosted runner for an organization
    */
   async actionsaddCustomLabelsToSelfHostedRunnerForOrg(params: {
-    labels: array;
+    labels: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1488,7 +1492,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set custom labels for a self-hosted runner for an organization
    */
   async actionssetCustomLabelsForSelfHostedRunnerForOrg(params: {
-    labels: array;
+    labels: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1625,8 +1629,8 @@ class GitHubv3RESTAPIactionsClient {
   async actionscreateOrUpdateOrgSecret(params: {
     encrypted_value: string;
     key_id: string;
-    visibility: string;
-    selected_repository_ids?: array;
+    visibility: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1694,7 +1698,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set selected repositories for an organization secret
    */
   async actionssetSelectedReposForOrgSecret(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1714,7 +1718,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsaddSelectedRepoToOrgSecret(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     secret_name: string;
   }): Promise<any> {
@@ -1739,7 +1743,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsremoveSelectedRepoFromOrgSecret(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     secret_name: string;
   }): Promise<any> {
@@ -1789,8 +1793,8 @@ class GitHubv3RESTAPIactionsClient {
   async actionscreateOrgVariable(params: {
     name: string;
     value: string;
-    visibility: string;
-    selected_repository_ids?: array;
+    visibility: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1834,8 +1838,8 @@ class GitHubv3RESTAPIactionsClient {
   async actionsupdateOrgVariable(params: {
     name?: string;
     value?: string;
-    visibility?: string;
-    selected_repository_ids?: array;
+    visibility?: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1903,7 +1907,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set selected repositories for an organization variable
    */
   async actionssetSelectedReposForOrgVariable(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1923,7 +1927,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsaddSelectedRepoToOrgVariable(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     name: string;
   }): Promise<any> {
@@ -1948,7 +1952,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsremoveSelectedRepoFromOrgVariable(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     name: string;
   }): Promise<any> {
@@ -2262,7 +2266,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionssetCustomOidcSubClaimForRepo(params: {
     use_default: boolean;
-    include_claim_keys?: array;
+    include_claim_keys?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2356,9 +2360,9 @@ class GitHubv3RESTAPIactionsClient {
    * Set GitHub Actions permissions for a repository
    */
   async actionssetGithubActionsPermissionsRepository(params: {
-    enabled: ;
-    allowed_actions?: ;
-    sha_pinning_required?: ;
+    enabled: any;
+    allowed_actions?: any;
+    sha_pinning_required?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2704,8 +2708,8 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionsgenerateRunnerJitconfigForRepo(params: {
     name: string;
-    runner_group_id: integer;
-    labels: array;
+    runner_group_id: number;
+    labels: Array<string>;
     work_folder?: string;
   }): Promise<any> {
 
@@ -2846,7 +2850,7 @@ class GitHubv3RESTAPIactionsClient {
    * Add custom labels to a self-hosted runner for a repository
    */
   async actionsaddCustomLabelsToSelfHostedRunnerForRepo(params: {
-    labels: array;
+    labels: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2865,7 +2869,7 @@ class GitHubv3RESTAPIactionsClient {
    * Set custom labels for a self-hosted runner for a repository
    */
   async actionssetCustomLabelsForSelfHostedRunnerForRepo(params: {
-    labels: array;
+    labels: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -3250,7 +3254,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionslistJobsForWorkflowRun(params: {
     None?: string;
-    filter?: string;
+    filter?: "latest" | "all";
     owner: string;
     repo: string;
     run_id: string;
@@ -3353,8 +3357,8 @@ class GitHubv3RESTAPIactionsClient {
    * Review pending deployments for a workflow run
    */
   async actionsreviewPendingDeploymentsForRun(params: {
-    environment_ids: array;
-    state: string;
+    environment_ids: Array<number>;
+    state: "approved" | "rejected";
     comment: string;
   }): Promise<Array<any>> {
 
@@ -3749,7 +3753,7 @@ class GitHubv3RESTAPIactionsClient {
    */
   async actionscreateWorkflowDispatch(params: {
     ref: string;
-    inputs?: any;
+    inputs?: Record<string, any>;
   }): Promise<any> {
 
     // Build path with parameters

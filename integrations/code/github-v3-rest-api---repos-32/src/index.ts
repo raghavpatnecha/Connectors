@@ -59,9 +59,9 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposlistForOrg(params: {
     None?: string;
-    type?: string;
-    sort?: string;
-    direction?: string;
+    type?: "all" | "public" | "private" | "forks" | "sources" | "member";
+    sort?: "created" | "updated" | "pushed" | "full_name";
+    direction?: "asc" | "desc";
     org: string;
   }): Promise<Array<any>> {
 
@@ -86,13 +86,13 @@ class GitHubv3RESTAPIreposClient {
     description?: string;
     homepage?: string;
     private?: boolean;
-    visibility?: string;
+    visibility?: "public" | "private";
     has_issues?: boolean;
     has_projects?: boolean;
     has_wiki?: boolean;
     has_downloads?: boolean;
     is_template?: boolean;
-    team_id?: integer;
+    team_id?: number;
     auto_init?: boolean;
     gitignore_template?: string;
     license_template?: string;
@@ -102,11 +102,11 @@ class GitHubv3RESTAPIreposClient {
     allow_auto_merge?: boolean;
     delete_branch_on_merge?: boolean;
     use_squash_pr_title_as_default?: boolean;
-    squash_merge_commit_title?: string;
-    squash_merge_commit_message?: string;
-    merge_commit_title?: string;
-    merge_commit_message?: string;
-    custom_properties?: any;
+    squash_merge_commit_title?: "PR_TITLE" | "COMMIT_OR_PR_TITLE";
+    squash_merge_commit_message?: "PR_BODY" | "COMMIT_MESSAGES" | "BLANK";
+    merge_commit_title?: "PR_TITLE" | "MERGE_MESSAGE";
+    merge_commit_message?: "PR_BODY" | "PR_TITLE" | "BLANK";
+    custom_properties?: Record<string, any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -147,11 +147,11 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposcreateOrgRuleset(params: {
     name: string;
-    target?: string;
-    enforcement: ;
-    bypass_actors?: array;
-    conditions?: ;
-    rules?: array;
+    target?: "branch" | "tag" | "push" | "repository";
+    enforcement: any;
+    bypass_actors?: Array<any>;
+    conditions?: any;
+    rules?: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -215,7 +215,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposgetOrgRuleset(params: {
     None?: string;
-    ruleset_id: integer;
+    ruleset_id: number;
     org: string;
   }): Promise<any> {
 
@@ -238,11 +238,11 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposupdateOrgRuleset(params: {
     name?: string;
-    target?: string;
-    enforcement?: ;
-    bypass_actors?: array;
-    conditions?: ;
-    rules?: array;
+    target?: "branch" | "tag" | "push" | "repository";
+    enforcement?: any;
+    bypass_actors?: Array<any>;
+    conditions?: any;
+    rules?: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -262,7 +262,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposdeleteOrgRuleset(params: {
     None?: string;
-    ruleset_id: integer;
+    ruleset_id: number;
     org: string;
   }): Promise<any> {
 
@@ -311,8 +311,27 @@ class GitHubv3RESTAPIreposClient {
     description?: string;
     homepage?: string;
     private?: boolean;
-    visibility?: string;
-    security_and_analysis?: any;
+    visibility?: "public" | "private";
+    security_and_analysis?: {
+  advanced_security?: {
+    status?: string;
+  };
+  code_security?: {
+    status?: string;
+  };
+  secret_scanning?: {
+    status?: string;
+  };
+  secret_scanning_push_protection?: {
+    status?: string;
+  };
+  secret_scanning_ai_detection?: {
+    status?: string;
+  };
+  secret_scanning_non_provider_patterns?: {
+    status?: string;
+  };
+};
     has_issues?: boolean;
     has_projects?: boolean;
     has_wiki?: boolean;
@@ -325,10 +344,10 @@ class GitHubv3RESTAPIreposClient {
     delete_branch_on_merge?: boolean;
     allow_update_branch?: boolean;
     use_squash_pr_title_as_default?: boolean;
-    squash_merge_commit_title?: string;
-    squash_merge_commit_message?: string;
-    merge_commit_title?: string;
-    merge_commit_message?: string;
+    squash_merge_commit_title?: "PR_TITLE" | "COMMIT_OR_PR_TITLE";
+    squash_merge_commit_message?: "PR_BODY" | "COMMIT_MESSAGES" | "BLANK";
+    merge_commit_title?: "PR_TITLE" | "MERGE_MESSAGE";
+    merge_commit_message?: "PR_BODY" | "PR_TITLE" | "BLANK";
     archived?: boolean;
     allow_forking?: boolean;
     web_commit_signoff_required?: boolean;
@@ -376,8 +395,8 @@ class GitHubv3RESTAPIreposClient {
     None?: string;
     ref?: string;
     actor?: string;
-    time_period?: string;
-    activity_type?: string;
+    time_period?: "day" | "week" | "month" | "quarter" | "year";
+    activity_type?: "push" | "force_push" | "branch_creation" | "branch_deletion" | "pr_merge" | "merge_queue_merge";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -400,7 +419,11 @@ class GitHubv3RESTAPIreposClient {
    * Create an attestation
    */
   async reposcreateAttestation(params: {
-    bundle: any;
+    bundle: {
+  mediaType?: string;
+  verificationMaterial?: Record<string, any>;
+  dsseEnvelope?: Record<string, any>;
+};
   }): Promise<{
   id?: number;
 }> {
@@ -695,10 +718,36 @@ class GitHubv3RESTAPIreposClient {
    * Update branch protection
    */
   async reposupdateBranchProtection(params: {
-    required_status_checks: any;
+    required_status_checks: {
+  strict: boolean;
+  contexts: Array<string>;
+  checks?: Array<{
+    context: string;
+    app_id?: number;
+  }>;
+};
     enforce_admins: boolean;
-    required_pull_request_reviews: any;
-    restrictions: any;
+    required_pull_request_reviews: {
+  dismissal_restrictions?: {
+    users?: Array<string>;
+    teams?: Array<string>;
+    apps?: Array<string>;
+  };
+  dismiss_stale_reviews?: boolean;
+  require_code_owner_reviews?: boolean;
+  required_approving_review_count?: number;
+  require_last_push_approval?: boolean;
+  bypass_pull_request_allowances?: {
+    users?: Array<string>;
+    teams?: Array<string>;
+    apps?: Array<string>;
+  };
+};
+    restrictions: {
+  users: Array<string>;
+  teams: Array<string>;
+  apps?: Array<string>;
+};
     required_linear_history?: boolean;
     allow_force_pushes?: boolean;
     allow_deletions?: boolean;
@@ -849,12 +898,20 @@ class GitHubv3RESTAPIreposClient {
    * Update pull request review protection
    */
   async reposupdatePullRequestReviewProtection(params: {
-    dismissal_restrictions?: any;
+    dismissal_restrictions?: {
+  users?: Array<string>;
+  teams?: Array<string>;
+  apps?: Array<string>;
+};
     dismiss_stale_reviews?: boolean;
     require_code_owner_reviews?: boolean;
-    required_approving_review_count?: integer;
+    required_approving_review_count?: number;
     require_last_push_approval?: boolean;
-    bypass_pull_request_allowances?: any;
+    bypass_pull_request_allowances?: {
+  users?: Array<string>;
+  teams?: Array<string>;
+  apps?: Array<string>;
+};
   }): Promise<any> {
 
     // Build path with parameters
@@ -999,8 +1056,11 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposupdateStatusCheckProtection(params: {
     strict?: boolean;
-    contexts?: array;
-    checks?: array;
+    contexts?: Array<string>;
+    checks?: Array<{
+  context: string;
+  app_id?: number;
+}>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1219,7 +1279,7 @@ class GitHubv3RESTAPIreposClient {
    * Add app access restrictions
    */
   async reposaddAppAccessRestrictions(params: {
-    apps: array;
+    apps: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1238,7 +1298,7 @@ class GitHubv3RESTAPIreposClient {
    * Set app access restrictions
    */
   async repossetAppAccessRestrictions(params: {
-    apps: array;
+    apps: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1257,7 +1317,7 @@ class GitHubv3RESTAPIreposClient {
    * Remove app access restrictions
    */
   async reposremoveAppAccessRestrictions(params: {
-    apps: array;
+    apps: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1401,7 +1461,7 @@ class GitHubv3RESTAPIreposClient {
    * Add user access restrictions
    */
   async reposaddUserAccessRestrictions(params: {
-    users: array;
+    users: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1420,7 +1480,7 @@ class GitHubv3RESTAPIreposClient {
    * Set user access restrictions
    */
   async repossetUserAccessRestrictions(params: {
-    users: array;
+    users: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1439,7 +1499,7 @@ class GitHubv3RESTAPIreposClient {
    * Remove user access restrictions
    */
   async reposremoveUserAccessRestrictions(params: {
-    users: array;
+    users: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1502,8 +1562,8 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposlistCollaborators(params: {
     None?: string;
-    affiliation?: string;
-    permission?: string;
+    affiliation?: "outside" | "direct" | "all";
+    permission?: "pull" | "triage" | "push" | "maintain" | "admin";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -1793,8 +1853,8 @@ class GitHubv3RESTAPIreposClient {
   async reposcreateCommitComment(params: {
     body: string;
     path?: string;
-    position?: integer;
-    line?: integer;
+    position?: number;
+    line?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1991,8 +2051,16 @@ class GitHubv3RESTAPIreposClient {
     content: string;
     sha?: string;
     branch?: string;
-    committer?: any;
-    author?: any;
+    committer?: {
+  name: string;
+  email: string;
+  date?: string;
+};
+    author?: {
+  name: string;
+  email: string;
+  date?: string;
+};
   }): Promise<any> {
 
     // Build path with parameters
@@ -2014,8 +2082,14 @@ class GitHubv3RESTAPIreposClient {
     message: string;
     sha: string;
     branch?: string;
-    committer?: any;
-    author?: any;
+    committer?: {
+  name?: string;
+  email?: string;
+};
+    author?: {
+  name?: string;
+  email?: string;
+};
   }): Promise<any> {
 
     // Build path with parameters
@@ -2088,8 +2162,8 @@ class GitHubv3RESTAPIreposClient {
     ref: string;
     task?: string;
     auto_merge?: boolean;
-    required_contexts?: array;
-    payload?: ;
+    required_contexts?: Array<string>;
+    payload?: Record<string, any> | string;
     environment?: string;
     description?: string;
     transient_environment?: boolean;
@@ -2187,7 +2261,7 @@ class GitHubv3RESTAPIreposClient {
    * Create a deployment status
    */
   async reposcreateDeploymentStatus(params: {
-    state: string;
+    state: "error" | "failure" | "inactive" | "in_progress" | "queued" | "pending" | "success";
     target_url?: string;
     log_url?: string;
     description?: string;
@@ -2213,7 +2287,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposgetDeploymentStatus(params: {
     None?: string;
-    status_id: integer;
+    status_id: number;
     owner: string;
     repo: string;
     deployment_id: string;
@@ -2240,7 +2314,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposcreateDispatchEvent(params: {
     event_type: string;
-    client_payload?: any;
+    client_payload?: Record<string, any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2310,10 +2384,13 @@ class GitHubv3RESTAPIreposClient {
    * Create or update an environment
    */
   async reposcreateOrUpdateEnvironment(params: {
-    wait_timer?: ;
-    prevent_self_review?: ;
-    reviewers?: array;
-    deployment_branch_policy?: ;
+    wait_timer?: any;
+    prevent_self_review?: any;
+    reviewers?: Array<{
+  type?: any;
+  id?: number;
+}>;
+    deployment_branch_policy?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2519,7 +2596,7 @@ class GitHubv3RESTAPIreposClient {
    * Create a custom deployment protection rule on an environment
    */
   async reposcreateDeploymentProtectionRule(params: {
-    integration_id?: integer;
+    integration_id?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2621,7 +2698,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposlistForks(params: {
     None?: string;
-    sort?: string;
+    sort?: "newest" | "oldest" | "stargazers" | "watchers";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -2689,8 +2766,13 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposcreateWebhook(params: {
     name?: string;
-    config?: any;
-    events?: array;
+    config?: {
+  url?: any;
+  content_type?: any;
+  secret?: any;
+  insecure_ssl?: any;
+};
+    events?: Array<string>;
     active?: boolean;
   }): Promise<any> {
 
@@ -2735,10 +2817,10 @@ class GitHubv3RESTAPIreposClient {
    * Update a repository webhook
    */
   async reposupdateWebhook(params: {
-    config?: ;
-    events?: array;
-    add_events?: array;
-    remove_events?: array;
+    config?: any;
+    events?: Array<string>;
+    add_events?: Array<string>;
+    remove_events?: Array<string>;
     active?: boolean;
   }): Promise<any> {
 
@@ -2808,10 +2890,10 @@ class GitHubv3RESTAPIreposClient {
    * Update a webhook configuration for a repository
    */
   async reposupdateWebhookConfigForRepo(params: {
-    url?: ;
-    content_type?: ;
-    secret?: ;
-    insecure_ssl?: ;
+    url?: any;
+    content_type?: any;
+    secret?: any;
+    insecure_ssl?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -3051,7 +3133,7 @@ class GitHubv3RESTAPIreposClient {
    * Update a repository invitation
    */
   async reposupdateInvitation(params: {
-    permissions?: string;
+    permissions?: "read" | "write" | "maintain" | "triage" | "admin";
   }): Promise<any> {
 
     // Build path with parameters
@@ -3275,8 +3357,11 @@ class GitHubv3RESTAPIreposClient {
    * Create a GitHub Pages site
    */
   async reposcreatePagesSite(params: {
-    build_type?: string;
-    source?: any;
+    build_type?: "legacy" | "workflow";
+    source?: {
+  branch: string;
+  path?: "/" | "/docs";
+};
   }): Promise<any> {
 
     // Build path with parameters
@@ -3297,8 +3382,11 @@ class GitHubv3RESTAPIreposClient {
   async reposupdateInformationAboutPagesSite(params: {
     cname?: string;
     https_enforced?: boolean;
-    build_type?: string;
-    source?: ;
+    build_type?: "legacy" | "workflow";
+    source?: "gh-pages" | "master" | "master /docs" | {
+  branch: string;
+  path: "/" | "/docs";
+};
   }): Promise<any> {
 
     // Build path with parameters
@@ -3410,7 +3498,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposgetPagesBuild(params: {
     None?: string;
-    build_id: integer;
+    build_id: number;
     owner: string;
     repo: string;
   }): Promise<any> {
@@ -3624,7 +3712,7 @@ class GitHubv3RESTAPIreposClient {
    * Create or update custom property values for a repository
    */
   async reposcustomPropertiesForReposCreateOrUpdateReposit(params: {
-    properties: array;
+    properties: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -3724,7 +3812,7 @@ class GitHubv3RESTAPIreposClient {
     prerelease?: boolean;
     discussion_category_name?: string;
     generate_release_notes?: boolean;
-    make_latest?: string;
+    make_latest?: "true" | "false" | "legacy";
   }): Promise<any> {
 
     // Build path with parameters
@@ -3915,7 +4003,7 @@ class GitHubv3RESTAPIreposClient {
     body?: string;
     draft?: boolean;
     prerelease?: boolean;
-    make_latest?: string;
+    make_latest?: "true" | "false" | "legacy";
     discussion_category_name?: string;
   }): Promise<any> {
 
@@ -4062,11 +4150,11 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposcreateRepoRuleset(params: {
     name: string;
-    target?: string;
-    enforcement: ;
-    bypass_actors?: array;
-    conditions?: ;
-    rules?: array;
+    target?: "branch" | "tag" | "push";
+    enforcement: any;
+    bypass_actors?: Array<any>;
+    conditions?: any;
+    rules?: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -4134,7 +4222,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposgetRepoRuleset(params: {
     None?: string;
-    ruleset_id: integer;
+    ruleset_id: number;
     includes_parents?: boolean;
     owner: string;
     repo: string;
@@ -4160,11 +4248,11 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposupdateRepoRuleset(params: {
     name?: string;
-    target?: string;
-    enforcement?: ;
-    bypass_actors?: array;
-    conditions?: ;
-    rules?: array;
+    target?: "branch" | "tag" | "push";
+    enforcement?: any;
+    bypass_actors?: Array<any>;
+    conditions?: any;
+    rules?: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -4184,7 +4272,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposdeleteRepoRuleset(params: {
     None?: string;
-    ruleset_id: integer;
+    ruleset_id: number;
     owner: string;
     repo: string;
   }): Promise<any> {
@@ -4209,7 +4297,7 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposgetRepoRulesetHistory(params: {
     None?: string;
-    ruleset_id: integer;
+    ruleset_id: number;
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -4234,8 +4322,8 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposgetRepoRulesetVersion(params: {
     None?: string;
-    ruleset_id: integer;
-    version_id: integer;
+    ruleset_id: number;
+    version_id: number;
     owner: string;
     repo: string;
   }): Promise<any> {
@@ -4375,7 +4463,7 @@ class GitHubv3RESTAPIreposClient {
    * Create a commit status
    */
   async reposcreateCommitStatus(params: {
-    state: string;
+    state: "error" | "failure" | "pending" | "success";
     target_url?: string;
     description?: string;
     context?: string;
@@ -4558,7 +4646,7 @@ class GitHubv3RESTAPIreposClient {
    * Replace all repository topics
    */
   async reposreplaceAllTopics(params: {
-    names: array;
+    names: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -4671,7 +4759,7 @@ class GitHubv3RESTAPIreposClient {
   async repostransfer(params: {
     new_owner: string;
     new_name?: string;
-    team_ids?: array;
+    team_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -4826,11 +4914,11 @@ class GitHubv3RESTAPIreposClient {
    * List repositories for the authenticated user
    */
   async reposlistForAuthenticatedUser(params: {
-    visibility?: string;
+    visibility?: "all" | "public" | "private";
     affiliation?: string;
-    type?: string;
-    sort?: string;
-    direction?: string;
+    type?: "all" | "owner" | "public" | "private" | "member";
+    sort?: "created" | "updated" | "pushed" | "full_name";
+    direction?: "asc" | "desc";
     None?: string;
   }): Promise<Array<any>> {
 
@@ -4858,7 +4946,7 @@ class GitHubv3RESTAPIreposClient {
     has_projects?: boolean;
     has_wiki?: boolean;
     has_discussions?: boolean;
-    team_id?: integer;
+    team_id?: number;
     auto_init?: boolean;
     gitignore_template?: string;
     license_template?: string;
@@ -4867,10 +4955,10 @@ class GitHubv3RESTAPIreposClient {
     allow_rebase_merge?: boolean;
     allow_auto_merge?: boolean;
     delete_branch_on_merge?: boolean;
-    squash_merge_commit_title?: string;
-    squash_merge_commit_message?: string;
-    merge_commit_title?: string;
-    merge_commit_message?: string;
+    squash_merge_commit_title?: "PR_TITLE" | "COMMIT_OR_PR_TITLE";
+    squash_merge_commit_message?: "PR_BODY" | "COMMIT_MESSAGES" | "BLANK";
+    merge_commit_title?: "PR_TITLE" | "MERGE_MESSAGE";
+    merge_commit_message?: "PR_BODY" | "PR_TITLE" | "BLANK";
     has_downloads?: boolean;
     is_template?: boolean;
   }): Promise<any> {
@@ -4953,9 +5041,9 @@ class GitHubv3RESTAPIreposClient {
    */
   async reposlistForUser(params: {
     None?: string;
-    type?: string;
-    sort?: string;
-    direction?: string;
+    type?: "all" | "owner" | "member";
+    sort?: "created" | "updated" | "pushed" | "full_name";
+    direction?: "asc" | "desc";
     username: string;
   }): Promise<Array<any>> {
 

@@ -102,12 +102,15 @@ class GitHubv3RESTAPIbillingClient {
    * Update a budget for an organization
    */
   async billingupdateBudgetOrg(params: {
-    budget_amount?: integer;
+    budget_amount?: number;
     prevent_further_usage?: boolean;
-    budget_alerting?: any;
-    budget_scope?: string;
+    budget_alerting?: {
+  will_alert?: boolean;
+  alert_recipients?: Array<string>;
+};
+    budget_scope?: "enterprise" | "organization" | "repository" | "cost_center";
     budget_entity_name?: string;
-    budget_type?: string;
+    budget_type?: "ProductPricing" | "SkuPricing";
     budget_product_sku?: string;
   }): Promise<{
   message?: string;

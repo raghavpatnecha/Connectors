@@ -79,7 +79,7 @@ class GitHubv3RESTAPIenterpriseteamorganizationsClient {
    * Add organization assignments
    */
   async enterpriseTeamOrganizationsbulkAdd(params: {
-    organization_slugs: array;
+    organization_slugs: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -98,7 +98,7 @@ class GitHubv3RESTAPIenterpriseteamorganizationsClient {
    * Remove organization assignments
    */
   async enterpriseTeamOrganizationsbulkRemove(params: {
-    organization_slugs: array;
+    organization_slugs: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters

@@ -58,7 +58,7 @@ class GitHubv3RESTAPIcredentialsClient {
    * Revoke a list of credentials
    */
   async credentialsrevoke(params: {
-    credentials: array;
+    credentials: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters

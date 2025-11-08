@@ -59,7 +59,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    */
   async codeSecuritygetConfigurationsForEnterprise(params: {
     None?: string;
-    per_page?: integer;
+    per_page?: number;
     enterprise: string;
   }): Promise<Array<any>> {
 
@@ -82,26 +82,28 @@ class GitHubv3RESTAPIcodesecurityClient {
   async codeSecuritycreateConfigurationForEnterprise(params: {
     name: string;
     description: string;
-    advanced_security?: string;
-    code_security?: string;
-    dependency_graph?: string;
-    dependency_graph_autosubmit_action?: string;
-    dependency_graph_autosubmit_action_options?: any;
-    dependabot_alerts?: string;
-    dependabot_security_updates?: string;
-    code_scanning_options?: ;
-    code_scanning_default_setup?: string;
-    code_scanning_default_setup_options?: ;
-    code_scanning_delegated_alert_dismissal?: string;
-    secret_protection?: string;
-    secret_scanning?: string;
-    secret_scanning_push_protection?: string;
-    secret_scanning_validity_checks?: string;
-    secret_scanning_non_provider_patterns?: string;
-    secret_scanning_generic_secrets?: string;
-    secret_scanning_delegated_alert_dismissal?: string;
-    private_vulnerability_reporting?: string;
-    enforcement?: string;
+    advanced_security?: "enabled" | "disabled" | "code_security" | "secret_protection";
+    code_security?: "enabled" | "disabled" | "not_set";
+    dependency_graph?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action_options?: {
+  labeled_runners?: boolean;
+};
+    dependabot_alerts?: "enabled" | "disabled" | "not_set";
+    dependabot_security_updates?: "enabled" | "disabled" | "not_set";
+    code_scanning_options?: any;
+    code_scanning_default_setup?: "enabled" | "disabled" | "not_set";
+    code_scanning_default_setup_options?: any;
+    code_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    secret_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning?: "enabled" | "disabled" | "not_set";
+    secret_scanning_push_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning_validity_checks?: "enabled" | "disabled" | "not_set";
+    secret_scanning_non_provider_patterns?: "enabled" | "disabled" | "not_set";
+    secret_scanning_generic_secrets?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    private_vulnerability_reporting?: "enabled" | "disabled" | "not_set";
+    enforcement?: "enforced" | "unenforced";
   }): Promise<any> {
 
     // Build path with parameters
@@ -166,25 +168,27 @@ class GitHubv3RESTAPIcodesecurityClient {
   async codeSecurityupdateEnterpriseConfiguration(params: {
     name?: string;
     description?: string;
-    advanced_security?: string;
-    code_security?: string;
-    dependency_graph?: string;
-    dependency_graph_autosubmit_action?: string;
-    dependency_graph_autosubmit_action_options?: any;
-    dependabot_alerts?: string;
-    dependabot_security_updates?: string;
-    code_scanning_default_setup?: string;
-    code_scanning_default_setup_options?: ;
-    code_scanning_delegated_alert_dismissal?: string;
-    secret_protection?: string;
-    secret_scanning?: string;
-    secret_scanning_push_protection?: string;
-    secret_scanning_validity_checks?: string;
-    secret_scanning_non_provider_patterns?: string;
-    secret_scanning_generic_secrets?: string;
-    secret_scanning_delegated_alert_dismissal?: string;
-    private_vulnerability_reporting?: string;
-    enforcement?: string;
+    advanced_security?: "enabled" | "disabled" | "code_security" | "secret_protection";
+    code_security?: "enabled" | "disabled" | "not_set";
+    dependency_graph?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action_options?: {
+  labeled_runners?: boolean;
+};
+    dependabot_alerts?: "enabled" | "disabled" | "not_set";
+    dependabot_security_updates?: "enabled" | "disabled" | "not_set";
+    code_scanning_default_setup?: "enabled" | "disabled" | "not_set";
+    code_scanning_default_setup_options?: any;
+    code_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    secret_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning?: "enabled" | "disabled" | "not_set";
+    secret_scanning_push_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning_validity_checks?: "enabled" | "disabled" | "not_set";
+    secret_scanning_non_provider_patterns?: "enabled" | "disabled" | "not_set";
+    secret_scanning_generic_secrets?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    private_vulnerability_reporting?: "enabled" | "disabled" | "not_set";
+    enforcement?: "enforced" | "unenforced";
   }): Promise<any> {
 
     // Build path with parameters
@@ -226,7 +230,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    * Attach an enterprise configuration to repositories
    */
   async codeSecurityattachEnterpriseConfiguration(params: {
-    scope: string;
+    scope: "all" | "all_without_configurations";
   }): Promise<any> {
 
     // Build path with parameters
@@ -245,7 +249,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    * Set a code security configuration as a default for an enterprise
    */
   async codeSecuritysetConfigurationAsDefaultForEnterprise(params: {
-    default_for_new_repos?: string;
+    default_for_new_repos?: "all" | "none" | "private_and_internal" | "public";
   }): Promise<{
   default_for_new_repos?: "all" | "none" | "private_and_internal" | "public";
   configuration?: any;
@@ -268,7 +272,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    */
   async codeSecuritygetRepositoriesForEnterpriseConfigurat(params: {
     None?: string;
-    per_page?: integer;
+    per_page?: number;
     status?: string;
     enterprise: string;
     configuration_id: string;
@@ -293,8 +297,8 @@ class GitHubv3RESTAPIcodesecurityClient {
    */
   async codeSecuritygetConfigurationsForOrg(params: {
     None?: string;
-    target_type?: string;
-    per_page?: integer;
+    target_type?: "global" | "all";
+    per_page?: number;
     org: string;
   }): Promise<Array<any>> {
 
@@ -317,28 +321,35 @@ class GitHubv3RESTAPIcodesecurityClient {
   async codeSecuritycreateConfiguration(params: {
     name: string;
     description: string;
-    advanced_security?: string;
-    code_security?: string;
-    dependency_graph?: string;
-    dependency_graph_autosubmit_action?: string;
-    dependency_graph_autosubmit_action_options?: any;
-    dependabot_alerts?: string;
-    dependabot_security_updates?: string;
-    code_scanning_options?: ;
-    code_scanning_default_setup?: string;
-    code_scanning_default_setup_options?: ;
-    code_scanning_delegated_alert_dismissal?: string;
-    secret_protection?: string;
-    secret_scanning?: string;
-    secret_scanning_push_protection?: string;
-    secret_scanning_delegated_bypass?: string;
-    secret_scanning_delegated_bypass_options?: any;
-    secret_scanning_validity_checks?: string;
-    secret_scanning_non_provider_patterns?: string;
-    secret_scanning_generic_secrets?: string;
-    secret_scanning_delegated_alert_dismissal?: string;
-    private_vulnerability_reporting?: string;
-    enforcement?: string;
+    advanced_security?: "enabled" | "disabled" | "code_security" | "secret_protection";
+    code_security?: "enabled" | "disabled" | "not_set";
+    dependency_graph?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action_options?: {
+  labeled_runners?: boolean;
+};
+    dependabot_alerts?: "enabled" | "disabled" | "not_set";
+    dependabot_security_updates?: "enabled" | "disabled" | "not_set";
+    code_scanning_options?: any;
+    code_scanning_default_setup?: "enabled" | "disabled" | "not_set";
+    code_scanning_default_setup_options?: any;
+    code_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    secret_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning?: "enabled" | "disabled" | "not_set";
+    secret_scanning_push_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_bypass?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_bypass_options?: {
+  reviewers?: Array<{
+    reviewer_id: number;
+    reviewer_type: "TEAM" | "ROLE";
+  }>;
+};
+    secret_scanning_validity_checks?: "enabled" | "disabled" | "not_set";
+    secret_scanning_non_provider_patterns?: "enabled" | "disabled" | "not_set";
+    secret_scanning_generic_secrets?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    private_vulnerability_reporting?: "enabled" | "disabled" | "not_set";
+    enforcement?: "enforced" | "unenforced";
   }): Promise<any> {
 
     // Build path with parameters
@@ -378,7 +389,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    * Detach configurations from repositories
    */
   async codeSecuritydetachConfiguration(params: {
-    selected_repository_ids?: array;
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -422,27 +433,34 @@ class GitHubv3RESTAPIcodesecurityClient {
   async codeSecurityupdateConfiguration(params: {
     name?: string;
     description?: string;
-    advanced_security?: string;
-    code_security?: string;
-    dependency_graph?: string;
-    dependency_graph_autosubmit_action?: string;
-    dependency_graph_autosubmit_action_options?: any;
-    dependabot_alerts?: string;
-    dependabot_security_updates?: string;
-    code_scanning_default_setup?: string;
-    code_scanning_default_setup_options?: ;
-    code_scanning_delegated_alert_dismissal?: string;
-    secret_protection?: string;
-    secret_scanning?: string;
-    secret_scanning_push_protection?: string;
-    secret_scanning_delegated_bypass?: string;
-    secret_scanning_delegated_bypass_options?: any;
-    secret_scanning_validity_checks?: string;
-    secret_scanning_non_provider_patterns?: string;
-    secret_scanning_generic_secrets?: string;
-    secret_scanning_delegated_alert_dismissal?: string;
-    private_vulnerability_reporting?: string;
-    enforcement?: string;
+    advanced_security?: "enabled" | "disabled" | "code_security" | "secret_protection";
+    code_security?: "enabled" | "disabled" | "not_set";
+    dependency_graph?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action?: "enabled" | "disabled" | "not_set";
+    dependency_graph_autosubmit_action_options?: {
+  labeled_runners?: boolean;
+};
+    dependabot_alerts?: "enabled" | "disabled" | "not_set";
+    dependabot_security_updates?: "enabled" | "disabled" | "not_set";
+    code_scanning_default_setup?: "enabled" | "disabled" | "not_set";
+    code_scanning_default_setup_options?: any;
+    code_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    secret_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning?: "enabled" | "disabled" | "not_set";
+    secret_scanning_push_protection?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_bypass?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_bypass_options?: {
+  reviewers?: Array<{
+    reviewer_id: number;
+    reviewer_type: "TEAM" | "ROLE";
+  }>;
+};
+    secret_scanning_validity_checks?: "enabled" | "disabled" | "not_set";
+    secret_scanning_non_provider_patterns?: "enabled" | "disabled" | "not_set";
+    secret_scanning_generic_secrets?: "enabled" | "disabled" | "not_set";
+    secret_scanning_delegated_alert_dismissal?: "enabled" | "disabled" | "not_set";
+    private_vulnerability_reporting?: "enabled" | "disabled" | "not_set";
+    enforcement?: "enforced" | "unenforced";
   }): Promise<any> {
 
     // Build path with parameters
@@ -484,8 +502,8 @@ class GitHubv3RESTAPIcodesecurityClient {
    * Attach a configuration to repositories
    */
   async codeSecurityattachConfiguration(params: {
-    scope: string;
-    selected_repository_ids?: array;
+    scope: "all" | "all_without_configurations" | "public" | "private_or_internal" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -504,7 +522,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    * Set a code security configuration as a default for an organization
    */
   async codeSecuritysetConfigurationAsDefault(params: {
-    default_for_new_repos?: string;
+    default_for_new_repos?: "all" | "none" | "private_and_internal" | "public";
   }): Promise<{
   default_for_new_repos?: "all" | "none" | "private_and_internal" | "public";
   configuration?: any;
@@ -527,7 +545,7 @@ class GitHubv3RESTAPIcodesecurityClient {
    */
   async codeSecuritygetRepositoriesForConfiguration(params: {
     None?: string;
-    per_page?: integer;
+    per_page?: number;
     status?: string;
     org: string;
     configuration_id: string;

@@ -83,8 +83,8 @@ class GitHubv3RESTAPIhostedcomputeClient {
    */
   async hostedComputecreateNetworkConfigurationForOrg(params: {
     name: string;
-    compute_service?: string;
-    network_settings_ids: array;
+    compute_service?: "none" | "actions";
+    network_settings_ids: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -127,8 +127,8 @@ class GitHubv3RESTAPIhostedcomputeClient {
    */
   async hostedComputeupdateNetworkConfigurationForOrg(params: {
     name?: string;
-    compute_service?: string;
-    network_settings_ids?: array;
+    compute_service?: "none" | "actions";
+    network_settings_ids?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters

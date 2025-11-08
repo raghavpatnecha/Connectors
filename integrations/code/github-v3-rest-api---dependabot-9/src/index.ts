@@ -80,8 +80,8 @@ class GitHubv3RESTAPIdependabotClient {
    */
   async dependabotrepositoryAccessForOrg(params: {
     None?: string;
-    page?: integer;
-    per_page?: integer;
+    page?: number;
+    per_page?: number;
     org: string;
   }): Promise<any> {
 
@@ -102,8 +102,8 @@ class GitHubv3RESTAPIdependabotClient {
    * Updates Dependabot's repository access list for an organization
    */
   async dependabotupdateRepositoryAccessForOrg(params: {
-    repository_ids_to_add?: array;
-    repository_ids_to_remove?: array;
+    repository_ids_to_add?: Array<number>;
+    repository_ids_to_remove?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -122,7 +122,7 @@ class GitHubv3RESTAPIdependabotClient {
    * Set the default repository access level for Dependabot
    */
   async dependabotsetRepositoryAccessDefaultLevel(params: {
-    default_level: string;
+    default_level: "public" | "internal";
   }): Promise<any> {
 
     // Build path with parameters
@@ -232,8 +232,8 @@ class GitHubv3RESTAPIdependabotClient {
   async dependabotcreateOrUpdateOrgSecret(params: {
     encrypted_value?: string;
     key_id?: string;
-    visibility: string;
-    selected_repository_ids?: array;
+    visibility: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number | string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -301,7 +301,7 @@ class GitHubv3RESTAPIdependabotClient {
    * Set selected repositories for an organization secret
    */
   async dependabotsetSelectedReposForOrgSecret(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -321,7 +321,7 @@ class GitHubv3RESTAPIdependabotClient {
    */
   async dependabotaddSelectedRepoToOrgSecret(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     secret_name: string;
   }): Promise<any> {
@@ -346,7 +346,7 @@ class GitHubv3RESTAPIdependabotClient {
    */
   async dependabotremoveSelectedRepoFromOrgSecret(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     secret_name: string;
   }): Promise<any> {
@@ -371,7 +371,7 @@ class GitHubv3RESTAPIdependabotClient {
    */
   async dependabotlistAlertsForRepo(params: {
     None?: string;
-    per_page?: integer;
+    per_page?: number;
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -419,8 +419,8 @@ class GitHubv3RESTAPIdependabotClient {
    * Update a Dependabot alert
    */
   async dependabotupdateAlert(params: {
-    state: string;
-    dismissed_reason?: string;
+    state: "dismissed" | "open";
+    dismissed_reason?: "fix_started" | "inaccurate" | "no_bandwidth" | "not_used" | "tolerable_risk";
     dismissed_comment?: string;
   }): Promise<any> {
 

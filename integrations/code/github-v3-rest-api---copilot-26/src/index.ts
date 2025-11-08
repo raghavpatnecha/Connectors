@@ -80,7 +80,7 @@ class GitHubv3RESTAPIcopilotClient {
    */
   async copilotlistCopilotSeats(params: {
     None?: string;
-    per_page?: integer;
+    per_page?: number;
     org: string;
   }): Promise<{
   total_seats?: number;
@@ -104,7 +104,7 @@ class GitHubv3RESTAPIcopilotClient {
    * Add teams to the Copilot subscription for an organization
    */
   async copilotaddCopilotSeatsForTeams(params: {
-    selected_teams: array;
+    selected_teams: Array<string>;
   }): Promise<{
   seats_created: number;
 }> {
@@ -125,7 +125,7 @@ class GitHubv3RESTAPIcopilotClient {
    * Remove teams from the Copilot subscription for an organization
    */
   async copilotcancelCopilotSeatAssignmentForTeams(params: {
-    selected_teams: array;
+    selected_teams: Array<string>;
   }): Promise<{
   seats_cancelled: number;
 }> {
@@ -146,7 +146,7 @@ class GitHubv3RESTAPIcopilotClient {
    * Add users to the Copilot subscription for an organization
    */
   async copilotaddCopilotSeatsForUsers(params: {
-    selected_usernames: array;
+    selected_usernames: Array<string>;
   }): Promise<{
   seats_created: number;
 }> {
@@ -167,7 +167,7 @@ class GitHubv3RESTAPIcopilotClient {
    * Remove users from the Copilot subscription for an organization
    */
   async copilotcancelCopilotSeatAssignmentForUsers(params: {
-    selected_usernames: array;
+    selected_usernames: Array<string>;
   }): Promise<{
   seats_cancelled: number;
 }> {
@@ -191,7 +191,7 @@ class GitHubv3RESTAPIcopilotClient {
     None?: string;
     since?: string;
     until?: string;
-    per_page?: integer;
+    per_page?: number;
     org: string;
   }): Promise<Array<any>> {
 
@@ -238,7 +238,7 @@ class GitHubv3RESTAPIcopilotClient {
     None?: string;
     since?: string;
     until?: string;
-    per_page?: integer;
+    per_page?: number;
     org: string;
     team_slug: string;
   }): Promise<Array<any>> {

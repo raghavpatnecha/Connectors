@@ -59,8 +59,8 @@ class GitHubv3RESTAPIsearchClient {
    */
   async searchcode(params: {
     q: string;
-    sort?: string;
-    order?: string;
+    sort?: "indexed";
+    order?: "desc" | "asc";
     None?: string;
   }): Promise<{
   total_count: number;
@@ -85,7 +85,7 @@ class GitHubv3RESTAPIsearchClient {
    */
   async searchcommits(params: {
     q: string;
-    sort?: string;
+    sort?: "author-date" | "committer-date";
     None?: string;
   }): Promise<{
   total_count: number;
@@ -110,7 +110,7 @@ class GitHubv3RESTAPIsearchClient {
    */
   async searchissuesAndPullRequests(params: {
     q: string;
-    sort?: string;
+    sort?: "comments" | "reactions" | "reactions-+1" | "reactions--1" | "reactions-smile" | "reactions-thinking_face" | "reactions-heart" | "reactions-tada" | "interactions" | "created" | "updated";
     None?: string;
   }): Promise<{
   total_count: number;
@@ -134,9 +134,9 @@ class GitHubv3RESTAPIsearchClient {
    * Search labels
    */
   async searchlabels(params: {
-    repository_id: integer;
+    repository_id: number;
     q: string;
-    sort?: string;
+    sort?: "created" | "updated";
     None?: string;
   }): Promise<{
   total_count: number;
@@ -161,7 +161,7 @@ class GitHubv3RESTAPIsearchClient {
    */
   async searchrepos(params: {
     q: string;
-    sort?: string;
+    sort?: "stars" | "forks" | "help-wanted-issues" | "updated";
     None?: string;
   }): Promise<{
   total_count: number;
@@ -210,7 +210,7 @@ class GitHubv3RESTAPIsearchClient {
    */
   async searchusers(params: {
     q: string;
-    sort?: string;
+    sort?: "followers" | "repositories" | "joined";
     None?: string;
   }): Promise<{
   total_count: number;

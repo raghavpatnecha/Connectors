@@ -59,8 +59,8 @@ class GitHubv3RESTAPIcampaignsClient {
    */
   async campaignslistOrgCampaigns(params: {
     None?: string;
-    state?: ;
-    sort?: string;
+    state?: any;
+    sort?: "created" | "updated" | "ends_at" | "published";
     org: string;
   }): Promise<Array<any>> {
 
@@ -83,11 +83,14 @@ class GitHubv3RESTAPIcampaignsClient {
   async campaignscreateCampaign(params: {
     name: string;
     description: string;
-    managers?: array;
-    team_managers?: array;
+    managers?: Array<string>;
+    team_managers?: Array<string>;
     ends_at: string;
     contact_link?: string;
-    code_scanning_alerts?: array;
+    code_scanning_alerts?: Array<{
+  repository_id: number;
+  alert_numbers: Array<number>;
+}>;
     generate_issues?: boolean;
   }): Promise<any> {
 
@@ -108,7 +111,7 @@ class GitHubv3RESTAPIcampaignsClient {
    */
   async campaignsgetCampaignSummary(params: {
     None?: string;
-    campaign_number: integer;
+    campaign_number: number;
     org: string;
   }): Promise<any> {
 
@@ -132,11 +135,11 @@ class GitHubv3RESTAPIcampaignsClient {
   async campaignsupdateCampaign(params: {
     name?: string;
     description?: string;
-    managers?: array;
-    team_managers?: array;
+    managers?: Array<string>;
+    team_managers?: Array<string>;
     ends_at?: string;
     contact_link?: string;
-    state?: ;
+    state?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -156,7 +159,7 @@ class GitHubv3RESTAPIcampaignsClient {
    */
   async campaignsdeleteCampaign(params: {
     None?: string;
-    campaign_number: integer;
+    campaign_number: number;
     org: string;
   }): Promise<any> {
 

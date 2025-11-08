@@ -119,7 +119,7 @@ class {{ title | replace(" ", "") | replace("-", "") }}Client {
    */
   async {{ tool.name }}(params: {
     {% for param_name, param_schema in tool.parameters.properties.items() %}
-    {{ param_name }}{% if param_name not in tool.parameters.required %}?{% endif %}: {{ param_schema.type if param_schema.type != 'object' else 'any' }};
+    {{ param_name }}{% if param_name not in tool.parameters.required %}?{% endif %}: {{ param_schema.ts_type if param_schema.ts_type else 'any' }};
     {% endfor %}
   }): Promise<{{ tool.response_type }}> {
     {% if rate_limits %}

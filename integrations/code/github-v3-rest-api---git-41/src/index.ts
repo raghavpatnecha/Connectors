@@ -105,9 +105,17 @@ class GitHubv3RESTAPIgitClient {
   async gitcreateCommit(params: {
     message: string;
     tree: string;
-    parents?: array;
-    author?: any;
-    committer?: any;
+    parents?: Array<string>;
+    author?: {
+  name: string;
+  email: string;
+  date?: string;
+};
+    committer?: {
+  name?: string;
+  email?: string;
+  date?: string;
+};
     signature?: string;
   }): Promise<any> {
 
@@ -270,8 +278,12 @@ class GitHubv3RESTAPIgitClient {
     tag: string;
     message: string;
     object: string;
-    type: string;
-    tagger?: any;
+    type: "commit" | "tree" | "blob";
+    tagger?: {
+  name: string;
+  email: string;
+  date?: string;
+};
   }): Promise<any> {
 
     // Build path with parameters
@@ -315,7 +327,13 @@ class GitHubv3RESTAPIgitClient {
    * Create a tree
    */
   async gitcreateTree(params: {
-    tree: array;
+    tree: Array<{
+  path?: string;
+  mode?: "100644" | "100755" | "040000" | "160000" | "120000";
+  type?: "blob" | "tree" | "commit";
+  sha?: string;
+  content?: string;
+}>;
     base_tree?: string;
   }): Promise<any> {
 

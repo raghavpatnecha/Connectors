@@ -139,7 +139,7 @@ class GitHubv3RESTAPIprojectsclassicClient {
    */
   async projectsClassiclistCollaborators(params: {
     None?: string;
-    affiliation?: string;
+    affiliation?: "outside" | "direct" | "all";
     project_id: string;
   }): Promise<Array<any>> {
 
@@ -160,7 +160,7 @@ class GitHubv3RESTAPIprojectsclassicClient {
    * Add project collaborator
    */
   async projectsClassicaddCollaborator(params: {
-    permission?: string;
+    permission?: "read" | "write" | "admin";
   }): Promise<any> {
 
     // Build path with parameters

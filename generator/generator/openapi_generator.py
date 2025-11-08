@@ -376,9 +376,13 @@ class OpenAPIToMCP:
             param_schema = param.get("schema", {"type": "string"})
             param_required = param.get("required", False)
 
+            # Convert JSON Schema type to TypeScript type
+            ts_type = generate_typescript_type(param_schema)
+
             schema["properties"][param_name] = {
                 **param_schema,
                 "description": param.get("description", ""),
+                "ts_type": ts_type,  # Add TypeScript type for template
             }
 
             if param_required:
@@ -393,6 +397,7 @@ class OpenAPIToMCP:
                 schema["properties"][param_name] = {
                     "type": "string",
                     "description": f"Path parameter: {param_name}",
+                    "ts_type": "string",  # Path params are always strings
                 }
                 schema["required"].append(param_name)
 
@@ -409,13 +414,22 @@ class OpenAPIToMCP:
         schema = json_content.get("schema", {})
 
         if schema.get("type") == "object":
-            # Flatten object properties into parameters
+            # Flatten object properties into parameters with TypeScript types
             properties = schema.get("properties", {})
             required = schema.get("required", [])
 
+            # Add TypeScript types to each property
+            typed_properties = {}
+            for prop_name, prop_schema in properties.items():
+                ts_type = generate_typescript_type(prop_schema)
+                typed_properties[prop_name] = {
+                    **prop_schema,
+                    "ts_type": ts_type,
+                }
+
             return {
                 "type": "object",
-                "properties": properties,
+                "properties": typed_properties,
                 "required": required,
             }
 

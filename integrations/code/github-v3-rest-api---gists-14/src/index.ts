@@ -78,8 +78,8 @@ class GitHubv3RESTAPIgistsClient {
    */
   async gistscreate(params: {
     description?: string;
-    files: any;
-    public?: ;
+    files: Record<string, any>;
+    public?: boolean | "true" | "false";
   }): Promise<any> {
 
     // Build path with parameters
@@ -158,7 +158,7 @@ class GitHubv3RESTAPIgistsClient {
    */
   async gistsupdate(params: {
     description?: string;
-    files?: any;
+    files?: Record<string, any>;
   }): Promise<any> {
 
     // Build path with parameters

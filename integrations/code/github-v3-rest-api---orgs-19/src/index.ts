@@ -98,7 +98,7 @@ class GitHubv3RESTAPIorgsClient {
    * Create or update custom property values for an organization
    */
   async orgscustomPropertiesForOrgsCreateOrUpdateOrganizat(params: {
-    properties: array;
+    properties: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -147,12 +147,12 @@ class GitHubv3RESTAPIorgsClient {
     description?: string;
     has_organization_projects?: boolean;
     has_repository_projects?: boolean;
-    default_repository_permission?: string;
+    default_repository_permission?: "read" | "write" | "admin" | "none";
     members_can_create_repositories?: boolean;
     members_can_create_internal_repositories?: boolean;
     members_can_create_private_repositories?: boolean;
     members_can_create_public_repositories?: boolean;
-    members_allowed_repository_creation_type?: string;
+    members_allowed_repository_creation_type?: "all" | "private" | "none";
     members_can_create_pages?: boolean;
     members_can_create_public_pages?: boolean;
     members_can_create_private_pages?: boolean;
@@ -214,7 +214,7 @@ class GitHubv3RESTAPIorgsClient {
     path?: string;
     registry_url: string;
     repository?: string;
-    status?: string;
+    status?: "active" | "eol" | "deleted";
     github_repository?: string;
   }): Promise<{
   total_count?: number;
@@ -283,7 +283,7 @@ class GitHubv3RESTAPIorgsClient {
    * List attestations by bulk subject digests
    */
   async orgslistAttestationsBulk(params: {
-    subject_digests: array;
+    subject_digests: Array<string>;
     predicate_type?: string;
   }): Promise<{
   attestations_subject_digests?: Record<string, any>;
@@ -378,7 +378,7 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgsdeleteAttestationsById(params: {
     None?: string;
-    attestation_id: integer;
+    attestation_id: number;
     org: string;
   }): Promise<any> {
 
@@ -568,8 +568,15 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgscreateWebhook(params: {
     name: string;
-    config: any;
-    events?: array;
+    config: {
+  url: any;
+  content_type?: any;
+  secret?: any;
+  insecure_ssl?: any;
+  username?: string;
+  password?: string;
+};
+    events?: Array<string>;
     active?: boolean;
   }): Promise<any> {
 
@@ -612,8 +619,13 @@ class GitHubv3RESTAPIorgsClient {
    * Update an organization webhook
    */
   async orgsupdateWebhook(params: {
-    config?: any;
-    events?: array;
+    config?: {
+  url: any;
+  content_type?: any;
+  secret?: any;
+  insecure_ssl?: any;
+};
+    events?: Array<string>;
     active?: boolean;
     name?: string;
   }): Promise<any> {
@@ -680,10 +692,10 @@ class GitHubv3RESTAPIorgsClient {
    * Update a webhook configuration for an organization
    */
   async orgsupdateWebhookConfigForOrg(params: {
-    url?: ;
-    content_type?: ;
-    secret?: ;
-    insecure_ssl?: ;
+    url?: any;
+    content_type?: any;
+    secret?: any;
+    insecure_ssl?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1030,8 +1042,8 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgslistPendingInvitations(params: {
     None?: string;
-    role?: string;
-    invitation_source?: string;
+    role?: "all" | "admin" | "direct_member" | "billing_manager" | "hiring_manager";
+    invitation_source?: "all" | "member" | "scim";
     org: string;
   }): Promise<Array<any>> {
 
@@ -1052,10 +1064,10 @@ class GitHubv3RESTAPIorgsClient {
    * Create an organization invitation
    */
   async orgscreateInvitation(params: {
-    invitee_id?: integer;
+    invitee_id?: number;
     email?: string;
-    role?: string;
-    team_ids?: array;
+    role?: "admin" | "direct_member" | "billing_manager" | "reinstate";
+    team_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1209,8 +1221,8 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgslistMembers(params: {
     None?: string;
-    filter?: string;
-    role?: string;
+    filter?: "2fa_disabled" | "2fa_insecure" | "all";
+    role?: "all" | "admin" | "member";
     org: string;
   }): Promise<Array<any>> {
 
@@ -1300,7 +1312,7 @@ class GitHubv3RESTAPIorgsClient {
    * Set organization membership for a user
    */
   async orgssetMembershipForUser(params: {
-    role?: string;
+    role?: "admin" | "member";
   }): Promise<any> {
 
     // Build path with parameters
@@ -1582,7 +1594,7 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgslistOutsideCollaborators(params: {
     None?: string;
-    filter?: string;
+    filter?: "2fa_disabled" | "2fa_insecure" | "all";
     org: string;
   }): Promise<Array<any>> {
 
@@ -1666,8 +1678,8 @@ class GitHubv3RESTAPIorgsClient {
    * Review requests to access organization resources with fine-grained personal access tokens
    */
   async orgsreviewPatGrantRequestsInBulk(params: {
-    pat_request_ids?: array;
-    action: string;
+    pat_request_ids?: Array<number>;
+    action: "approve" | "deny";
     reason?: string;
   }): Promise<any> {
 
@@ -1687,7 +1699,7 @@ class GitHubv3RESTAPIorgsClient {
    * Review a request to access organization resources with a fine-grained personal access token
    */
   async orgsreviewPatGrantRequest(params: {
-    action: string;
+    action: "approve" | "deny";
     reason?: string;
   }): Promise<any> {
 
@@ -1708,7 +1720,7 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgslistPatGrantRequestRepositories(params: {
     None?: string;
-    pat_request_id: integer;
+    pat_request_id: number;
     org: string;
   }): Promise<Array<any>> {
 
@@ -1751,8 +1763,8 @@ class GitHubv3RESTAPIorgsClient {
    * Update the access to organization resources via fine-grained personal access tokens
    */
   async orgsupdatePatAccesses(params: {
-    action: string;
-    pat_ids: array;
+    action: "revoke";
+    pat_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1771,7 +1783,7 @@ class GitHubv3RESTAPIorgsClient {
    * Update the access a fine-grained personal access token has to organization resources
    */
   async orgsupdatePatAccess(params: {
-    action: string;
+    action: "revoke";
   }): Promise<any> {
 
     // Build path with parameters
@@ -1791,7 +1803,7 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgslistPatGrantRepositories(params: {
     None?: string;
-    pat_id: integer;
+    pat_id: number;
     org: string;
   }): Promise<Array<any>> {
 
@@ -1834,7 +1846,7 @@ class GitHubv3RESTAPIorgsClient {
    * Create or update custom properties for an organization
    */
   async orgscustomPropertiesForReposCreateOrUpdateOrganiza(params: {
-    properties: array;
+    properties: Array<any>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -1944,8 +1956,8 @@ class GitHubv3RESTAPIorgsClient {
    * Create or update custom property values for organization repositories
    */
   async orgscustomPropertiesForReposCreateOrUpdateOrganiza(params: {
-    repository_names: array;
-    properties: array;
+    repository_names: Array<string>;
+    properties: Array<any>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2055,7 +2067,7 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgsgetOrgRulesetHistory(params: {
     None?: string;
-    ruleset_id: integer;
+    ruleset_id: number;
     org: string;
   }): Promise<Array<any>> {
 
@@ -2078,8 +2090,8 @@ class GitHubv3RESTAPIorgsClient {
    */
   async orgsgetOrgRulesetVersion(params: {
     None?: string;
-    ruleset_id: integer;
-    version_id: integer;
+    ruleset_id: number;
+    version_id: number;
     org: string;
   }): Promise<any> {
 
@@ -2190,8 +2202,8 @@ class GitHubv3RESTAPIorgsClient {
    * Set immutable releases settings for an organization
    */
   async orgssetImmutableReleasesSettings(params: {
-    enforced_repositories: string;
-    selected_repository_ids?: array;
+    enforced_repositories: "all" | "none" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2234,7 +2246,7 @@ class GitHubv3RESTAPIorgsClient {
    * Set selected repositories for immutable releases enforcement
    */
   async orgssetImmutableReleasesSettingsRepositories(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -2324,7 +2336,7 @@ class GitHubv3RESTAPIorgsClient {
    * List organization memberships for the authenticated user
    */
   async orgslistMembershipsForAuthenticatedUser(params: {
-    state?: string;
+    state?: "active" | "pending";
     None?: string;
   }): Promise<Array<any>> {
 
@@ -2365,7 +2377,7 @@ class GitHubv3RESTAPIorgsClient {
    * Update an organization membership for the authenticated user
    */
   async orgsupdateMembershipForAuthenticatedUser(params: {
-    state: string;
+    state: "active";
   }): Promise<any> {
 
     // Build path with parameters

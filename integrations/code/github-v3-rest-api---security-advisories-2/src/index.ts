@@ -59,21 +59,21 @@ class GitHubv3RESTAPIsecurityadvisoriesClient {
    */
   async securityAdvisorieslistGlobalAdvisories(params: {
     ghsa_id?: string;
-    type?: string;
+    type?: "reviewed" | "malware" | "unreviewed";
     cve_id?: string;
-    ecosystem?: ;
-    severity?: string;
-    cwes?: ;
+    ecosystem?: any;
+    severity?: "unknown" | "low" | "medium" | "high" | "critical";
+    cwes?: string | Array<string>;
     is_withdrawn?: boolean;
-    affects?: ;
+    affects?: string | Array<string>;
     published?: string;
     updated?: string;
     modified?: string;
     epss_percentage?: string;
     epss_percentile?: string;
     None?: string;
-    per_page?: integer;
-    sort?: string;
+    per_page?: number;
+    sort?: "updated" | "published" | "epss_percentage" | "epss_percentile";
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -114,9 +114,9 @@ class GitHubv3RESTAPIsecurityadvisoriesClient {
    */
   async securityAdvisorieslistOrgRepositoryAdvisories(params: {
     None?: string;
-    sort?: string;
-    per_page?: integer;
-    state?: string;
+    sort?: "created" | "updated" | "published";
+    per_page?: number;
+    state?: "triage" | "draft" | "published" | "closed";
     org: string;
   }): Promise<Array<any>> {
 
@@ -138,9 +138,9 @@ class GitHubv3RESTAPIsecurityadvisoriesClient {
    */
   async securityAdvisorieslistRepositoryAdvisories(params: {
     None?: string;
-    sort?: string;
-    per_page?: integer;
-    state?: string;
+    sort?: "created" | "updated" | "published";
+    per_page?: number;
+    state?: "triage" | "draft" | "published" | "closed";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {

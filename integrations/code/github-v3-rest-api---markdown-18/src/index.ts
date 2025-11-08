@@ -59,7 +59,7 @@ class GitHubv3RESTAPImarkdownClient {
    */
   async markdownrender(params: {
     text: string;
-    mode?: string;
+    mode?: "markdown" | "gfm";
     context?: string;
   }): Promise<any> {
 

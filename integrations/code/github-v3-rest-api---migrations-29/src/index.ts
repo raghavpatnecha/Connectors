@@ -59,7 +59,7 @@ class GitHubv3RESTAPImigrationsClient {
    */
   async migrationslistForOrg(params: {
     None?: string;
-    exclude?: array;
+    exclude?: Array<"repositories">;
     org: string;
   }): Promise<Array<any>> {
 
@@ -80,7 +80,7 @@ class GitHubv3RESTAPImigrationsClient {
    * Start an organization migration
    */
   async migrationsstartForOrg(params: {
-    repositories: array;
+    repositories: Array<string>;
     lock_repositories?: boolean;
     exclude_metadata?: boolean;
     exclude_git_data?: boolean;
@@ -88,7 +88,7 @@ class GitHubv3RESTAPImigrationsClient {
     exclude_releases?: boolean;
     exclude_owner_projects?: boolean;
     org_metadata_only?: boolean;
-    exclude?: array;
+    exclude?: Array<"repositories">;
   }): Promise<any> {
 
     // Build path with parameters
@@ -108,7 +108,7 @@ class GitHubv3RESTAPImigrationsClient {
    */
   async migrationsgetStatusForOrg(params: {
     None?: string;
-    exclude?: array;
+    exclude?: Array<"repositories">;
     org: string;
     migration_id: string;
   }): Promise<any> {
@@ -249,7 +249,7 @@ class GitHubv3RESTAPImigrationsClient {
    */
   async migrationsstartImport(params: {
     vcs_url: string;
-    vcs?: string;
+    vcs?: "subversion" | "git" | "mercurial" | "tfvc";
     vcs_username?: string;
     vcs_password?: string;
     tfvc_project?: string;
@@ -273,7 +273,7 @@ class GitHubv3RESTAPImigrationsClient {
   async migrationsupdateImport(params: {
     vcs_username?: string;
     vcs_password?: string;
-    vcs?: string;
+    vcs?: "subversion" | "tfvc" | "git" | "mercurial";
     tfvc_project?: string;
   }): Promise<any> {
 
@@ -382,7 +382,7 @@ class GitHubv3RESTAPImigrationsClient {
    * Update Git LFS preference
    */
   async migrationssetLfsPreference(params: {
-    use_lfs: string;
+    use_lfs: "opt_in" | "opt_out";
   }): Promise<any> {
 
     // Build path with parameters
@@ -427,8 +427,8 @@ class GitHubv3RESTAPImigrationsClient {
     exclude_releases?: boolean;
     exclude_owner_projects?: boolean;
     org_metadata_only?: boolean;
-    exclude?: array;
-    repositories: array;
+    exclude?: Array<"repositories">;
+    repositories: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -448,7 +448,7 @@ class GitHubv3RESTAPImigrationsClient {
    */
   async migrationsgetStatusForAuthenticatedUser(params: {
     None?: string;
-    exclude?: array;
+    exclude?: Array<string>;
     migration_id: string;
   }): Promise<any> {
 

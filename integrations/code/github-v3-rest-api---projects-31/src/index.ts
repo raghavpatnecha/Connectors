@@ -173,7 +173,7 @@ class GitHubv3RESTAPIprojectsClient {
   async projectslistItemsForOrg(params: {
     None?: string;
     q?: string;
-    fields?: ;
+    fields?: string | Array<string>;
     org: string;
     project_number: string;
   }): Promise<Array<any>> {
@@ -196,8 +196,8 @@ class GitHubv3RESTAPIprojectsClient {
    * Add item to organization owned project
    */
   async projectsaddItemForOrg(params: {
-    type: string;
-    id: integer;
+    type: "Issue" | "PullRequest";
+    id: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -217,7 +217,7 @@ class GitHubv3RESTAPIprojectsClient {
    */
   async projectsgetOrgItem(params: {
     None?: string;
-    fields?: ;
+    fields?: string | Array<string>;
     org: string;
     project_number: string;
     item_id: string;
@@ -242,7 +242,10 @@ class GitHubv3RESTAPIprojectsClient {
    * Update project item for organization
    */
   async projectsupdateItemForOrg(params: {
-    fields: array;
+    fields: Array<{
+  id: number;
+  value: string | number;
+}>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -401,7 +404,7 @@ class GitHubv3RESTAPIprojectsClient {
   async projectslistItemsForUser(params: {
     None?: string;
     q?: string;
-    fields?: ;
+    fields?: string | Array<string>;
     username: string;
     project_number: string;
   }): Promise<Array<any>> {
@@ -424,8 +427,8 @@ class GitHubv3RESTAPIprojectsClient {
    * Add item to user owned project
    */
   async projectsaddItemForUser(params: {
-    type: string;
-    id: integer;
+    type: "Issue" | "PullRequest";
+    id: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -445,7 +448,7 @@ class GitHubv3RESTAPIprojectsClient {
    */
   async projectsgetUserItem(params: {
     None?: string;
-    fields?: ;
+    fields?: string | Array<string>;
     username: string;
     project_number: string;
     item_id: string;
@@ -470,7 +473,10 @@ class GitHubv3RESTAPIprojectsClient {
    * Update project item for user
    */
   async projectsupdateItemForUser(params: {
-    fields: array;
+    fields: Array<{
+  id: number;
+  value: string | number;
+}>;
   }): Promise<any> {
 
     // Build path with parameters

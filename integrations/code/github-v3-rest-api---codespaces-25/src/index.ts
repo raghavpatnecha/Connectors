@@ -82,8 +82,8 @@ class GitHubv3RESTAPIcodespacesClient {
    * Manage access control for organization codespaces
    */
   async codespacessetCodespacesAccess(params: {
-    visibility: string;
-    selected_usernames?: array;
+    visibility: "disabled" | "selected_members" | "all_members" | "all_members_and_outside_collaborators";
+    selected_usernames?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -102,7 +102,7 @@ class GitHubv3RESTAPIcodespacesClient {
    * Add users to Codespaces access for an organization
    */
   async codespacessetCodespacesAccessUsers(params: {
-    selected_usernames: array;
+    selected_usernames: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -121,7 +121,7 @@ class GitHubv3RESTAPIcodespacesClient {
    * Remove users from Codespaces access for an organization
    */
   async codespacesdeleteCodespacesAccessUsers(params: {
-    selected_usernames: array;
+    selected_usernames: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -210,8 +210,8 @@ class GitHubv3RESTAPIcodespacesClient {
   async codespacescreateOrUpdateOrgSecret(params: {
     encrypted_value?: string;
     key_id?: string;
-    visibility: string;
-    selected_repository_ids?: array;
+    visibility: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -279,7 +279,7 @@ class GitHubv3RESTAPIcodespacesClient {
    * Set selected repositories for an organization secret
    */
   async codespacessetSelectedReposForOrgSecret(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -299,7 +299,7 @@ class GitHubv3RESTAPIcodespacesClient {
    */
   async codespacesaddSelectedRepoToOrgSecret(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     secret_name: string;
   }): Promise<any> {
@@ -324,7 +324,7 @@ class GitHubv3RESTAPIcodespacesClient {
    */
   async codespacesremoveSelectedRepoFromOrgSecret(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     org: string;
     secret_name: string;
   }): Promise<any> {
@@ -452,15 +452,15 @@ class GitHubv3RESTAPIcodespacesClient {
   async codespacescreateWithRepoForAuthenticatedUser(params: {
     ref?: string;
     location?: string;
-    geo?: string;
+    geo?: "EuropeWest" | "SoutheastAsia" | "UsEast" | "UsWest";
     client_ip?: string;
     machine?: string;
     devcontainer_path?: string;
     multi_repo_permissions_opt_out?: boolean;
     working_directory?: string;
-    idle_timeout_minutes?: integer;
+    idle_timeout_minutes?: number;
     display_name?: string;
-    retention_period_minutes?: integer;
+    retention_period_minutes?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -714,15 +714,15 @@ class GitHubv3RESTAPIcodespacesClient {
    */
   async codespacescreateWithPrForAuthenticatedUser(params: {
     location?: string;
-    geo?: string;
+    geo?: "EuropeWest" | "SoutheastAsia" | "UsEast" | "UsWest";
     client_ip?: string;
     machine?: string;
     devcontainer_path?: string;
     multi_repo_permissions_opt_out?: boolean;
     working_directory?: string;
-    idle_timeout_minutes?: integer;
+    idle_timeout_minutes?: number;
     display_name?: string;
-    retention_period_minutes?: integer;
+    retention_period_minutes?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -844,7 +844,7 @@ class GitHubv3RESTAPIcodespacesClient {
   async codespacescreateOrUpdateSecretForAuthenticatedUser(params: {
     encrypted_value?: string;
     key_id: string;
-    selected_repository_ids?: array;
+    selected_repository_ids?: Array<number | string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -908,7 +908,7 @@ class GitHubv3RESTAPIcodespacesClient {
    * Set selected repositories for a user secret
    */
   async codespacessetRepositoriesForSecretForAuthenticated(params: {
-    selected_repository_ids: array;
+    selected_repository_ids: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -928,7 +928,7 @@ class GitHubv3RESTAPIcodespacesClient {
    */
   async codespacesaddRepositoryForSecretForAuthenticatedUs(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     secret_name: string;
   }): Promise<any> {
 
@@ -951,7 +951,7 @@ class GitHubv3RESTAPIcodespacesClient {
    */
   async codespacesremoveRepositoryForSecretForAuthenticate(params: {
     None?: string;
-    repository_id: integer;
+    repository_id: number;
     secret_name: string;
   }): Promise<any> {
 
@@ -996,7 +996,7 @@ class GitHubv3RESTAPIcodespacesClient {
   async codespacesupdateForAuthenticatedUser(params: {
     machine?: string;
     display_name?: string;
-    recent_folders?: array;
+    recent_folders?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters

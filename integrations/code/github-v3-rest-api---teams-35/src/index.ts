@@ -81,12 +81,12 @@ class GitHubv3RESTAPIteamsClient {
   async teamscreate(params: {
     name: string;
     description?: string;
-    maintainers?: array;
-    repo_names?: array;
-    privacy?: string;
-    notification_setting?: string;
-    permission?: string;
-    parent_team_id?: integer;
+    maintainers?: Array<string>;
+    repo_names?: Array<string>;
+    privacy?: "secret" | "closed";
+    notification_setting?: "notifications_enabled" | "notifications_disabled";
+    permission?: "pull" | "push";
+    parent_team_id?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -130,10 +130,10 @@ class GitHubv3RESTAPIteamsClient {
   async teamsupdateInOrg(params: {
     name?: string;
     description?: string;
-    privacy?: string;
-    notification_setting?: string;
-    permission?: string;
-    parent_team_id?: integer;
+    privacy?: "secret" | "closed";
+    notification_setting?: "notifications_enabled" | "notifications_disabled";
+    permission?: "pull" | "push" | "admin";
+    parent_team_id?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -431,7 +431,7 @@ class GitHubv3RESTAPIteamsClient {
    */
   async teamslistMembersInOrg(params: {
     None?: string;
-    role?: string;
+    role?: "member" | "maintainer" | "all";
     org: string;
     team_slug: string;
   }): Promise<Array<any>> {
@@ -479,7 +479,7 @@ class GitHubv3RESTAPIteamsClient {
    * Add or update team membership for a user
    */
   async teamsaddOrUpdateMembershipForUserInOrg(params: {
-    role?: string;
+    role?: "member" | "maintainer";
   }): Promise<any> {
 
     // Build path with parameters
@@ -571,7 +571,7 @@ class GitHubv3RESTAPIteamsClient {
    * Add or update team project permissions
    */
   async teamsaddOrUpdateProjectPermissionsInOrg(params: {
-    permission?: string;
+    permission?: "read" | "write" | "admin";
   }): Promise<any> {
 
     // Build path with parameters
@@ -757,10 +757,10 @@ class GitHubv3RESTAPIteamsClient {
   async teamsupdateLegacy(params: {
     name: string;
     description?: string;
-    privacy?: string;
-    notification_setting?: string;
-    permission?: string;
-    parent_team_id?: integer;
+    privacy?: "secret" | "closed";
+    notification_setting?: "notifications_enabled" | "notifications_disabled";
+    permission?: "pull" | "push" | "admin";
+    parent_team_id?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1041,7 +1041,7 @@ class GitHubv3RESTAPIteamsClient {
    */
   async teamslistMembersLegacy(params: {
     None?: string;
-    role?: string;
+    role?: "member" | "maintainer" | "all";
     team_id: string;
   }): Promise<Array<any>> {
 
@@ -1154,7 +1154,7 @@ class GitHubv3RESTAPIteamsClient {
    * Add or update team membership for a user (Legacy)
    */
   async teamsaddOrUpdateMembershipForUserLegacy(params: {
-    role?: string;
+    role?: "member" | "maintainer";
   }): Promise<any> {
 
     // Build path with parameters
@@ -1240,7 +1240,7 @@ class GitHubv3RESTAPIteamsClient {
    * Add or update team project permissions (Legacy)
    */
   async teamsaddOrUpdateProjectPermissionsLegacy(params: {
-    permission?: string;
+    permission?: "read" | "write" | "admin";
   }): Promise<any> {
 
     // Build path with parameters
@@ -1328,7 +1328,7 @@ class GitHubv3RESTAPIteamsClient {
    * Add or update team repository permissions (Legacy)
    */
   async teamsaddOrUpdateRepoPermissionsLegacy(params: {
-    permission?: string;
+    permission?: "pull" | "push" | "admin";
   }): Promise<any> {
 
     // Build path with parameters

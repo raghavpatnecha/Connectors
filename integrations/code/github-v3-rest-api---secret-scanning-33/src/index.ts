@@ -100,9 +100,16 @@ class GitHubv3RESTAPIsecretscanningClient {
    * Update organization pattern configurations
    */
   async secretScanningupdateOrgPatternConfigs(params: {
-    pattern_config_version?: ;
-    provider_pattern_settings?: array;
-    custom_pattern_settings?: array;
+    pattern_config_version?: any;
+    provider_pattern_settings?: Array<{
+  token_type?: string;
+  push_protection_setting?: "not-set" | "disabled" | "enabled";
+}>;
+    custom_pattern_settings?: Array<{
+  token_type?: string;
+  custom_pattern_version?: any;
+  push_protection_setting?: "disabled" | "enabled";
+}>;
   }): Promise<{
   pattern_config_version?: string;
 }> {
@@ -171,9 +178,9 @@ class GitHubv3RESTAPIsecretscanningClient {
    * Update a secret scanning alert
    */
   async secretScanningupdateAlert(params: {
-    state?: ;
-    resolution?: ;
-    resolution_comment?: ;
+    state?: any;
+    resolution?: any;
+    resolution_comment?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -217,8 +224,8 @@ class GitHubv3RESTAPIsecretscanningClient {
    * Create a push protection bypass
    */
   async secretScanningcreatePushProtectionBypass(params: {
-    reason: ;
-    placeholder_id: ;
+    reason: any;
+    placeholder_id: any;
   }): Promise<any> {
 
     // Build path with parameters

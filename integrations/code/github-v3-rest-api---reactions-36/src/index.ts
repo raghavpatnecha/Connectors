@@ -59,7 +59,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForTeamDiscussionCommentInOrg(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     org: string;
     team_slug: string;
     discussion_number: string;
@@ -86,7 +86,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a team discussion comment
    */
   async reactionscreateForTeamDiscussionCommentInOrg(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -135,7 +135,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForTeamDiscussionInOrg(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     org: string;
     team_slug: string;
     discussion_number: string;
@@ -160,7 +160,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a team discussion
    */
   async reactionscreateForTeamDiscussionInOrg(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -207,7 +207,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForCommitComment(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     owner: string;
     repo: string;
     comment_id: string;
@@ -232,7 +232,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a commit comment
    */
   async reactionscreateForCommitComment(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -279,7 +279,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForIssueComment(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     owner: string;
     repo: string;
     comment_id: string;
@@ -304,7 +304,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for an issue comment
    */
   async reactionscreateForIssueComment(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -351,7 +351,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForIssue(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     owner: string;
     repo: string;
     issue_number: string;
@@ -376,7 +376,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for an issue
    */
   async reactionscreateForIssue(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -423,7 +423,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForPullRequestReviewComment(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     owner: string;
     repo: string;
     comment_id: string;
@@ -448,7 +448,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a pull request review comment
    */
   async reactionscreateForPullRequestReviewComment(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -495,7 +495,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForRelease(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "laugh" | "heart" | "hooray" | "rocket" | "eyes";
     owner: string;
     repo: string;
     release_id: string;
@@ -520,7 +520,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a release
    */
   async reactionscreateForRelease(params: {
-    content: string;
+    content: "+1" | "laugh" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -567,7 +567,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForTeamDiscussionCommentLegacy(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     team_id: string;
     discussion_number: string;
     comment_number: string;
@@ -592,7 +592,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a team discussion comment (Legacy)
    */
   async reactionscreateForTeamDiscussionCommentLegacy(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters
@@ -612,7 +612,7 @@ class GitHubv3RESTAPIreactionsClient {
    */
   async reactionslistForTeamDiscussionLegacy(params: {
     None?: string;
-    content?: string;
+    content?: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
     team_id: string;
     discussion_number: string;
   }): Promise<Array<any>> {
@@ -635,7 +635,7 @@ class GitHubv3RESTAPIreactionsClient {
    * Create reaction for a team discussion (Legacy)
    */
   async reactionscreateForTeamDiscussionLegacy(params: {
-    content: string;
+    content: "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
   }): Promise<any> {
 
     // Build path with parameters

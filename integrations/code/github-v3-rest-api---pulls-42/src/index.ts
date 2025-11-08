@@ -59,11 +59,11 @@ class GitHubv3RESTAPIpullsClient {
    */
   async pullslist(params: {
     None?: string;
-    state?: string;
+    state?: "open" | "closed" | "all";
     head?: string;
     base?: string;
-    sort?: string;
-    direction?: string;
+    sort?: "created" | "updated" | "popularity" | "long-running";
+    direction?: "asc" | "desc";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -93,7 +93,7 @@ class GitHubv3RESTAPIpullsClient {
     body?: string;
     maintainer_can_modify?: boolean;
     draft?: boolean;
-    issue?: integer;
+    issue?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -113,8 +113,8 @@ class GitHubv3RESTAPIpullsClient {
    */
   async pullslistReviewCommentsForRepo(params: {
     None?: string;
-    sort?: string;
-    direction?: string;
+    sort?: "created" | "updated" | "created_at";
+    direction?: "asc" | "desc";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -233,7 +233,7 @@ class GitHubv3RESTAPIpullsClient {
   async pullsupdate(params: {
     title?: string;
     body?: string;
-    state?: string;
+    state?: "open" | "closed";
     base?: string;
     maintainer_can_modify?: boolean;
   }): Promise<any> {
@@ -255,7 +255,7 @@ class GitHubv3RESTAPIpullsClient {
    */
   async pullslistReviewComments(params: {
     None?: string;
-    direction?: string;
+    direction?: "asc" | "desc";
     owner: string;
     repo: string;
     pull_number: string;
@@ -283,13 +283,13 @@ class GitHubv3RESTAPIpullsClient {
     body: string;
     commit_id: string;
     path: string;
-    position?: integer;
-    side?: string;
-    line?: integer;
-    start_line?: integer;
-    start_side?: string;
-    in_reply_to?: integer;
-    subject_type?: string;
+    position?: number;
+    side?: "LEFT" | "RIGHT";
+    line?: number;
+    start_line?: number;
+    start_side?: "LEFT" | "RIGHT" | "side";
+    in_reply_to?: number;
+    subject_type?: "line" | "file";
   }): Promise<any> {
 
     // Build path with parameters
@@ -405,7 +405,7 @@ class GitHubv3RESTAPIpullsClient {
     commit_title?: string;
     commit_message?: string;
     sha?: string;
-    merge_method?: string;
+    merge_method?: "merge" | "squash" | "rebase";
   }): Promise<any> {
 
     // Build path with parameters
@@ -449,8 +449,8 @@ class GitHubv3RESTAPIpullsClient {
    * Request reviewers for a pull request
    */
   async pullsrequestReviewers(params: {
-    reviewers?: array;
-    team_reviewers?: array;
+    reviewers?: Array<string>;
+    team_reviewers?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -469,8 +469,8 @@ class GitHubv3RESTAPIpullsClient {
    * Remove requested reviewers from a pull request
    */
   async pullsremoveRequestedReviewers(params: {
-    reviewers: array;
-    team_reviewers?: array;
+    reviewers: Array<string>;
+    team_reviewers?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -516,8 +516,16 @@ class GitHubv3RESTAPIpullsClient {
   async pullscreateReview(params: {
     commit_id?: string;
     body?: string;
-    event?: string;
-    comments?: array;
+    event?: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
+    comments?: Array<{
+  path: string;
+  position?: number;
+  body: string;
+  line?: number;
+  side?: string;
+  start_line?: number;
+  start_side?: string;
+}>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -637,7 +645,7 @@ class GitHubv3RESTAPIpullsClient {
    */
   async pullsdismissReview(params: {
     message: string;
-    event?: string;
+    event?: "DISMISS";
   }): Promise<any> {
 
     // Build path with parameters
@@ -657,7 +665,7 @@ class GitHubv3RESTAPIpullsClient {
    */
   async pullssubmitReview(params: {
     body?: string;
-    event: string;
+    event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
   }): Promise<any> {
 
     // Build path with parameters

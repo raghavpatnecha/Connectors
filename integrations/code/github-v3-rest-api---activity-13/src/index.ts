@@ -119,7 +119,7 @@ class GitHubv3RESTAPIactivityClient {
    */
   async activitylistNotificationsForAuthenticatedUser(params: {
     None?: string;
-    per_page?: integer;
+    per_page?: number;
   }): Promise<Array<any>> {
 
     // Build path with parameters

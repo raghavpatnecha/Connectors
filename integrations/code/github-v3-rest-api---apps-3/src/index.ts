@@ -114,10 +114,10 @@ class GitHubv3RESTAPIappsClient {
    * Update a webhook configuration for an app
    */
   async appsupdateWebhookConfigForApp(params: {
-    url?: ;
-    content_type?: ;
-    secret?: ;
-    insecure_ssl?: ;
+    url?: any;
+    content_type?: any;
+    secret?: any;
+    insecure_ssl?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -278,9 +278,9 @@ class GitHubv3RESTAPIappsClient {
    * Create an installation access token for an app
    */
   async appscreateInstallationAccessToken(params: {
-    repositories?: array;
-    repository_ids?: array;
-    permissions?: ;
+    repositories?: Array<string>;
+    repository_ids?: Array<number>;
+    permissions?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -419,10 +419,10 @@ class GitHubv3RESTAPIappsClient {
   async appsscopeToken(params: {
     access_token: string;
     target?: string;
-    target_id?: integer;
-    repositories?: array;
-    repository_ids?: array;
-    permissions?: ;
+    target_id?: number;
+    repositories?: Array<string>;
+    repository_ids?: Array<number>;
+    permissions?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -544,7 +544,7 @@ class GitHubv3RESTAPIappsClient {
    */
   async appslistAccountsForPlan(params: {
     None?: string;
-    direction?: string;
+    direction?: "asc" | "desc";
     plan_id: string;
   }): Promise<Array<any>> {
 
@@ -606,7 +606,7 @@ class GitHubv3RESTAPIappsClient {
    */
   async appslistAccountsForPlanStubbed(params: {
     None?: string;
-    direction?: string;
+    direction?: "asc" | "desc";
     plan_id: string;
   }): Promise<Array<any>> {
 

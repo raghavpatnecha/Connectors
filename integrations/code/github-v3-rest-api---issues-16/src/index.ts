@@ -58,10 +58,10 @@ class GitHubv3RESTAPIissuesClient {
    * List issues assigned to the authenticated user
    */
   async issueslist(params: {
-    filter?: string;
-    state?: string;
+    filter?: "assigned" | "created" | "mentioned" | "subscribed" | "repos" | "all";
+    state?: "open" | "closed" | "all";
     None?: string;
-    sort?: string;
+    sort?: "created" | "updated" | "comments";
     collab?: boolean;
     orgs?: boolean;
     owned?: boolean;
@@ -85,10 +85,10 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issueslistForOrg(params: {
     None?: string;
-    filter?: string;
-    state?: string;
+    filter?: "assigned" | "created" | "mentioned" | "subscribed" | "repos" | "all";
+    state?: "open" | "closed" | "all";
     type?: string;
-    sort?: string;
+    sort?: "created" | "updated" | "comments";
     org: string;
   }): Promise<Array<any>> {
 
@@ -159,12 +159,12 @@ class GitHubv3RESTAPIissuesClient {
   async issueslistForRepo(params: {
     None?: string;
     milestone?: string;
-    state?: string;
+    state?: "open" | "closed" | "all";
     assignee?: string;
     type?: string;
     creator?: string;
     mentioned?: string;
-    sort?: string;
+    sort?: "created" | "updated" | "comments";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -187,12 +187,17 @@ class GitHubv3RESTAPIissuesClient {
    * Create an issue
    */
   async issuescreate(params: {
-    title: ;
+    title: string | number;
     body?: string;
     assignee?: string;
-    milestone?: ;
-    labels?: array;
-    assignees?: array;
+    milestone?: string | number;
+    labels?: Array<string | {
+  id?: number;
+  name?: string;
+  description?: string;
+  color?: string;
+}>;
+    assignees?: Array<string>;
     type?: string;
   }): Promise<any> {
 
@@ -213,7 +218,7 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issueslistCommentsForRepo(params: {
     None?: string;
-    direction?: string;
+    direction?: "asc" | "desc";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -329,7 +334,7 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issuesgetEvent(params: {
     None?: string;
-    event_id: integer;
+    event_id: number;
     owner: string;
     repo: string;
   }): Promise<any> {
@@ -378,14 +383,19 @@ class GitHubv3RESTAPIissuesClient {
    * Update an issue
    */
   async issuesupdate(params: {
-    title?: ;
+    title?: string | number;
     body?: string;
     assignee?: string;
-    state?: string;
-    state_reason?: string;
-    milestone?: ;
-    labels?: array;
-    assignees?: array;
+    state?: "open" | "closed";
+    state_reason?: "completed" | "not_planned" | "duplicate" | "reopened";
+    milestone?: string | number;
+    labels?: Array<string | {
+  id?: number;
+  name?: string;
+  description?: string;
+  color?: string;
+}>;
+    assignees?: Array<string>;
     type?: string;
   }): Promise<any> {
 
@@ -405,7 +415,7 @@ class GitHubv3RESTAPIissuesClient {
    * Add assignees to an issue
    */
   async issuesaddAssignees(params: {
-    assignees?: array;
+    assignees?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -424,7 +434,7 @@ class GitHubv3RESTAPIissuesClient {
    * Remove assignees from an issue
    */
   async issuesremoveAssignees(params: {
-    assignees?: array;
+    assignees?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -539,7 +549,7 @@ class GitHubv3RESTAPIissuesClient {
    * Add a dependency an issue is blocked by
    */
   async issuesaddBlockedByDependency(params: {
-    issue_id: integer;
+    issue_id: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -559,7 +569,7 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issuesremoveDependencyBlockedBy(params: {
     None?: string;
-    issue_id: integer;
+    issue_id: number;
     owner: string;
     repo: string;
     issue_number: string;
@@ -762,7 +772,7 @@ class GitHubv3RESTAPIissuesClient {
    * Lock an issue
    */
   async issueslock(params: {
-    lock_reason?: string;
+    lock_reason?: "off-topic" | "too heated" | "resolved" | "spam";
   }): Promise<any> {
 
     // Build path with parameters
@@ -831,7 +841,7 @@ class GitHubv3RESTAPIissuesClient {
    * Remove sub-issue
    */
   async issuesremoveSubIssue(params: {
-    sub_issue_id: integer;
+    sub_issue_id: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -875,7 +885,7 @@ class GitHubv3RESTAPIissuesClient {
    * Add sub-issue
    */
   async issuesaddSubIssue(params: {
-    sub_issue_id: integer;
+    sub_issue_id: number;
     replace_parent?: boolean;
   }): Promise<any> {
 
@@ -895,9 +905,9 @@ class GitHubv3RESTAPIissuesClient {
    * Reprioritize sub-issue
    */
   async issuesreprioritizeSubIssue(params: {
-    sub_issue_id: integer;
-    after_id?: integer;
-    before_id?: integer;
+    sub_issue_id: number;
+    after_id?: number;
+    before_id?: number;
   }): Promise<any> {
 
     // Build path with parameters
@@ -1057,9 +1067,9 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issueslistMilestones(params: {
     None?: string;
-    state?: string;
-    sort?: string;
-    direction?: string;
+    state?: "open" | "closed" | "all";
+    sort?: "due_on" | "completeness";
+    direction?: "asc" | "desc";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -1083,7 +1093,7 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issuescreateMilestone(params: {
     title: string;
-    state?: string;
+    state?: "open" | "closed";
     description?: string;
     due_on?: string;
   }): Promise<any> {
@@ -1130,7 +1140,7 @@ class GitHubv3RESTAPIissuesClient {
    */
   async issuesupdateMilestone(params: {
     title?: string;
-    state?: string;
+    state?: "open" | "closed";
     description?: string;
     due_on?: string;
   }): Promise<any> {
@@ -1201,10 +1211,10 @@ class GitHubv3RESTAPIissuesClient {
    * List user account issues assigned to the authenticated user
    */
   async issueslistForAuthenticatedUser(params: {
-    filter?: string;
-    state?: string;
+    filter?: "assigned" | "created" | "mentioned" | "subscribed" | "repos" | "all";
+    state?: "open" | "closed" | "all";
     None?: string;
-    sort?: string;
+    sort?: "created" | "updated" | "comments";
   }): Promise<Array<any>> {
 
     // Build path with parameters

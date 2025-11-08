@@ -184,7 +184,7 @@ class GitHubv3RESTAPIusersClient {
    * Set primary email visibility for the authenticated user
    */
   async userssetPrimaryEmailVisibilityForAuthenticatedUser(params: {
-    visibility: string;
+    visibility: "public" | "private";
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -559,7 +559,7 @@ class GitHubv3RESTAPIusersClient {
    * Add social accounts for the authenticated user
    */
   async usersaddSocialAccountForAuthenticatedUser(params: {
-    account_urls: array;
+    account_urls: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -578,7 +578,7 @@ class GitHubv3RESTAPIusersClient {
    * Delete social accounts for the authenticated user
    */
   async usersdeleteSocialAccountForAuthenticatedUser(params: {
-    account_urls: array;
+    account_urls: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -739,7 +739,7 @@ class GitHubv3RESTAPIusersClient {
    * List attestations by bulk subject digests
    */
   async userslistAttestationsBulk(params: {
-    subject_digests: array;
+    subject_digests: Array<string>;
     predicate_type?: string;
   }): Promise<{
   attestations_subject_digests?: Record<string, any>;
@@ -809,7 +809,7 @@ class GitHubv3RESTAPIusersClient {
    */
   async usersdeleteAttestationsById(params: {
     None?: string;
-    attestation_id: integer;
+    attestation_id: number;
     username: string;
   }): Promise<any> {
 
@@ -953,7 +953,7 @@ class GitHubv3RESTAPIusersClient {
    */
   async usersgetContextForUser(params: {
     None?: string;
-    subject_type?: string;
+    subject_type?: "organization" | "repository" | "issue" | "pull_request";
     subject_id?: string;
     username: string;
   }): Promise<any> {

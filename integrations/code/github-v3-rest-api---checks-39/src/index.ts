@@ -62,12 +62,36 @@ class GitHubv3RESTAPIchecksClient {
     head_sha: string;
     details_url?: string;
     external_id?: string;
-    status?: string;
+    status?: "queued" | "in_progress" | "completed" | "waiting" | "requested" | "pending";
     started_at?: string;
-    conclusion?: string;
+    conclusion?: "action_required" | "cancelled" | "failure" | "neutral" | "success" | "skipped" | "stale" | "timed_out";
     completed_at?: string;
-    output?: any;
-    actions?: array;
+    output?: {
+  title: string;
+  summary: string;
+  text?: string;
+  annotations?: Array<{
+    path: string;
+    start_line: number;
+    end_line: number;
+    start_column?: number;
+    end_column?: number;
+    annotation_level: "notice" | "warning" | "failure";
+    message: string;
+    title?: string;
+    raw_details?: string;
+  }>;
+  images?: Array<{
+    alt: string;
+    image_url: string;
+    caption?: string;
+  }>;
+};
+    actions?: Array<{
+  label: string;
+  description: string;
+  identifier: string;
+}>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -115,11 +139,35 @@ class GitHubv3RESTAPIchecksClient {
     details_url?: string;
     external_id?: string;
     started_at?: string;
-    status?: string;
-    conclusion?: string;
+    status?: "queued" | "in_progress" | "completed" | "waiting" | "requested" | "pending";
+    conclusion?: "action_required" | "cancelled" | "failure" | "neutral" | "success" | "skipped" | "stale" | "timed_out";
     completed_at?: string;
-    output?: any;
-    actions?: array;
+    output?: {
+  title?: string;
+  summary: string;
+  text?: string;
+  annotations?: Array<{
+    path: string;
+    start_line: number;
+    end_line: number;
+    start_column?: number;
+    end_column?: number;
+    annotation_level: "notice" | "warning" | "failure";
+    message: string;
+    title?: string;
+    raw_details?: string;
+  }>;
+  images?: Array<{
+    alt: string;
+    image_url: string;
+    caption?: string;
+  }>;
+};
+    actions?: Array<{
+  label: string;
+  description: string;
+  identifier: string;
+}>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -207,7 +255,10 @@ class GitHubv3RESTAPIchecksClient {
    * Update repository preferences for check suites
    */
   async checkssetSuitesPreferences(params: {
-    auto_trigger_checks?: array;
+    auto_trigger_checks?: Array<{
+  app_id: number;
+  setting: boolean;
+}>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -252,7 +303,7 @@ class GitHubv3RESTAPIchecksClient {
    */
   async checkslistForSuite(params: {
     None?: string;
-    filter?: string;
+    filter?: "latest" | "all";
     owner: string;
     repo: string;
     check_suite_id: string;
@@ -306,8 +357,8 @@ class GitHubv3RESTAPIchecksClient {
    */
   async checkslistForRef(params: {
     None?: string;
-    filter?: string;
-    app_id?: integer;
+    filter?: "latest" | "all";
+    app_id?: number;
     owner: string;
     repo: string;
     ref: string;
@@ -336,7 +387,7 @@ class GitHubv3RESTAPIchecksClient {
    */
   async checkslistSuitesForRef(params: {
     None?: string;
-    app_id?: integer;
+    app_id?: number;
     owner: string;
     repo: string;
     ref: string;

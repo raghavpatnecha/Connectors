@@ -59,9 +59,9 @@ class GitHubv3RESTAPIcodescanningClient {
    */
   async codeScanninglistAlertsForOrg(params: {
     None?: string;
-    state?: ;
-    sort?: string;
-    severity?: ;
+    state?: any;
+    sort?: "created" | "updated";
+    severity?: any;
     org: string;
   }): Promise<Array<any>> {
 
@@ -83,9 +83,9 @@ class GitHubv3RESTAPIcodescanningClient {
    */
   async codeScanninglistAlertsForRepo(params: {
     None?: string;
-    sort?: string;
-    state?: ;
-    severity?: ;
+    sort?: "created" | "updated";
+    state?: any;
+    severity?: any;
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -133,10 +133,10 @@ class GitHubv3RESTAPIcodescanningClient {
    * Update a code scanning alert
    */
   async codeScanningupdateAlert(params: {
-    state: ;
-    dismissed_reason?: ;
-    dismissed_comment?: ;
-    create_request?: ;
+    state: any;
+    dismissed_reason?: any;
+    dismissed_comment?: any;
+    create_request?: any;
   }): Promise<any> {
 
     // Build path with parameters
@@ -256,9 +256,9 @@ class GitHubv3RESTAPIcodescanningClient {
    */
   async codeScanninglistRecentAnalyses(params: {
     None?: string;
-    ref?: ;
-    sarif_id?: ;
-    sort?: string;
+    ref?: any;
+    sarif_id?: any;
+    sort?: "created";
     owner: string;
     repo: string;
   }): Promise<Array<any>> {
@@ -282,7 +282,7 @@ class GitHubv3RESTAPIcodescanningClient {
    */
   async codeScanninggetAnalysis(params: {
     None?: string;
-    analysis_id: integer;
+    analysis_id: number;
     owner: string;
     repo: string;
   }): Promise<any> {
@@ -307,7 +307,7 @@ class GitHubv3RESTAPIcodescanningClient {
    */
   async codeScanningdeleteAnalysis(params: {
     None?: string;
-    analysis_id: integer;
+    analysis_id: number;
     confirm_delete?: string;
     owner: string;
     repo: string;
@@ -405,11 +405,11 @@ class GitHubv3RESTAPIcodescanningClient {
    * Create a CodeQL variant analysis
    */
   async codeScanningcreateVariantAnalysis(params: {
-    language: ;
+    language: any;
     query_pack: string;
-    repositories?: array;
-    repository_lists?: array;
-    repository_owners?: array;
+    repositories?: Array<string>;
+    repository_lists?: Array<string>;
+    repository_owners?: Array<string>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -429,7 +429,7 @@ class GitHubv3RESTAPIcodescanningClient {
    */
   async codeScanninggetVariantAnalysis(params: {
     None?: string;
-    codeql_variant_analysis_id: integer;
+    codeql_variant_analysis_id: number;
     owner: string;
     repo: string;
   }): Promise<any> {
@@ -455,7 +455,7 @@ class GitHubv3RESTAPIcodescanningClient {
   async codeScanninggetVariantAnalysisRepoTask(params: {
     None?: string;
     repo: string;
-    codeql_variant_analysis_id: integer;
+    codeql_variant_analysis_id: number;
     repo_owner: string;
     repo_name: string;
     owner: string;
@@ -528,9 +528,9 @@ class GitHubv3RESTAPIcodescanningClient {
    * Upload an analysis as SARIF data
    */
   async codeScanninguploadSarif(params: {
-    commit_sha: ;
-    ref: ;
-    sarif: ;
+    commit_sha: any;
+    ref: any;
+    sarif: any;
     checkout_uri?: string;
     started_at?: string;
     tool_name?: string;

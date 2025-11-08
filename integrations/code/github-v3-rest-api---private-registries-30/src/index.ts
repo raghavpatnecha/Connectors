@@ -82,14 +82,14 @@ class GitHubv3RESTAPIprivateregistriesClient {
    * Create a private registry for an organization
    */
   async privateRegistriescreateOrgPrivateRegistry(params: {
-    registry_type: string;
+    registry_type: "maven_repository" | "nuget_feed" | "goproxy_server" | "npm_registry" | "rubygems_server" | "cargo_registry" | "composer_repository" | "docker_registry" | "git_source" | "helm_registry" | "hex_organization" | "hex_repository" | "pub_repository" | "python_index" | "terraform_registry";
     url: string;
     username?: string;
     replaces_base?: boolean;
     encrypted_value: string;
     key_id: string;
-    visibility: string;
-    selected_repository_ids?: array;
+    visibility: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters
@@ -155,14 +155,14 @@ class GitHubv3RESTAPIprivateregistriesClient {
    * Update a private registry for an organization
    */
   async privateRegistriesupdateOrgPrivateRegistry(params: {
-    registry_type?: string;
+    registry_type?: "maven_repository" | "nuget_feed" | "goproxy_server" | "npm_registry" | "rubygems_server" | "cargo_registry" | "composer_repository" | "docker_registry" | "git_source" | "helm_registry" | "hex_organization" | "hex_repository" | "pub_repository" | "python_index" | "terraform_registry";
     url?: string;
     username?: string;
     replaces_base?: boolean;
     encrypted_value?: string;
     key_id?: string;
-    visibility?: string;
-    selected_repository_ids?: array;
+    visibility?: "all" | "private" | "selected";
+    selected_repository_ids?: Array<number>;
   }): Promise<any> {
 
     // Build path with parameters

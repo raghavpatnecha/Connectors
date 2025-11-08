@@ -81,8 +81,8 @@ class GitHubv3RESTAPIenterpriseteamsClient {
   async enterpriseTeamscreate(params: {
     name: string;
     description?: string;
-    sync_to_organizations?: string;
-    organization_selection_type?: string;
+    sync_to_organizations?: "all" | "disabled";
+    organization_selection_type?: "disabled" | "selected" | "all";
     group_id?: string;
   }): Promise<any> {
 
@@ -127,8 +127,8 @@ class GitHubv3RESTAPIenterpriseteamsClient {
   async enterpriseTeamsupdate(params: {
     name?: string;
     description?: string;
-    sync_to_organizations?: string;
-    organization_selection_type?: string;
+    sync_to_organizations?: "all" | "disabled";
+    organization_selection_type?: "disabled" | "selected" | "all";
     group_id?: string;
   }): Promise<any> {
 

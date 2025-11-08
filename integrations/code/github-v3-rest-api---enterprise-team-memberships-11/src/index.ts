@@ -79,7 +79,7 @@ class GitHubv3RESTAPIenterpriseteammembershipsClient {
    * Bulk add team members
    */
   async enterpriseTeamMembershipsbulkAdd(params: {
-    usernames: array;
+    usernames: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters
@@ -98,7 +98,7 @@ class GitHubv3RESTAPIenterpriseteammembershipsClient {
    * Bulk remove team members
    */
   async enterpriseTeamMembershipsbulkRemove(params: {
-    usernames: array;
+    usernames: Array<string>;
   }): Promise<Array<any>> {
 
     // Build path with parameters

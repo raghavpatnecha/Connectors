@@ -79,10 +79,10 @@ class GitHubv3RESTAPIpackagesClient {
    * List packages for an organization
    */
   async packageslistPackagesForOrganization(params: {
-    package_type: string;
+    package_type: "npm" | "maven" | "rubygems" | "docker" | "nuget" | "container";
     None?: string;
-    page?: integer;
-    per_page?: integer;
+    page?: number;
+    per_page?: number;
     org: string;
   }): Promise<Array<any>> {
 
@@ -180,7 +180,7 @@ class GitHubv3RESTAPIpackagesClient {
    */
   async packagesgetAllPackageVersionsForPackageOwnedByOrg(params: {
     None?: string;
-    state?: string;
+    state?: "active" | "deleted";
     org: string;
     package_type: string;
     package_name: string;
@@ -304,7 +304,7 @@ class GitHubv3RESTAPIpackagesClient {
    * List packages for the authenticated user's namespace
    */
   async packageslistPackagesForAuthenticatedUser(params: {
-    package_type: string;
+    package_type: "npm" | "maven" | "rubygems" | "docker" | "nuget" | "container";
     None?: string;
   }): Promise<Array<any>> {
 
@@ -395,7 +395,7 @@ class GitHubv3RESTAPIpackagesClient {
    */
   async packagesgetAllPackageVersionsForPackageOwnedByAuth(params: {
     None?: string;
-    state?: string;
+    state?: "active" | "deleted";
     package_type: string;
     package_name: string;
   }): Promise<Array<any>> {
@@ -514,7 +514,7 @@ class GitHubv3RESTAPIpackagesClient {
    * List packages for a user
    */
   async packageslistPackagesForUser(params: {
-    package_type: string;
+    package_type: "npm" | "maven" | "rubygems" | "docker" | "nuget" | "container";
     None?: string;
     username: string;
   }): Promise<Array<any>> {
