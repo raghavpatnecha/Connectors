@@ -1,0 +1,128 @@
+[
+  {
+    "id": "github.authenticate",
+    "name": "GitHub Authenticate",
+    "category": "code",
+    "description": "Authenticate with GitHub using OAuth",
+    "usageCount": 1000
+  },
+  {
+    "id": "github.createPullRequest",
+    "name": "GitHub Create Pull Request",
+    "category": "code",
+    "description": "Create a new pull request on GitHub repository",
+    "usageCount": 850
+  },
+  {
+    "id": "github.mergePullRequest",
+    "name": "GitHub Merge Pull Request",
+    "category": "code",
+    "description": "Merge an approved pull request",
+    "usageCount": 720
+  },
+  {
+    "id": "github.listPullRequests",
+    "name": "GitHub List Pull Requests",
+    "category": "code",
+    "description": "List all pull requests in a repository",
+    "usageCount": 950
+  },
+  {
+    "id": "github.createIssue",
+    "name": "GitHub Create Issue",
+    "category": "code",
+    "description": "Create a new issue on GitHub",
+    "usageCount": 680
+  },
+  {
+    "id": "github.createBranch",
+    "name": "GitHub Create Branch",
+    "category": "code",
+    "description": "Create a new branch in repository",
+    "usageCount": 550
+  },
+  {
+    "id": "gitlab.createMergeRequest",
+    "name": "GitLab Create Merge Request",
+    "category": "code",
+    "description": "Create a new merge request on GitLab",
+    "usageCount": 420
+  },
+  {
+    "id": "gitlab.mergeMergeRequest",
+    "name": "GitLab Merge Request",
+    "category": "code",
+    "description": "Merge an approved merge request",
+    "usageCount": 380
+  },
+  {
+    "id": "slack.sendMessage",
+    "name": "Slack Send Message",
+    "category": "communication",
+    "description": "Send a message to Slack channel",
+    "usageCount": 1200
+  },
+  {
+    "id": "slack.createChannel",
+    "name": "Slack Create Channel",
+    "category": "communication",
+    "description": "Create a new Slack channel",
+    "usageCount": 300
+  },
+  {
+    "id": "teams.sendMessage",
+    "name": "Teams Send Message",
+    "category": "communication",
+    "description": "Send a message to Microsoft Teams",
+    "usageCount": 650
+  },
+  {
+    "id": "jira.createIssue",
+    "name": "Jira Create Issue",
+    "category": "project-management",
+    "description": "Create a new Jira issue",
+    "usageCount": 890
+  },
+  {
+    "id": "jira.transitionIssue",
+    "name": "Jira Transition Issue",
+    "category": "project-management",
+    "description": "Transition Jira issue to different status",
+    "usageCount": 760
+  },
+  {
+    "id": "linear.createIssue",
+    "name": "Linear Create Issue",
+    "category": "project-management",
+    "description": "Create a new Linear issue",
+    "usageCount": 520
+  },
+  {
+    "id": "aws.deployLambda",
+    "name": "AWS Deploy Lambda",
+    "category": "cloud",
+    "description": "Deploy AWS Lambda function",
+    "usageCount": 450
+  },
+  {
+    "id": "aws.s3Upload",
+    "name": "AWS S3 Upload",
+    "category": "cloud",
+    "description": "Upload file to AWS S3 bucket",
+    "usageCount": 620
+  },
+  {
+    "id": "postgres.query",
+    "name": "PostgreSQL Query",
+    "category": "data",
+    "description": "Execute SQL query on PostgreSQL database",
+    "usageCount": 780
+  },
+  {
+    "id": "mongodb.find",
+    "name": "MongoDB Find",
+    "category": "data",
+    "description": "Find documents in MongoDB collection",
+    "usageCount": 690
+  }
+]

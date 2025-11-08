@@ -1,0 +1,67 @@
+[
+  {
+    "name": "code",
+    "displayName": "Code Management",
+    "description": "Tools for version control, code repositories, pull requests, issues tracking, continuous integration, deployment pipelines, and software development lifecycle management. Includes Git operations, GitHub, GitLab, Bitbucket integrations.",
+    "examples": [
+      "create a pull request",
+      "merge branches",
+      "create GitHub issue",
+      "trigger CI/CD pipeline",
+      "review code changes",
+      "manage repository settings"
+    ]
+  },
+  {
+    "name": "communication",
+    "displayName": "Communication & Collaboration",
+    "description": "Tools for team messaging, email, video conferencing, notifications, and real-time collaboration. Includes Slack, Microsoft Teams, Discord, email services, and notification platforms.",
+    "examples": [
+      "send Slack message",
+      "schedule meeting",
+      "send email notification",
+      "create Teams channel",
+      "post announcement",
+      "manage chat conversations"
+    ]
+  },
+  {
+    "name": "project-management",
+    "displayName": "Project Management",
+    "description": "Tools for task tracking, project planning, sprint management, agile workflows, roadmaps, and team coordination. Includes Jira, Asana, Linear, Trello, Monday.com integrations.",
+    "examples": [
+      "create Jira ticket",
+      "update task status",
+      "manage sprint backlog",
+      "create project timeline",
+      "assign tasks to team members",
+      "track project milestones"
+    ]
+  },
+  {
+    "name": "cloud",
+    "displayName": "Cloud Infrastructure",
+    "description": "Tools for cloud resource management, infrastructure provisioning, monitoring, scaling, and cloud services orchestration. Includes AWS, Azure, Google Cloud Platform, Kubernetes, Docker, Terraform.",
+    "examples": [
+      "deploy container",
+      "scale EC2 instances",
+      "manage Kubernetes pods",
+      "provision infrastructure",
+      "monitor cloud resources",
+      "configure auto-scaling"
+    ]
+  },
+  {
+    "name": "data",
+    "displayName": "Data & Analytics",
+    "description": "Tools for databases, data pipelines, analytics, business intelligence, ETL processes, data warehousing, and data visualization. Includes SQL databases, NoSQL databases, data analytics platforms.",
+    "examples": [
+      "query database",
+      "run analytics report",
+      "create data pipeline",
+      "generate visualizations",
+      "export data warehouse",
+      "schedule ETL jobs"
+    ]
+  }
+]
