@@ -17,10 +17,11 @@ import { EmbeddingService } from './routing/embedding-service';
 import { TokenOptimizer } from './optimization/token-optimizer';
 import { ProgressiveLoader } from './optimization/progressive-loader';
 import { OAuthProxy } from './auth/oauth-proxy';
+import { VaultClient } from './auth/vault-client';
 import { RedisCache } from './caching/redis-cache';
 import { logger } from './logging/logger';
 import { ToolSelectionError, OAuthError } from './errors/gateway-errors';
-import type { ToolSelection, QueryContext } from './types/routing.types';
+import type { QueryContext } from './types/routing.types';
 
 // Server configuration
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -76,7 +77,21 @@ export class MCPGatewayServer {
 
     this.tokenOptimizer = new TokenOptimizer();
     this.progressiveLoader = new ProgressiveLoader(this.tokenOptimizer);
-    this.oauthProxy = new OAuthProxy();
+
+    // Initialize Vault client
+    const vaultClient = new VaultClient({
+      address: process.env.VAULT_ADDR || 'http://localhost:8200',
+      token: process.env.VAULT_TOKEN || 'dev-token',
+      transitEngine: 'transit',
+      kvEngine: 'secret',
+    });
+
+    // Initialize OAuth proxy
+    this.oauthProxy = new OAuthProxy(
+      vaultClient,
+      process.env.MCP_BASE_URL || 'http://localhost:4000',
+      new Map()
+    );
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -145,7 +160,7 @@ export class MCPGatewayServer {
     this.app.use('/api/v1', apiV1);
 
     // Root endpoint
-    this.app.get('/', (req: Request, res: Response) => {
+    this.app.get('/', (_req: Request, res: Response) => {
       res.json({
         name: 'MCP Gateway',
         version: '1.0.0',
@@ -171,7 +186,7 @@ export class MCPGatewayServer {
   /**
    * Health check endpoint
    */
-  private async handleHealth(req: Request, res: Response): Promise<void> {
+  private async handleHealth(_req: Request, res: Response): Promise<void> {
     res.status(200).json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -183,7 +198,7 @@ export class MCPGatewayServer {
   /**
    * Readiness probe endpoint
    */
-  private async handleReadiness(req: Request, res: Response): Promise<void> {
+  private async handleReadiness(_req: Request, res: Response): Promise<void> {
     try {
       // Check service dependencies
       const checks = await Promise.allSettled([
@@ -240,10 +255,8 @@ export class MCPGatewayServer {
 
       // Build query context
       const queryContext: QueryContext = {
-        query,
         allowedCategories: context?.allowedCategories || [],
         tokenBudget: context?.tokenBudget || 5000,
-        maxTools: context?.maxTools || 5,
         tenantId: context?.tenantId,
       };
 
@@ -253,18 +266,19 @@ export class MCPGatewayServer {
       const selectionLatency = Date.now() - startTime;
 
       // Optimize token usage with progressive loading
-      const optimized = await this.tokenOptimizer.optimize(selectedTools, queryContext.tokenBudget);
-      const tiered = await this.progressiveLoader.loadTiered(optimized, queryContext);
+      const tokenBudget = queryContext.tokenBudget || 5000;
+      const optimized = this.tokenOptimizer.optimize(selectedTools, tokenBudget);
+      const tiered = await this.progressiveLoader.loadTiered(optimized, tokenBudget);
 
       // Log performance metrics
       logger.info('tool_selection_completed', {
         query,
         tools_selected: selectedTools.length,
         tools_optimized: optimized.length,
-        token_budget: queryContext.tokenBudget,
+        token_budget: tokenBudget,
         token_usage: tiered.totalTokens,
         latency_ms: selectionLatency,
-        token_reduction_pct: ((queryContext.tokenBudget - tiered.totalTokens) / queryContext.tokenBudget) * 100,
+        token_reduction_pct: ((tokenBudget - tiered.totalTokens) / tokenBudget) * 100,
       });
 
       res.status(200).json({
@@ -395,7 +409,7 @@ export class MCPGatewayServer {
    * List all categories
    * GET /api/v1/categories
    */
-  private async handleListCategories(req: Request, res: Response): Promise<void> {
+  private async handleListCategories(_req: Request, res: Response): Promise<void> {
     try {
       const categories = await this.semanticRouter.listCategories();
 
@@ -412,7 +426,7 @@ export class MCPGatewayServer {
    * Metrics endpoint
    * GET /api/v1/metrics
    */
-  private async handleMetrics(req: Request, res: Response): Promise<void> {
+  private async handleMetrics(_req: Request, res: Response): Promise<void> {
     try {
       const metrics = {
         requests: {
@@ -445,7 +459,7 @@ export class MCPGatewayServer {
    * Setup error handlers
    */
   private setupErrorHandlers(): void {
-    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    this.app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
       logger.error('Unhandled error', {
         error: err.message,
         stack: err.stack,
@@ -523,5 +537,3 @@ if (require.main === module) {
     process.exit(1);
   });
 }
-
-export { MCPGatewayServer };

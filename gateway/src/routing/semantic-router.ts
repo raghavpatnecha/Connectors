@@ -454,14 +454,19 @@ export class SemanticRouter {
 
     return paginatedTools.map(t => ({
       toolId: t.toolId,
-      name: t.name,
-      description: t.description,
+      name: t.metadata.name,
+      description: t.metadata.description,
       category: t.category,
       score: 1.0,
-      tokenCost: this._tokenOptimizer.estimateTokens({
-        name: t.name,
-        description: t.description,
-        parameters: {},
+      tier: 1 as const,
+      tokenCost: this._tokenOptimizer.estimateTokenCost({
+        toolId: t.toolId,
+        name: t.metadata.name,
+        description: t.metadata.description,
+        category: t.category,
+        score: 1.0,
+        tier: 1,
+        tokenCost: 0,
       }),
     }));
   }
