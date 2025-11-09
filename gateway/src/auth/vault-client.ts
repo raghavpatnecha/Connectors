@@ -41,19 +41,27 @@ export class VaultClient {
   private readonly _transitEngine: string;
   private readonly _kvEngine: string;
   private readonly _maxRetries: number;
+  private readonly _vaultToken: string;
 
   constructor(config: VaultConfig) {
     this._transitEngine = config.transitEngine || DEFAULT_TRANSIT_ENGINE;
     this._kvEngine = config.kvEngine || DEFAULT_KV_ENGINE;
     this._maxRetries = config.maxRetries || DEFAULT_MAX_RETRIES;
+    this._vaultToken = config.token;
 
+    // Create axios client WITHOUT token in static config to prevent logging
     this._client = axios.create({
       baseURL: config.address,
       timeout: config.timeout || DEFAULT_TIMEOUT,
       headers: {
-        'X-Vault-Token': config.token,
         'Content-Type': 'application/json'
       }
+    });
+
+    // Use request interceptor to add token dynamically (not logged)
+    this._client.interceptors.request.use((requestConfig) => {
+      requestConfig.headers['X-Vault-Token'] = this._vaultToken;
+      return requestConfig;
     });
 
     logger.info('VaultClient initialized', {

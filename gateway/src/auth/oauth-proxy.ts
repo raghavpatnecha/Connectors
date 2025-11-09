@@ -345,17 +345,22 @@ export class OAuthProxy {
     }
 
     try {
+      // Use HTTP Basic Auth for client credentials (RFC 6749 Section 2.3.1)
+      // This is more secure than sending client_secret in POST body
+      const basicAuth = Buffer.from(
+        `${config.clientId}:${config.clientSecret}`
+      ).toString('base64');
+
       const response = await axios.post(
         config.tokenEndpoint,
         new URLSearchParams({
           grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: config.clientId,
-          client_secret: config.clientSecret
+          refresh_token: refreshToken
         }),
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${basicAuth}`
           }
         }
       );

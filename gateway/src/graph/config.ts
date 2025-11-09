@@ -3,6 +3,7 @@
  */
 
 import neo4j, { Driver, Session, auth } from 'neo4j-driver';
+import { logger } from '../logging/logger';
 
 /**
  * Neo4j connection configuration
@@ -105,7 +106,7 @@ export class Neo4jConnectionPool {
       await driver.verifyConnectivity();
       return true;
     } catch (error) {
-      console.error('Neo4j connectivity check failed:', error);
+      logger.error('Neo4j connectivity check failed', { error });
       return false;
     }
   }
@@ -189,10 +190,19 @@ export class Neo4jConnectionPool {
  * Initialize Neo4j from environment variables
  */
 export function initializeFromEnv(): void {
+  // Require password to be set explicitly - no weak defaults
+  const password = process.env.NEO4J_PASSWORD;
+  if (!password) {
+    throw new Error(
+      'NEO4J_PASSWORD environment variable is required. ' +
+      'Do not use weak default passwords in production.'
+    );
+  }
+
   const config: Neo4jConfig = {
     uri: process.env.NEO4J_URI || 'bolt://localhost:7687',
     username: process.env.NEO4J_USERNAME || 'neo4j',
-    password: process.env.NEO4J_PASSWORD || 'password',
+    password,
     database: process.env.NEO4J_DATABASE || 'neo4j',
     encrypted: process.env.NEO4J_ENCRYPTED === 'true'
   };

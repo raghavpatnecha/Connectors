@@ -6,12 +6,13 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Neo4jConnectionPool, initializeFromEnv } from './config';
+import { logger } from '../logging/logger';
 
 /**
  * Initialize Neo4j graph database
  */
 export async function initializeGraphDB(): Promise<void> {
-  console.log('Initializing Neo4j GraphRAG database...');
+  logger.info('Initializing Neo4j GraphRAG database...');
 
   // Initialize connection from environment
   initializeFromEnv();
@@ -24,7 +25,7 @@ export async function initializeGraphDB(): Promise<void> {
     throw new Error('Failed to connect to Neo4j. Check connection settings.');
   }
 
-  console.log('✓ Neo4j connection established');
+  logger.info('✓ Neo4j connection established');
 
   // Run schema initialization
   await runSchemaInit(pool);
@@ -32,14 +33,14 @@ export async function initializeGraphDB(): Promise<void> {
   // Run seed data
   await runSeedData(pool);
 
-  console.log('✓ Neo4j GraphRAG initialization complete');
+  logger.info('✓ Neo4j GraphRAG initialization complete');
 }
 
 /**
  * Run schema.cypher to create constraints and indexes
  */
 async function runSchemaInit(pool: Neo4jConnectionPool): Promise<void> {
-  console.log('Creating schema constraints and indexes...');
+  logger.info('Creating schema constraints and indexes...');
 
   const schemaPath = join(__dirname, 'schema.cypher');
   const schemaContent = await fs.readFile(schemaPath, 'utf-8');
@@ -57,11 +58,11 @@ async function runSchemaInit(pool: Neo4jConnectionPool): Promise<void> {
       if (statement.includes('CREATE CONSTRAINT') || statement.includes('CREATE INDEX')) {
         try {
           await session.run(statement);
-          console.log(`  ✓ Executed: ${statement.substring(0, 60)}...`);
+          logger.info(`  ✓ Executed: ${statement.substring(0, 60)}...`);
         } catch (error) {
           // Ignore "already exists" errors
           if (error instanceof Error && error.message.includes('already exists')) {
-            console.log(`  - Skipped (exists): ${statement.substring(0, 60)}...`);
+            logger.info(`  - Skipped (exists): ${statement.substring(0, 60)}...`);
           } else {
             throw error;
           }
@@ -69,7 +70,7 @@ async function runSchemaInit(pool: Neo4jConnectionPool): Promise<void> {
       }
     }
 
-    console.log('✓ Schema initialization complete');
+    logger.info('✓ Schema initialization complete');
   } finally {
     await session.close();
   }
@@ -79,7 +80,7 @@ async function runSchemaInit(pool: Neo4jConnectionPool): Promise<void> {
  * Run seed-data.cypher to populate initial tools and relationships
  */
 async function runSeedData(pool: Neo4jConnectionPool): Promise<void> {
-  console.log('Loading seed data...');
+  logger.info('Loading seed data...');
 
   const seedPath = join(__dirname, 'seed-data.cypher');
   const seedContent = await fs.readFile(seedPath, 'utf-8');
@@ -103,7 +104,7 @@ async function runSeedData(pool: Neo4jConnectionPool): Promise<void> {
     const result = await session.run('MATCH (t:Tool) RETURN count(t) AS toolCount');
     const toolCount = result.records[0]?.get('toolCount') || 0;
 
-    console.log(`✓ Seed data loaded: ${toolCount} tools created`);
+    logger.info(`✓ Seed data loaded: ${toolCount} tools created`);
   } finally {
     await session.close();
   }
@@ -113,7 +114,7 @@ async function runSeedData(pool: Neo4jConnectionPool): Promise<void> {
  * Reset database (WARNING: Deletes all data)
  */
 export async function resetGraphDB(): Promise<void> {
-  console.log('WARNING: Resetting Neo4j database (deleting all data)...');
+  logger.info('WARNING: Resetting Neo4j database (deleting all data)...');
 
   const pool = Neo4jConnectionPool.getInstance();
   const session = pool.getSession();
@@ -122,7 +123,7 @@ export async function resetGraphDB(): Promise<void> {
     // Delete all nodes and relationships
     await session.run('MATCH (n) DETACH DELETE n');
 
-    console.log('✓ Database reset complete');
+    logger.info('✓ Database reset complete');
   } finally {
     await session.close();
   }
@@ -145,7 +146,7 @@ if (require.main === module) {
 
       process.exit(0);
     } catch (error) {
-      console.error('Initialization failed:', error);
+      logger.error('Initialization failed:', error);
       process.exit(1);
     }
   })();

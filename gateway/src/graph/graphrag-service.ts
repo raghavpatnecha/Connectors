@@ -4,6 +4,7 @@
  */
 
 import { Neo4jConnectionPool } from './config';
+import { logger } from '../logging/logger';
 import {
   ToolNode,
   QueryContext,
@@ -82,7 +83,7 @@ export class GraphRAGService {
           return this._mapNodeToTool(node);
         });
 
-        console.log('GraphRAG enhancement', {
+        logger.info('GraphRAG enhancement', {
           originalTools: tools.length,
           relatedToolsFound: relatedTools.length,
           totalTools: tools.length + relatedTools.length,
@@ -105,7 +106,7 @@ export class GraphRAGService {
         await session.close();
       }
     } catch (error) {
-      console.error('GraphRAG enhancement failed', {
+      logger.error('GraphRAG enhancement failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
         toolIds,
         context
@@ -202,13 +203,13 @@ export class GraphRAGService {
     try {
       await session.run(INCREMENT_TOOL_USAGE, { toolId, increment });
 
-      console.log('Tool usage updated', {
+      logger.info('Tool usage updated', {
         toolId,
         increment,
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('Failed to update tool usage', {
+      logger.error('Failed to update tool usage', {
         toolId,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -226,7 +227,7 @@ export class GraphRAGService {
     try {
       await session.run(UPDATE_RELATIONSHIP_CONFIDENCE, { toolId1, toolId2 });
     } catch (error) {
-      console.error('Failed to update relationship confidence', {
+      logger.error('Failed to update relationship confidence', {
         toolId1,
         toolId2,
         error: error instanceof Error ? error.message : 'Unknown error'
