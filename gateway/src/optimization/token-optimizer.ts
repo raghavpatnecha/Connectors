@@ -82,7 +82,7 @@ export class TokenOptimizer {
       totalChars += JSON.stringify(tool.schema.examples).length;
     }
 
-    return this._estimateTextTokens(totalChars.toString());
+    return Math.ceil(totalChars * AVERAGE_TOKENS_PER_CHAR);
   }
 
   /**

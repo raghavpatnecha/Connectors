@@ -52,6 +52,17 @@ describe('OAuth Flow Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Mock axios.create BEFORE creating OAuthProxy
+    const mockAxiosInstance = {
+      request: jest.fn().mockResolvedValue({
+        status: 200,
+        headers: {},
+        data: { success: true, pr: { number: 123 } }
+      })
+    };
+
+    axios.create = jest.fn().mockReturnValue(mockAxiosInstance);
+
     // Create mock Vault client
     mockVault = new VaultClient({}) as jest.Mocked<VaultClient>;
 
@@ -59,7 +70,7 @@ describe('OAuth Flow Integration Tests', () => {
     mockVault.storeCredentials = jest.fn().mockResolvedValue(undefined);
     mockVault.deleteCredentials = jest.fn().mockResolvedValue(undefined);
 
-    // Create OAuth proxy
+    // Create OAuth proxy (axios.create is already mocked)
     oauthProxy = new OAuthProxy(
       mockVault,
       'http://localhost:3000',
@@ -75,14 +86,7 @@ describe('OAuth Flow Integration Tests', () => {
 
   describe('Full OAuth Flow: Store → Retrieve → Inject', () => {
     it('should complete full OAuth flow for MCP request', async () => {
-      // Mock axios MCP request
-      axios.create = jest.fn().mockReturnValue({
-        request: jest.fn().mockResolvedValue({
-          status: 200,
-          headers: {},
-          data: { success: true, pr: { number: 123 } }
-        })
-      });
+      // axios.create is already mocked in beforeEach
 
       const request: MCPRequest = {
         tenantId: testTenantId,

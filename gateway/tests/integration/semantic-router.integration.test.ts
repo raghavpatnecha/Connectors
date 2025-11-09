@@ -248,9 +248,6 @@ describe('SemanticRouter Integration Tests', () => {
         }
       ];
 
-      // First call: cache miss
-      mockCache.getToolSelection.mockResolvedValueOnce(null);
-
       const mockCategoryIndex = router['_categoryIndex'] as jest.Mocked<FAISSIndex>;
       mockCategoryIndex.search.mockResolvedValue([
         { id: 'code', score: 0.9, distance: 0.1 }
@@ -261,11 +258,15 @@ describe('SemanticRouter Integration Tests', () => {
         { id: 'github.createPullRequest', score: 0.95, distance: 0.05 }
       ]);
 
+      // Reset and setup cache mock for this test
+      mockCache.getToolSelection.mockReset();
+      mockCache.getToolSelection
+        .mockResolvedValueOnce(null)  // First call: cache miss
+        .mockResolvedValueOnce(cachedTools);  // Second call: cache hit
+
       await router.selectTools(query, context);
 
-      // Second call: cache hit
-      mockCache.getToolSelection.mockResolvedValueOnce(cachedTools);
-
+      // Second call should hit cache
       const result = await router.selectTools(query, context);
 
       expect(result).toEqual(cachedTools);
@@ -384,10 +385,12 @@ describe('SemanticRouter Integration Tests', () => {
       // Verify reduction percentage
       expect(result.reductionPercentage).toBeGreaterThan(0);
 
-      // Tier 1 should have minimal schemas
+      // Tier 1 should have minimal schemas (name + description only)
       result.tier1.forEach(tool => {
         expect(tool.tier).toBe(1);
-        expect(tool.schema).toBeUndefined();
+        expect(tool.schema).toBeDefined();
+        expect(tool.schema?.name).toBeDefined();
+        expect(tool.schema?.description).toBeDefined();
       });
 
       // Tier 3 should have load URLs

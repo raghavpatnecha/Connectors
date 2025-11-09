@@ -80,14 +80,21 @@ describe('TokenOptimizer', () => {
 
     it('should estimate medium cost for tier 2 tools', () => {
       const tool = createMockTool('test', 0.9, 2);
+      // Override with more realistic content
+      tool.name = 'Create Pull Request';
+      tool.description = 'Creates a new pull request in the repository with title, description, and branch information';
       tool.schema = {
-        name: 'Test',
-        description: 'Test',
+        name: 'Create Pull Request',
+        description: 'Creates a new pull request in the repository',
         parameters: {
           type: 'object',
           properties: {
-            param1: { type: 'string', description: 'Param 1' }
-          }
+            title: { type: 'string', description: 'PR title' },
+            body: { type: 'string', description: 'PR description' },
+            head: { type: 'string', description: 'Head branch' },
+            base: { type: 'string', description: 'Base branch' }
+          },
+          required: ['title', 'head', 'base']
         }
       };
 
