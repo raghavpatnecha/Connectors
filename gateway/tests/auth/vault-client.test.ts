@@ -24,12 +24,20 @@ describe('VaultClient', () => {
     // Reset mocks
     jest.clearAllMocks();
 
-    // Create mock axios instance
+    // Create mock axios instance with interceptors support
     mockAxiosInstance = {
       get: jest.fn(),
       post: jest.fn(),
       delete: jest.fn(),
-      request: jest.fn()
+      request: jest.fn(),
+      interceptors: {
+        request: {
+          use: jest.fn()
+        },
+        response: {
+          use: jest.fn()
+        }
+      }
     };
 
     mockedAxios.create.mockReturnValue(mockAxiosInstance);
@@ -254,7 +262,9 @@ describe('VaultClient', () => {
     });
 
     it('should throw VaultError on deletion failure', async () => {
-      mockAxiosInstance.delete.mockRejectedValueOnce(new Error('Access denied'));
+      // Mock rejection for all retry attempts (maxRetries = 3, so 4 total attempts)
+      const error = new Error('Access denied');
+      mockAxiosInstance.delete.mockRejectedValue(error);
 
       await expect(
         vaultClient.deleteCredentials('tenant', 'test')
