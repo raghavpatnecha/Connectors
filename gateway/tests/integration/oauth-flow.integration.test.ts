@@ -232,7 +232,15 @@ describe('OAuth Flow Integration Tests', () => {
         expiresAt: new Date(Date.now() - 1000) // 1 second ago
       };
 
-      mockVault.getCredentials = jest.fn().mockResolvedValue(expiredCredentials);
+      // Mock getCredentials to return expired creds first, then refreshed creds on retry
+      mockVault.getCredentials = jest.fn()
+        .mockResolvedValueOnce(expiredCredentials) // First call: expired
+        .mockResolvedValueOnce({  // Second call (retry): refreshed
+          ...expiredCredentials,
+          accessToken: 'refreshed-token',
+          refreshToken: 'new-refresh-token',
+          expiresAt: new Date(Date.now() + 3600 * 1000)
+        });
 
       // Mock refresh
       axios.post = jest.fn().mockResolvedValue({
@@ -250,7 +258,11 @@ describe('OAuth Flow Integration Tests', () => {
           status: 200,
           headers: {},
           data: { success: true }
-        })
+        }),
+        interceptors: {
+          request: { use: jest.fn() },
+          response: { use: jest.fn() }
+        }
       });
 
       // Recreate proxy
@@ -335,6 +347,7 @@ describe('OAuth Flow Integration Tests', () => {
         expiresAt: new Date(Date.now() - 1000)
       };
 
+      // Mock getCredentials - only needs one call since refresh will fail
       mockVault.getCredentials = jest.fn().mockResolvedValue(expiredCredentials);
 
       // Mock refresh failure
@@ -347,7 +360,11 @@ describe('OAuth Flow Integration Tests', () => {
       });
 
       axios.create = jest.fn().mockReturnValue({
-        request: jest.fn().mockResolvedValue({ status: 200 })
+        request: jest.fn().mockResolvedValue({ status: 200 }),
+        interceptors: {
+          request: { use: jest.fn() },
+          response: { use: jest.fn() }
+        }
       });
 
       // Recreate proxy

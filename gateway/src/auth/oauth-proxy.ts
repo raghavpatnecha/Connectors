@@ -175,6 +175,11 @@ export class OAuthProxy {
     } catch (error: any) {
       const duration = Date.now() - startTime;
 
+      // Re-throw OAuth-specific errors without wrapping
+      if (error instanceof TokenExpiredError || error instanceof TokenRefreshError) {
+        throw error;
+      }
+
       // 4. Handle auth errors (token expired despite our check)
       if (error.response?.status === 401) {
         logger.warn('Received 401 Unauthorized, attempting token refresh', {
