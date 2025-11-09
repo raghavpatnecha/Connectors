@@ -61,3 +61,4 @@ temp/
 # FAISS indices (large binary files)
 *.faiss
 *.faiss.map
+.claude-flow/metrics/
