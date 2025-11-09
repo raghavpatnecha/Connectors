@@ -260,17 +260,22 @@ describe('SemanticRouter Integration Tests', () => {
 
       // Reset and setup cache mock for this test
       mockCache.getToolSelection.mockReset();
-      mockCache.getToolSelection
-        .mockResolvedValueOnce(null)  // First call: cache miss
-        .mockResolvedValueOnce(cachedTools);  // Second call: cache hit
+      mockCache.getToolSelection.mockResolvedValueOnce(null); // First call: cache miss
 
       await router.selectTools(query, context);
+
+      // Setup cache to return cached tools on second call
+      mockCache.getToolSelection.mockReset();
+      mockCache.getToolSelection.mockResolvedValue(cachedTools); // Second call: cache hit
+
+      // Clear embedding service call count before second query
+      mockEmbeddingService.generateEmbedding.mockClear();
 
       // Second call should hit cache
       const result = await router.selectTools(query, context);
 
       expect(result).toEqual(cachedTools);
-      expect(mockEmbeddingService.generateEmbedding).toHaveBeenCalledTimes(1); // Only first call
+      expect(mockEmbeddingService.generateEmbedding).toHaveBeenCalledTimes(0); // Should not be called on cache hit
     });
 
     it('should respect token budget and downgrade tiers', async () => {
