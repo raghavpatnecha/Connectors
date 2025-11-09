@@ -30,3 +30,4 @@ data/indices/*.map
 
 # Cache
 .cache/
+.claude-flow/metrics/
