@@ -1,0 +1,121 @@
+version: '3.8'
+
+# ============================================
+# Docker Compose Override for Local Development
+# This file is automatically merged with docker-compose.yml
+# ============================================
+
+services:
+  # ============================================
+  # Gateway - Development Overrides
+  # ============================================
+  gateway:
+    build:
+      target: development
+      args:
+        - NODE_ENV=development
+    environment:
+      # Enable development features
+      - DEBUG=connectors:*
+      - ENABLE_DEBUG_ROUTES=true
+      - ENABLE_CORS=true
+      - CORS_ORIGIN=*
+
+      # Faster feedback loops
+      - WATCH_FILES=true
+      - HOT_RELOAD=true
+
+      # Verbose logging
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=pretty
+
+      # Development tokens (NEVER use in production)
+      - DEVELOPMENT_MODE=true
+    volumes:
+      # Additional development mounts
+      - ./gateway/.env.development:/app/.env:ro
+      - ./gateway/nodemon.json:/app/nodemon.json:ro
+    command: npm run dev
+    stdin_open: true
+    tty: true
+
+  # ============================================
+  # Vault - Development Configuration
+  # ============================================
+  vault:
+    environment:
+      # Enable UI in development
+      - VAULT_UI=true
+    ports:
+      - "8200:8200"
+    volumes:
+      # Development scripts
+      - ./vault/scripts:/vault/scripts:ro
+
+  # ============================================
+  # Neo4j - Development Configuration
+  # ============================================
+  neo4j:
+    environment:
+      # Enable development features
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_browser_remote__content__hostname__whitelist=*
+      - NEO4J_browser_post__connect__cmd=config
+
+      # Relaxed memory for development
+      - NEO4J_server_memory_heap_max__size=1g
+    ports:
+      # Expose all ports for debugging
+      - "7474:7474"
+      - "7687:7687"
+
+  # ============================================
+  # Redis - Development Configuration
+  # ============================================
+  redis:
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+      --protected-mode no
+    ports:
+      - "6379:6379"
+
+  # ============================================
+  # Development Tools
+  # ============================================
+
+  # Redis Commander - Redis GUI
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: connectors-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - connectors-network
+
+  # Adminer - Database Management (for any SQL DBs we add later)
+  adminer:
+    image: adminer:latest
+    container_name: connectors-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    networks:
+      - connectors-network
+    profiles:
+      - db-tools
+
+# ============================================
+# Development Networks
+# ============================================
+networks:
+  connectors-network:
+    driver: bridge

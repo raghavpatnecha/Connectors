@@ -1,0 +1,256 @@
+/**
+ * MCP Server: {{ title }}
+ * Category: {{ category }}
+ * Version: {{ version }}
+ *
+ * Auto-generated from OpenAPI specification
+ * DO NOT EDIT - Regenerate using openapi-mcp-gen
+ */
+
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  Tool,
+} from "@modelcontextprotocol/sdk/types.js";
+import axios, { AxiosInstance, AxiosError } from "axios";
+
+// Configuration
+const API_BASE_URL = "{{ base_url }}";
+{% if rate_limits %}
+const RATE_LIMITS = {
+  requestsPerMinute: {{ rate_limits.requests_per_minute }},
+  requestsPerHour: {{ rate_limits.requests_per_hour }},
+  burstLimit: {{ rate_limits.burst_limit }},
+};
+{% endif %}
+
+// OAuth Configuration
+{% if oauth %}
+interface OAuthConfig {
+  flowType: "{{ oauth.flow_type }}";
+  {% if oauth.auth_url %}authUrl: "{{ oauth.auth_url }}";{% endif %}
+  {% if oauth.token_url %}tokenUrl: "{{ oauth.token_url }}";{% endif %}
+  scopes: {
+    {% for scope, description in oauth.scopes.items() %}
+    "{{ scope }}": "{{ description }}",
+    {% endfor %}
+  };
+}
+
+const OAUTH_CONFIG: OAuthConfig = {
+  flowType: "{{ oauth.flow_type }}",
+  {% if oauth.auth_url %}authUrl: "{{ oauth.auth_url }}",{% endif %}
+  {% if oauth.token_url %}tokenUrl: "{{ oauth.token_url }}",{% endif %}
+  scopes: {
+    {% for scope, description in oauth.scopes.items() %}
+    "{{ scope }}": "{{ description }}",
+    {% endfor %}
+  },
+};
+{% endif %}
+
+// Rate limiting state
+{% if rate_limits %}
+class RateLimiter {
+  private requestTimestamps: number[] = [];
+
+  canMakeRequest(): boolean {
+    const now = Date.now();
+    const oneMinuteAgo = now - 60 * 1000;
+
+    // Clean old timestamps
+    this.requestTimestamps = this.requestTimestamps.filter(
+      (timestamp) => timestamp > oneMinuteAgo
+    );
+
+    return this.requestTimestamps.length < RATE_LIMITS.requestsPerMinute;
+  }
+
+  recordRequest(): void {
+    this.requestTimestamps.push(Date.now());
+  }
+
+  async waitForSlot(): Promise<void> {
+    while (!this.canMakeRequest()) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+}
+
+const rateLimiter = new RateLimiter();
+{% endif %}
+
+// API Client
+class {{ title | replace(" ", "") | replace("-", "") }}Client {
+  private client: AxiosInstance;
+
+  constructor(accessToken?: string) {
+    this.client = axios.create({
+      baseURL: API_BASE_URL,
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+      },
+    });
+
+    // Error interceptor
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError) => {
+        if (error.response?.status === 429) {
+          const retryAfter = error.response.headers["retry-after"];
+          throw new Error(
+            `Rate limit exceeded. Retry after ${retryAfter || "unknown"} seconds`
+          );
+        }
+        if (error.response?.status === 401) {
+          throw new Error("Authentication failed - access token may be expired");
+        }
+        throw error;
+      }
+    );
+  }
+
+  {% for tool in tools %}
+  /**
+   * {{ tool.description }}
+   */
+  async {{ tool.name }}(params: {
+    {% for param_name, param_schema in tool.parameters.properties.items() %}
+    {{ param_name }}{% if param_name not in tool.parameters.required %}?{% endif %}: {{ param_schema.ts_type if param_schema.ts_type else 'any' }};
+    {% endfor %}
+  }): Promise<{{ tool.response_type }}> {
+    {% if rate_limits %}
+    await rateLimiter.waitForSlot();
+    {% endif %}
+
+    // Build path with parameters
+    let path = "{{ tool.path }}";
+    {% for param_name in tool.parameters.required %}
+    {% if '{' + param_name + '}' in tool.path %}
+    path = path.replace("{{"{{ " + param_name + " }}"}}}", String(params.{{ param_name }}));
+    {% endif %}
+    {% endfor %}
+
+    const response = await this.client.request({
+      method: "{{ tool.method }}",
+      url: path,
+      {% if tool.method in ['POST', 'PUT', 'PATCH'] %}
+      data: params,
+      {% else %}
+      params: params,
+      {% endif %}
+    });
+
+    {% if rate_limits %}
+    rateLimiter.recordRequest();
+    {% endif %}
+
+    return response.data;
+  }
+  {% endfor %}
+}
+
+// MCP Server
+const server = new Server(
+  {
+    name: "{{ server_name }}",
+    version: "{{ version }}",
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+// Tool definitions
+const TOOLS: Tool[] = [
+  {% for tool in tools %}
+  {
+    name: "{{ tool.name }}",
+    description: "{{ tool.description }}",
+    inputSchema: {
+      type: "object",
+      properties: {
+        {% for param_name, param_schema in tool.parameters.properties.items() %}
+        {{ param_name }}: {
+          type: "{{ param_schema.type }}",
+          description: "{{ param_schema.description | default('') }}",
+          {% if param_schema.enum %}
+          enum: [{% for val in param_schema.enum %}"{{ val }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+          {% endif %}
+        },
+        {% endfor %}
+      },
+      required: [{% for req in tool.parameters.required %}"{{ req }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+    },
+  },
+  {% endfor %}
+];
+
+// List tools handler
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: TOOLS,
+  };
+});
+
+// Call tool handler
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  // Get access token from environment (injected by gateway)
+  const accessToken = process.env.OAUTH_ACCESS_TOKEN;
+  const client = new {{ title | replace(" ", "") | replace("-", "") }}Client(accessToken);
+
+  try {
+    switch (name) {
+      {% for tool in tools %}
+      case "{{ tool.name }}": {
+        const result = await client.{{ tool.name }}(args as any);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+      {% endfor %}
+
+      default:
+        throw new Error(`Unknown tool: ${name}`);
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `API Error: ${error.response?.status} - ${
+              error.response?.data?.message || error.message
+            }`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    throw error;
+  }
+});
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("{{ title }} MCP Server running on stdio");
+}
+
+main().catch((error) => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});

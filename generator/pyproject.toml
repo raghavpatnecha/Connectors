@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "openapi-mcp-generator"
+version = "0.1.0"
+description = "Generate MCP servers from OpenAPI specifications with OAuth support"
+authors = ["Connectors Platform Team"]
+readme = "README.md"
+packages = [{include = "generator"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openapi-spec-validator = "^0.7.1"
+pyyaml = "^6.0.1"
+jinja2 = "^3.1.2"
+click = "^8.1.7"
+requests = "^2.31.0"
+pydantic = "^2.5.0"
+httpx = "^0.25.2"
+inflection = "^0.5.1"
+jsonschema = "^4.20.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+pytest-cov = "^4.1.0"
+black = "^23.12.0"
+mypy = "^1.7.1"
+ruff = "^0.1.8"
+types-pyyaml = "^6.0.12.12"
+types-requests = "^2.31.0.10"
+
+[tool.poetry.scripts]
+openapi-mcp-gen = "generator.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=generator --cov-report=html --cov-report=term"

@@ -1,0 +1,126 @@
+{
+  "timestamp": "2025-11-08T22:18:09.282Z",
+  "configuration": {
+    "totalTools": 500,
+    "categories": [
+      "code",
+      "communication",
+      "project-management",
+      "cloud",
+      "data"
+    ],
+    "testQueries": 5
+  },
+  "results": {
+    "traditional": {
+      "approach": "Traditional (All Tools)",
+      "tokenCount": 77698,
+      "latencyMs": 2,
+      "toolsSelected": 500,
+      "details": {
+        "avgTokensPerTool": 155,
+        "schemaType": "full"
+      }
+    },
+    "optimized": [
+      {
+        "approach": "Optimized (Semantic+Progressive)",
+        "tokenCount": 761,
+        "latencyMs": 5,
+        "toolsSelected": 8,
+        "details": {
+          "categoriesSelected": [
+            "code",
+            "communication"
+          ],
+          "tier1Count": 3,
+          "tier2Count": 5,
+          "tier3Count": 0,
+          "avgTokensPerTool": 95
+        }
+      },
+      {
+        "approach": "Optimized (Semantic+Progressive)",
+        "tokenCount": 775,
+        "latencyMs": 1,
+        "toolsSelected": 8,
+        "details": {
+          "categoriesSelected": [
+            "project-management"
+          ],
+          "tier1Count": 3,
+          "tier2Count": 5,
+          "tier3Count": 0,
+          "avgTokensPerTool": 97
+        }
+      },
+      {
+        "approach": "Optimized (Semantic+Progressive)",
+        "tokenCount": 748,
+        "latencyMs": 1,
+        "toolsSelected": 8,
+        "details": {
+          "categoriesSelected": [
+            "data"
+          ],
+          "tier1Count": 3,
+          "tier2Count": 5,
+          "tier3Count": 0,
+          "avgTokensPerTool": 94
+        }
+      },
+      {
+        "approach": "Optimized (Semantic+Progressive)",
+        "tokenCount": 761,
+        "latencyMs": 0,
+        "toolsSelected": 8,
+        "details": {
+          "categoriesSelected": [
+            "code",
+            "communication"
+          ],
+          "tier1Count": 3,
+          "tier2Count": 5,
+          "tier3Count": 0,
+          "avgTokensPerTool": 95
+        }
+      },
+      {
+        "approach": "Optimized (Semantic+Progressive)",
+        "tokenCount": 748,
+        "latencyMs": 0,
+        "toolsSelected": 8,
+        "details": {
+          "categoriesSelected": [
+            "data"
+          ],
+          "tier1Count": 3,
+          "tier2Count": 5,
+          "tier3Count": 0,
+          "avgTokensPerTool": 94
+        }
+      }
+    ],
+    "aggregated": {
+      "avgOptimizedTokens": 759,
+      "avgOptimizedLatency": 1,
+      "avgOptimizedToolsSelected": 8
+    }
+  },
+  "metrics": {
+    "tokenReduction": 76939,
+    "tokenReductionPercent": 99.0231408787871,
+    "targetTokenRange": [
+      1000,
+      3000
+    ],
+    "targetReductionPercent": 95,
+    "latencyComparison": -1
+  },
+  "validation": {
+    "meetsTokenTarget": true,
+    "meetsReductionTarget": true,
+    "meetsLatencyTarget": true,
+    "overallStatus": "PASS"
+  }
+}
