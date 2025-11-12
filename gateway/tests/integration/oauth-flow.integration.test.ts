@@ -232,15 +232,19 @@ describe('OAuth Flow Integration Tests', () => {
         expiresAt: new Date(Date.now() - 1000) // 1 second ago
       };
 
-      // Mock getCredentials to return expired creds first, then refreshed creds on retry
+      const refreshedCredentials = {
+        ...expiredCredentials,
+        accessToken: 'refreshed-token',
+        refreshToken: 'new-refresh-token',
+        expiresAt: new Date(Date.now() + 3600 * 1000)
+      };
+
+      // Mock getCredentials to return expired creds first, then refreshed creds
+      // Note: Called 3 times - initial check, during refresh, and during retry
       mockVault.getCredentials = jest.fn()
-        .mockResolvedValueOnce(expiredCredentials) // First call: expired
-        .mockResolvedValueOnce({  // Second call (retry): refreshed
-          ...expiredCredentials,
-          accessToken: 'refreshed-token',
-          refreshToken: 'new-refresh-token',
-          expiresAt: new Date(Date.now() + 3600 * 1000)
-        });
+        .mockResolvedValueOnce(expiredCredentials) // First call: initial check (expired)
+        .mockResolvedValueOnce(expiredCredentials) // Second call: during _forceRefresh
+        .mockResolvedValue(refreshedCredentials);   // Subsequent calls: after refresh
 
       // Mock refresh
       axios.post = jest.fn().mockResolvedValue({
@@ -347,7 +351,8 @@ describe('OAuth Flow Integration Tests', () => {
         expiresAt: new Date(Date.now() - 1000)
       };
 
-      // Mock getCredentials - only needs one call since refresh will fail
+      // Mock getCredentials - called twice (initial check + during _forceRefresh)
+      // Refresh will fail, so no retry happens
       mockVault.getCredentials = jest.fn().mockResolvedValue(expiredCredentials);
 
       // Mock refresh failure

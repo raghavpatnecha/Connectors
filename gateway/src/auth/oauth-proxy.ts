@@ -121,18 +121,28 @@ export class OAuthProxy {
       // 1. Get valid credentials from Vault
       const creds = await this._vault.getCredentials(tenantId, integration);
 
-      // Check if token is already expired
-      if (creds.expiresAt.getTime() <= Date.now()) {
+      // Check if token is already expired (if expiresAt is provided)
+      if (creds && creds.expiresAt && creds.expiresAt.getTime() <= Date.now()) {
         logger.warn('Token already expired, forcing refresh', {
           tenantId,
           integration,
           expiresAt: creds.expiresAt
         });
 
-        await this._forceRefresh(tenantId, integration);
-        // Retry with new token (prevent infinite loop with _retry flag)
-        if (!req._retry) {
-          return this.proxyRequest({ ...req, _retry: true });
+        try {
+          await this._forceRefresh(tenantId, integration);
+          // Retry with new token (prevent infinite loop with _retry flag)
+          if (!req._retry) {
+            return this.proxyRequest({ ...req, _retry: true });
+          }
+        } catch (refreshError) {
+          // Convert TokenRefreshError to TokenExpiredError since token is expired and can't be refreshed
+          throw new TokenExpiredError(
+            'Token expired and refresh failed',
+            integration,
+            tenantId,
+            creds.expiresAt
+          );
         }
 
         throw new TokenExpiredError(
