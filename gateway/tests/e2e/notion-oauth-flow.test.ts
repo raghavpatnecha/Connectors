@@ -132,7 +132,7 @@ describe('Notion E2E OAuth Flow Tests', () => {
         notionIntegration,
         expect.objectContaining({
           accessToken: 'secret_notion_access_token',
-          tokenType: 'Bearer'
+          tokenType: 'bearer'
         })
       );
 
