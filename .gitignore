@@ -62,3 +62,4 @@ temp/
 *.faiss
 *.faiss.map
 .claude-flow/metrics/
+validation-report-*.txt
