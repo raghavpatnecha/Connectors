@@ -63,5 +63,18 @@
       "export data warehouse",
       "schedule ETL jobs"
     ]
+  },
+  {
+    "name": "productivity",
+    "displayName": "Productivity & Knowledge Management",
+    "description": "Tools for note-taking, documentation, knowledge bases, wikis, task management, calendars, and workspace organization. Includes Notion, Confluence, Evernote, OneNote, Google Workspace, Microsoft 365 integrations.",
+    "examples": [
+      "create Notion page",
+      "search workspace",
+      "update document",
+      "organize knowledge base",
+      "manage calendar",
+      "share notes with team"
+    ]
   }
 ]
