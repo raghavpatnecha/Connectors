@@ -39,15 +39,16 @@ Result: 99.02% token reduction, 198K tokens free for actual work
 
 ### 🔌 **500+ Integrations (Target)**
 - **44 GitHub MCP servers** currently operational (1,111 operations)
+- **Notion productivity suite** integrated (19 tools for pages, databases, blocks)
 - **Auto-generation pipeline**: Generate MCP servers from OpenAPI specs in minutes
-- **Category-based organization**: code, communication, project management, cloud, data
+- **Category-based organization**: code, communication, project management, cloud, data, productivity
 - **Existing server integration**: 5-15 minute setup for any standard MCP server
 
 ### 🔐 **Enterprise-Grade OAuth**
 - **Per-tenant credential encryption** via HashiCorp Vault
 - **Automatic token refresh** (5min before expiry)
 - **Transparent injection**: MCP servers don't handle auth - gateway does
-- **Multi-provider support**: GitHub, Slack, Jira, Stripe, AWS, and more
+- **Multi-provider support**: GitHub, Notion, Slack, Jira, Stripe, AWS, and more
 
 ### 🧠 **Intelligent Tool Discovery**
 - **Two-level retrieval**: Category selection → Tool selection (19.4% better accuracy)
@@ -202,6 +203,17 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
 - [**Integrating Existing MCP Servers**](docs/INTEGRATING_EXISTING_MCP_SERVERS.md) - Add community or custom servers (5-15 mins)
 - [**Generating MCP Servers from OpenAPI**](generator/README.md) - Auto-generate integrations
 - [**Docker Deployment**](docs/DEPLOYMENT_STATUS_2025-11-11.md) - Deploy via Docker Compose or Kubernetes
+
+### Integration Guides
+
+**Multi-Tenant Setup (Recommended):**
+- [**Multi-Tenant Setup Guide**](docs/MULTI_TENANT_SETUP.md) - **NEW** Complete guide for multi-tenant deployments with multiple integrations
+- [**Tenant OAuth Management API**](docs/API_TENANT_OAUTH.md) - REST API for managing tenants and OAuth credentials
+- [**Migration from Single to Multi-Tenant**](docs/MIGRATION_SINGLE_TO_MULTI_TENANT.md) - Step-by-step migration guide
+
+**Legacy Single-Tenant Setup:**
+- [**Notion Setup**](docs/integrations/NOTION_SETUP.md) - Legacy single-tenant Notion integration (for existing deployments)
+- [**Notion OAuth Flow**](docs/integrations/notion-oauth-flow.md) - Detailed OAuth 2.0 flow diagram and examples
 
 ### Architecture & Strategy
 - [**Executive Summary**](EXECUTIVE_SUMMARY.md) - Vision, competitive positioning, roadmap
@@ -482,6 +494,64 @@ print(f"Created issue: {result['result']['html_url']}")
 
 Full example: [examples/python-client.py](examples/python-client.py)
 
+### Notion Integration
+
+```python
+from connectors_client import ConnectorsClient
+
+client = ConnectorsClient(
+    base_url='http://localhost:3000',
+    tenant_id='my-team'
+)
+
+# Semantic tool selection for Notion
+tools = client.select_tools(
+    query='create a new page in Notion with a task list',
+    max_tools=5,
+    allowed_categories=['productivity']
+)
+
+# Create a Notion page with content
+result = client.invoke_tool(
+    tool_id='notion.createPage',
+    integration='notion',
+    parameters={
+        'parent': {
+            'database_id': 'your-database-id'
+        },
+        'properties': {
+            'Name': {
+                'title': [{'text': {'content': 'Q4 Project Plan'}}]
+            },
+            'Status': {
+                'select': {'name': 'In Progress'}
+            }
+        },
+        'children': [
+            {
+                'object': 'block',
+                'type': 'heading_1',
+                'heading_1': {
+                    'rich_text': [{'text': {'content': 'Objectives'}}]
+                }
+            },
+            {
+                'object': 'block',
+                'type': 'to_do',
+                'to_do': {
+                    'rich_text': [{'text': {'content': 'Define project scope'}}],
+                    'checked': False
+                }
+            }
+        ]
+    }
+)
+
+print(f"Created Notion page: {result['result']['url']}")
+```
+
+See [Notion Setup Guide](docs/integrations/NOTION_SETUP.md) for complete integration instructions.
+
 ### JavaScript/TypeScript
 
 ```typescript
@@ -531,7 +601,7 @@ def semantic_tool_selector(query: str):
 connectors_tool = Tool(
     name="Connectors",
     func=semantic_tool_selector,
-    description="Access 500+ integrations (GitHub, Slack, Jira, AWS, etc.) with semantic routing"
+    description="Access 500+ integrations (GitHub, Notion, Slack, Jira, AWS, etc.) with semantic routing"
 )
 
 # Use in agent
@@ -633,6 +703,8 @@ connectors/
 │   │   └── ... (42 more)
 │   ├── communication/
 │   ├── project_management/
+│   ├── productivity/
+│   │   └── notion/        # Notion integration (19 tools)
 │   ├── cloud/
 │   └── data/
 │

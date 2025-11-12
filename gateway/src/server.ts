@@ -22,6 +22,7 @@ import { RedisCache } from './caching/redis-cache';
 import { logger } from './logging/logger';
 import { ToolSelectionError, OAuthError } from './errors/gateway-errors';
 import type { QueryContext } from './types/routing.types';
+import { createTenantOAuthRouter } from './routes/tenant-oauth';
 
 // Server configuration
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -156,6 +157,16 @@ export class MCPGatewayServer {
     apiV1.get('/tools/list', this.handleListTools.bind(this));
     apiV1.get('/categories', this.handleListCategories.bind(this));
     apiV1.get('/metrics', this.handleMetrics.bind(this));
+
+    // Mount tenant OAuth configuration routes
+    const vaultClient = new VaultClient({
+      address: process.env.VAULT_ADDR || 'http://localhost:8200',
+      token: process.env.VAULT_TOKEN || 'dev-token',
+      transitEngine: 'transit',
+      kvEngine: 'secret',
+    });
+    const tenantOAuthRouter = createTenantOAuthRouter(vaultClient);
+    apiV1.use('/', tenantOAuthRouter);
 
     this.app.use('/api/v1', apiV1);
 

@@ -6,6 +6,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { createLogger } from 'winston';
 import { VaultClient } from './vault-client';
+import { TenantOAuthStorage } from './tenant-oauth-storage';
 import { RefreshScheduler, RefreshCallback } from './refresh-scheduler';
 import {
   MCPRequest,
@@ -18,7 +19,8 @@ import {
   OAuthError,
   TokenExpiredError,
   TokenRefreshError,
-  RateLimitError
+  RateLimitError,
+  CredentialNotFoundError
 } from '../errors/oauth-errors';
 
 const logger = createLogger({
@@ -30,6 +32,7 @@ const logger = createLogger({
  *
  * Features:
  * - Automatic credential retrieval from Vault
+ * - Dynamic OAuth config loading per tenant
  * - Transparent auth header injection
  * - Automatic token refresh on 401
  * - Rate limit handling
@@ -37,6 +40,7 @@ const logger = createLogger({
  */
 export class OAuthProxy {
   private readonly _vault: VaultClient;
+  private readonly _oauthStorage: TenantOAuthStorage;
   private readonly _scheduler: RefreshScheduler;
   private readonly _mcpClient: AxiosInstance;
   private readonly _oauthConfigs: Map<string, OAuthClientConfig>;
@@ -47,6 +51,7 @@ export class OAuthProxy {
     oauthConfigs: Map<string, OAuthClientConfig> = new Map()
   ) {
     this._vault = vault;
+    this._oauthStorage = new TenantOAuthStorage(vault);
     this._oauthConfigs = oauthConfigs;
 
     // Create MCP client
@@ -57,11 +62,11 @@ export class OAuthProxy {
 
     // Create refresh callback
     const refreshCallback: RefreshCallback = async (
-      _tenantId,
+      tenantId,
       integration,
       refreshToken
     ) => {
-      return this._performRefresh(integration, refreshToken);
+      return this._performRefresh(integration, refreshToken, tenantId);
     };
 
     // Initialize scheduler
@@ -121,18 +126,28 @@ export class OAuthProxy {
       // 1. Get valid credentials from Vault
       const creds = await this._vault.getCredentials(tenantId, integration);
 
-      // Check if token is already expired
-      if (creds.expiresAt.getTime() <= Date.now()) {
+      // Check if token is already expired (if expiresAt is provided)
+      if (creds && creds.expiresAt && creds.expiresAt.getTime() <= Date.now()) {
         logger.warn('Token already expired, forcing refresh', {
           tenantId,
           integration,
           expiresAt: creds.expiresAt
         });
 
-        await this._forceRefresh(tenantId, integration);
-        // Retry with new token (prevent infinite loop with _retry flag)
-        if (!req._retry) {
-          return this.proxyRequest({ ...req, _retry: true });
+        try {
+          await this._forceRefresh(tenantId, integration);
+          // Retry with new token (prevent infinite loop with _retry flag)
+          if (!req._retry) {
+            return this.proxyRequest({ ...req, _retry: true });
+          }
+        } catch (refreshError) {
+          // Convert TokenRefreshError to TokenExpiredError since token is expired and can't be refreshed
+          throw new TokenExpiredError(
+            'Token expired and refresh failed',
+            integration,
+            tenantId,
+            creds.expiresAt
+          );
         }
 
         throw new TokenExpiredError(
@@ -313,7 +328,7 @@ export class OAuthProxy {
    */
   private async _forceRefresh(tenantId: string, integration: string): Promise<void> {
     const creds = await this._vault.getCredentials(tenantId, integration);
-    const tokenResponse = await this._performRefresh(integration, creds.refreshToken);
+    const tokenResponse = await this._performRefresh(integration, creds.refreshToken, tenantId);
 
     const expiresAt = new Date(Date.now() + tokenResponse.expires_in * 1000);
 
@@ -333,19 +348,85 @@ export class OAuthProxy {
   }
 
   /**
+   * Get OAuth client configuration
+   * First checks static configs, then fetches from Vault per-tenant
+   *
+   * @param tenantId - Tenant identifier
+   * @param integration - Integration name
+   * @returns OAuth client configuration
+   */
+  private async _getOAuthConfig(
+    tenantId: string,
+    integration: string
+  ): Promise<OAuthClientConfig> {
+    // Check static configs first (for backward compatibility)
+    const staticConfig = this._oauthConfigs.get(integration);
+    if (staticConfig) {
+      logger.debug('Using static OAuth config', { integration });
+      return staticConfig;
+    }
+
+    // Fetch tenant-specific config from Vault
+    try {
+      const tenantConfig = await this._oauthStorage.getTenantOAuthConfig(tenantId, integration);
+
+      logger.debug('Using tenant-specific OAuth config', {
+        tenantId,
+        integration
+      });
+
+      return {
+        clientId: tenantConfig.clientId,
+        clientSecret: tenantConfig.clientSecret,
+        tokenEndpoint: tenantConfig.tokenEndpoint,
+        authEndpoint: tenantConfig.authEndpoint,
+        redirectUri: tenantConfig.redirectUri
+      };
+    } catch (error) {
+      if (error instanceof CredentialNotFoundError) {
+        throw new OAuthError(
+          `No OAuth configuration found for tenant ${tenantId} and integration ${integration}`,
+          integration,
+          tenantId,
+          error
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Perform OAuth token refresh with provider
    */
   private async _performRefresh(
     integration: string,
-    refreshToken: string
+    refreshToken: string,
+    tenantId?: string
   ): Promise<OAuthTokenResponse> {
-    const config = this._oauthConfigs.get(integration);
+    // Try to get config - first from static, then from tenant-specific
+    let config: OAuthClientConfig | undefined;
+
+    // Check static configs first
+    config = this._oauthConfigs.get(integration);
+
+    // If no static config and tenantId provided, try tenant-specific
+    if (!config && tenantId) {
+      try {
+        config = await this._getOAuthConfig(tenantId, integration);
+      } catch (error) {
+        logger.error('Failed to get OAuth config for refresh', {
+          integration,
+          tenantId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
 
     if (!config) {
       throw new OAuthError(
         `No OAuth config found for integration: ${integration}`,
         integration,
-        'unknown'
+        tenantId || 'unknown'
       );
     }
 

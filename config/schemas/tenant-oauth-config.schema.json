@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://connectors.platform/schemas/tenant-oauth-config.json",
+  "title": "Tenant OAuth Configuration",
+  "description": "Multi-tenant OAuth 2.0 configuration schema for Connectors Platform with HashiCorp Vault integration",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["tenant_id", "integrations"],
+  "additionalProperties": false,
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Unique tenant identifier for credential isolation",
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+      "minLength": 3,
+      "maxLength": 63,
+      "examples": [
+        "acme-corp-001",
+        "example-tenant-001",
+        "demo-customer-abc"
+      ]
+    },
+    "tenant_name": {
+      "type": "string",
+      "description": "Human-readable tenant name (optional)",
+      "maxLength": 255,
+      "examples": [
+        "Acme Corporation",
+        "Example Customer LLC"
+      ]
+    },
+    "environment": {
+      "type": "string",
+      "description": "Deployment environment",
+      "enum": ["development", "staging", "production"],
+      "default": "production"
+    },
+    "integrations": {
+      "type": "object",
+      "description": "OAuth configurations for each integration",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9_-]*$": {
+          "type": "object",
+          "required": ["client_id", "client_secret", "redirect_uri"],
+          "additionalProperties": false,
+          "properties": {
+            "client_id": {
+              "type": "string",
+              "description": "OAuth client ID (supports environment variable substitution with ${VAR})",
+              "minLength": 1,
+              "examples": [
+                "${NOTION_CLIENT_ID}",
+                "${GITHUB_CLIENT_ID}",
+                "abc123xyz789"
+              ]
+            },
+            "client_secret": {
+              "type": "string",
+              "description": "OAuth client secret (supports environment variable substitution with ${VAR})",
+              "minLength": 1,
+              "examples": [
+                "${NOTION_CLIENT_SECRET}",
+                "${GITHUB_CLIENT_SECRET}",
+                "secret_abc123xyz789"
+              ]
+            },
+            "redirect_uri": {
+              "type": "string",
+              "format": "uri",
+              "description": "OAuth callback URL (must match provider registration)",
+              "pattern": "^https?://",
+              "examples": [
+                "https://app.example.com/oauth/callback/notion",
+                "https://app.example.com/oauth/callback/github"
+              ]
+            },
+            "scopes": {
+              "type": "array",
+              "description": "OAuth scopes (provider-specific, not all providers support scopes)",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true,
+              "examples": [
+                ["repo", "user"],
+                ["read:user", "write:repo_hook"]
+              ]
+            },
+            "additional_params": {
+              "type": "object",
+              "description": "Provider-specific OAuth parameters",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "examples": [
+                {
+                  "owner": "workspace",
+                  "state": "random_csrf_token"
+                }
+              ]
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable/disable this integration",
+              "default": true
+            },
+            "notes": {
+              "type": "string",
+              "description": "Optional notes about this integration configuration",
+              "maxLength": 500
+            }
+          }
+        }
+      }
+    },
+    "vault_config": {
+      "type": "object",
+      "description": "Optional Vault-specific configuration overrides",
+      "additionalProperties": false,
+      "properties": {
+        "kv_mount": {
+          "type": "string",
+          "description": "KV v2 mount path",
+          "default": "secret",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "transit_mount": {
+          "type": "string",
+          "description": "Transit engine mount path",
+          "default": "transit",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "policy_name": {
+          "type": "string",
+          "description": "Custom policy name (defaults to integration-specific policy)",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "enable_auto_rotate": {
+          "type": "boolean",
+          "description": "Enable automatic key rotation (requires custom automation)",
+          "default": false
+        },
+        "rotation_interval_days": {
+          "type": "integer",
+          "description": "Key rotation interval in days",
+          "minimum": 1,
+          "maximum": 365,
+          "default": 90
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional tenant metadata",
+      "additionalProperties": true,
+      "properties": {
+        "created_by": {
+          "type": "string",
+          "description": "User or system that created this configuration"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Configuration creation timestamp (ISO 8601)"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp (ISO 8601)"
+        },
+        "contact_email": {
+          "type": "string",
+          "format": "email",
+          "description": "Technical contact email"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "tenant_id": "example-tenant-001",
+      "tenant_name": "Example Corporation",
+      "environment": "production",
+      "integrations": {
+        "notion": {
+          "client_id": "${NOTION_CLIENT_ID}",
+          "client_secret": "${NOTION_CLIENT_SECRET}",
+          "redirect_uri": "https://app.example.com/oauth/callback/notion",
+          "enabled": true,
+          "notes": "Notion integration for workspace collaboration"
+        },
+        "github": {
+          "client_id": "${GITHUB_CLIENT_ID}",
+          "client_secret": "${GITHUB_CLIENT_SECRET}",
+          "redirect_uri": "https://app.example.com/oauth/callback/github",
+          "scopes": ["repo", "user", "write:repo_hook"],
+          "enabled": true
+        },
+        "slack": {
+          "client_id": "${SLACK_CLIENT_ID}",
+          "client_secret": "${SLACK_CLIENT_SECRET}",
+          "redirect_uri": "https://app.example.com/oauth/callback/slack",
+          "scopes": ["chat:write", "channels:read", "users:read"],
+          "enabled": false,
+          "notes": "Disabled pending security review"
+        }
+      },
+      "vault_config": {
+        "enable_auto_rotate": true,
+        "rotation_interval_days": 90
+      },
+      "metadata": {
+        "created_by": "platform-admin",
+        "created_at": "2025-01-15T10:30:00Z",
+        "contact_email": "devops@example.com"
+      }
+    }
+  ]
+}

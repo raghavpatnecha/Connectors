@@ -1,0 +1,33 @@
+# Example Notion-Only OAuth Configuration
+# Migrated from: vault/configs/notion-oauth-config.json
+#
+# This is a simplified single-integration config for Notion.
+# For multi-integration setups, see example-tenant.yaml
+#
+# Usage:
+#   export NOTION_CLIENT_ID="your_client_id"
+#   export NOTION_CLIENT_SECRET="your_client_secret"
+#   ./vault/scripts/init-tenant-oauth.sh --tenant notion-test-001 --config config/tenants/example-notion.yaml
+
+tenant_id: notion-test-001
+tenant_name: Notion Test Tenant
+environment: development
+
+integrations:
+  notion:
+    client_id: "${NOTION_CLIENT_ID}"
+    client_secret: "${NOTION_CLIENT_SECRET}"
+    redirect_uri: "https://app.example.com/oauth/callback/notion"
+    additional_params:
+      owner: "user"  # Can be "user" or "workspace"
+    enabled: true
+    notes: "Development tenant for Notion OAuth testing"
+
+vault_config:
+  kv_mount: secret
+  transit_mount: transit
+
+metadata:
+  created_by: init-script
+  created_at: "2025-01-15T10:30:00Z"
+  contact_email: dev@example.com

@@ -8,6 +8,8 @@ Intelligent tool selection gateway for AI agents using FAISS vector search and p
 - **FAISS vector search**: Fast similarity search with L2 distance
 - **Progressive loading**: Three-tier schema loading (minimal → medium → full)
 - **Token optimization**: 95% token reduction (1-3K vs 250K traditional)
+- **Multi-tenant OAuth**: Per-tenant credential management with HashiCorp Vault
+- **Dynamic OAuth config loading**: Runtime OAuth configuration per tenant per integration
 - **Redis caching**: Cache embeddings and tool selections
 - **Comprehensive logging**: Structured logging with Winston
 
@@ -109,6 +111,72 @@ console.log(tieredTools.tier1); // Top 3 with minimal schema
 console.log(tieredTools.tier2); // Next 5 with medium schema
 console.log(tieredTools.tier3); // Rest lazy-loaded
 console.log(`Token reduction: ${tieredTools.reductionPercentage}%`);
+```
+
+## Multi-Tenant OAuth Management
+
+The gateway supports per-tenant OAuth credential management for multiple integrations.
+
+### Quick Start
+
+**Option 1: API-based (Production)**
+
+```bash
+# Register tenant's OAuth app credentials
+curl -X POST http://localhost:3000/api/v1/tenants/acme-corp/integrations/notion/oauth-config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "your-notion-client-id",
+    "clientSecret": "your-notion-client-secret",
+    "redirectUri": "https://app.acme.com/oauth/callback/notion",
+    "authEndpoint": "https://api.notion.com/v1/oauth/authorize",
+    "tokenEndpoint": "https://api.notion.com/v1/oauth/token"
+  }'
+```
+
+**Option 2: Config File (Development)**
+
+```yaml
+# config/tenants/acme-corp.yaml
+tenant_id: acme-corp
+integrations:
+  notion:
+    client_id: "${NOTION_CLIENT_ID}"
+    client_secret: "${NOTION_CLIENT_SECRET}"
+    redirect_uri: "https://app.acme.com/oauth/callback/notion"
+  github:
+    client_id: "${GITHUB_CLIENT_ID}"
+    client_secret: "${GITHUB_CLIENT_SECRET}"
+    redirect_uri: "https://app.acme.com/oauth/callback/github"
+    scopes: ["repo", "user"]
+```
+
+```bash
+# Initialize from config file
+./vault/scripts/init-tenant-oauth.sh --tenant acme-corp --config config/tenants/acme-corp.yaml
+```
+
+### Documentation
+
+- **[Multi-Tenant Setup Guide](../docs/MULTI_TENANT_SETUP.md)** - Complete setup guide
+- **[Tenant OAuth API](../docs/API_TENANT_OAUTH.md)** - REST API reference
+- **[Migration Guide](../docs/MIGRATION_SINGLE_TO_MULTI_TENANT.md)** - Migrate from single to multi-tenant
+
+### API Endpoints
+
+```
+POST   /api/v1/tenants/:tenantId/integrations/:integration/oauth-config
+GET    /api/v1/tenants/:tenantId/integrations/:integration/oauth-config
+DELETE /api/v1/tenants/:tenantId/integrations/:integration/oauth-config
+GET    /api/v1/tenants/:tenantId/integrations
+```
+
+### Vault Storage Structure
+
+```
+OAuth App Credentials:  secret/data/{tenantId}/oauth-configs/{integration}
+User Access Tokens:      secret/data/{tenantId}/{integration}
+Encryption Keys:         transit/keys/{tenantId}
 ```
 
 ## Performance Metrics

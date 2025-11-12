@@ -124,5 +124,138 @@
     "category": "data",
     "description": "Find documents in MongoDB collection",
     "usageCount": 690
+  },
+  {
+    "id": "notion.listUsers",
+    "name": "listUsers",
+    "category": "productivity",
+    "description": "Retrieve paginated list of all users in the Notion workspace with their profile information and permissions",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getUser",
+    "name": "getUser",
+    "category": "productivity",
+    "description": "Retrieve detailed information about a specific user by their unique ID including name, avatar, email, and user type",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getBotUser",
+    "name": "getBotUser",
+    "category": "productivity",
+    "description": "Retrieve information about the bot user associated with the current API token for integration identification",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.createDatabase",
+    "name": "createDatabase",
+    "category": "productivity",
+    "description": "Create a new Notion database with custom properties, schema, and parent page or workspace location",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getDatabase",
+    "name": "getDatabase",
+    "category": "productivity",
+    "description": "Retrieve complete database schema, properties, and metadata by database ID for analysis or display",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.updateDatabase",
+    "name": "updateDatabase",
+    "category": "productivity",
+    "description": "Update database properties, title, description, or schema by modifying existing columns or adding new ones",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.queryDatabase",
+    "name": "queryDatabase",
+    "category": "productivity",
+    "description": "Query database with filters, sorts, and pagination to retrieve specific pages matching complex criteria and conditions",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.createPage",
+    "name": "createPage",
+    "category": "productivity",
+    "description": "Create a new page with rich content blocks, properties, and parent location in database or under another page",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getPage",
+    "name": "getPage",
+    "category": "productivity",
+    "description": "Retrieve complete page object with all properties, metadata, timestamps, and parent information by page ID",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.updatePage",
+    "name": "updatePage",
+    "category": "productivity",
+    "description": "Update page properties, archive status, icon, or cover image by modifying specific attributes",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getPageProperty",
+    "name": "getPageProperty",
+    "category": "productivity",
+    "description": "Retrieve specific property value from a page with pagination support for long property values like rollups or relations",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getBlock",
+    "name": "getBlock",
+    "category": "productivity",
+    "description": "Retrieve a specific block by ID including its type, content, and metadata for content analysis or modification",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.getBlockChildren",
+    "name": "getBlockChildren",
+    "category": "productivity",
+    "description": "Retrieve paginated list of all child blocks nested within a parent block or page for content traversal",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.updateBlock",
+    "name": "updateBlock",
+    "category": "productivity",
+    "description": "Update the content, properties, or type of an existing block such as text, heading, list item, or embed",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.deleteBlock",
+    "name": "deleteBlock",
+    "category": "productivity",
+    "description": "Permanently delete a block and all its children from a page, removing content and structure",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.appendBlockChildren",
+    "name": "appendBlockChildren",
+    "category": "productivity",
+    "description": "Append new child blocks to an existing block or page, adding paragraphs, headings, lists, or other content types",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.createComment",
+    "name": "createComment",
+    "category": "productivity",
+    "description": "Create a new comment on a page or discussion thread with rich text content for collaboration and feedback",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.listComments",
+    "name": "listComments",
+    "category": "productivity",
+    "description": "Retrieve all comments from a specific page or block with pagination for review and discussion tracking",
+    "usageCount": 500
+  },
+  {
+    "id": "notion.search",
+    "name": "search",
+    "category": "productivity",
+    "description": "Search across all pages and databases in workspace using text query with filters for object type and sorting options",
+    "usageCount": 500
   }
 ]

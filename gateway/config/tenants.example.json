@@ -1,0 +1,181 @@
+{
+  "$schema": "./tenants.schema.json",
+  "description": "Multi-tenant configuration for Connectors Platform. This file defines tenants and their OAuth integrations. Credentials are stored in Vault for security.",
+  "version": "1.0.0",
+
+  "defaults": {
+    "autoRefresh": true,
+    "tokenRefreshBuffer": 300,
+    "enableAuditLogging": true
+  },
+
+  "tenants": [
+    {
+      "id": "tenant-001",
+      "name": "Acme Corporation",
+      "enabled": true,
+      "metadata": {
+        "organization": "Acme Corporation",
+        "plan": "enterprise",
+        "region": "us-west-2",
+        "contact": "admin@acme.com"
+      },
+      "integrations": [
+        {
+          "name": "notion",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/tenant-001/notion"
+          },
+          "config": {
+            "workspaceId": "ws-acme-001",
+            "botId": "bot-acme-001"
+          }
+        },
+        {
+          "name": "github",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/tenant-001/github"
+          },
+          "config": {
+            "autoRefresh": true,
+            "scopes": ["repo", "user", "workflow"]
+          }
+        },
+        {
+          "name": "slack",
+          "enabled": false,
+          "comment": "Not yet configured - awaiting OAuth flow completion"
+        }
+      ],
+      "quotas": {
+        "maxApiCalls": 100000,
+        "maxTokensPerQuery": 5000,
+        "rateLimitPerSecond": 10
+      }
+    },
+
+    {
+      "id": "tenant-002",
+      "name": "Beta Industries",
+      "enabled": true,
+      "metadata": {
+        "organization": "Beta Industries",
+        "plan": "professional",
+        "region": "eu-west-1",
+        "contact": "tech@betaindustries.com"
+      },
+      "integrations": [
+        {
+          "name": "notion",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/tenant-002/notion"
+          },
+          "config": {
+            "workspaceId": "ws-beta-001",
+            "botId": "bot-beta-001"
+          }
+        }
+      ],
+      "quotas": {
+        "maxApiCalls": 50000,
+        "maxTokensPerQuery": 3000,
+        "rateLimitPerSecond": 5
+      }
+    },
+
+    {
+      "id": "tenant-003",
+      "name": "Gamma Startups",
+      "enabled": true,
+      "metadata": {
+        "organization": "Gamma Startups",
+        "plan": "starter",
+        "region": "us-east-1",
+        "contact": "hello@gammastartups.io"
+      },
+      "integrations": [
+        {
+          "name": "notion",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/tenant-003/notion"
+          }
+        },
+        {
+          "name": "github",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/tenant-003/github"
+          }
+        },
+        {
+          "name": "slack",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/tenant-003/slack"
+          },
+          "config": {
+            "teamId": "T012345",
+            "botUserId": "U012345"
+          }
+        }
+      ],
+      "quotas": {
+        "maxApiCalls": 10000,
+        "maxTokensPerQuery": 2000,
+        "rateLimitPerSecond": 3
+      }
+    },
+
+    {
+      "id": "test-tenant",
+      "name": "Test Tenant (Development Only)",
+      "enabled": false,
+      "comment": "This tenant is for local development and testing only",
+      "metadata": {
+        "organization": "Internal Testing",
+        "plan": "test",
+        "region": "local"
+      },
+      "integrations": [
+        {
+          "name": "notion",
+          "enabled": true,
+          "credentials": {
+            "source": "vault",
+            "vaultPath": "secret/data/test-tenant/notion"
+          },
+          "config": {
+            "workspaceId": "ws-test",
+            "botId": "bot-test"
+          }
+        }
+      ]
+    }
+  ],
+
+  "notes": [
+    "Credentials are ALWAYS stored in HashiCorp Vault, never in this file",
+    "This file only contains configuration and references to Vault paths",
+    "To add a new tenant: 1) Add entry here, 2) Store credentials in Vault, 3) Restart gateway",
+    "For production, use environment-specific config files: tenants.production.json, tenants.staging.json"
+  ],
+
+  "vaultConfiguration": {
+    "address": "${VAULT_ADDR}",
+    "token": "${VAULT_TOKEN}",
+    "transitEngine": "transit",
+    "kvEngine": "secret",
+    "credentialPath": "secret/data/{tenantId}/{integration}",
+    "encryptionKeyPath": "transit/keys/{tenantId}"
+  }
+}

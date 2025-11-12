@@ -1,0 +1,466 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Notion OAuth Configuration",
+  "description": "Complete OAuth 2.0 configuration for Notion API integration with HashiCorp Vault credential management",
+  "version": "1.0.0",
+
+  "oauth": {
+    "provider": "notion",
+    "api_version": "2022-06-28",
+    "documentation": "https://developers.notion.com/docs/authorization",
+
+    "endpoints": {
+      "authorization": {
+        "url": "https://api.notion.com/v1/oauth/authorize",
+        "method": "GET",
+        "description": "User authorization endpoint for OAuth flow",
+        "parameters": {
+          "required": {
+            "client_id": {
+              "type": "string",
+              "description": "OAuth integration client ID from Notion integration settings",
+              "location": "query"
+            },
+            "redirect_uri": {
+              "type": "string",
+              "format": "uri",
+              "description": "Callback URL registered in Notion integration settings",
+              "location": "query"
+            },
+            "response_type": {
+              "type": "string",
+              "enum": ["code"],
+              "default": "code",
+              "description": "OAuth response type (always 'code' for authorization code flow)",
+              "location": "query"
+            }
+          },
+          "optional": {
+            "state": {
+              "type": "string",
+              "description": "CSRF protection token (highly recommended)",
+              "location": "query"
+            },
+            "owner": {
+              "type": "string",
+              "enum": ["user", "workspace"],
+              "default": "user",
+              "description": "Specifies whether integration is owned by user or workspace",
+              "location": "query"
+            }
+          }
+        },
+        "example": "https://api.notion.com/v1/oauth/authorize?client_id=abc123&redirect_uri=https://example.com/callback&response_type=code&state=random_state_string"
+      },
+
+      "token": {
+        "url": "https://api.notion.com/v1/oauth/token",
+        "method": "POST",
+        "description": "Exchange authorization code for access token",
+        "authentication": {
+          "type": "basic",
+          "description": "Basic auth with client_id as username and client_secret as password",
+          "encoding": "base64"
+        },
+        "headers": {
+          "required": {
+            "Authorization": {
+              "format": "Basic <base64(client_id:client_secret)>",
+              "description": "Basic authentication with OAuth credentials"
+            },
+            "Content-Type": {
+              "value": "application/json",
+              "description": "Request body format"
+            },
+            "Notion-Version": {
+              "value": "2022-06-28",
+              "description": "Notion API version header"
+            }
+          }
+        },
+        "body": {
+          "grant_type": {
+            "type": "string",
+            "enum": ["authorization_code"],
+            "required": true,
+            "description": "OAuth grant type"
+          },
+          "code": {
+            "type": "string",
+            "required": true,
+            "description": "Authorization code from callback"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri",
+            "required": true,
+            "description": "Must match the redirect_uri used in authorization request"
+          }
+        },
+        "response": {
+          "success": {
+            "status": 200,
+            "schema": {
+              "access_token": {
+                "type": "string",
+                "description": "OAuth access token for API requests"
+              },
+              "token_type": {
+                "type": "string",
+                "value": "bearer",
+                "description": "Token type (always 'bearer')"
+              },
+              "bot_id": {
+                "type": "string",
+                "description": "Unique identifier for the bot/integration"
+              },
+              "workspace_id": {
+                "type": "string",
+                "description": "Notion workspace ID"
+              },
+              "workspace_name": {
+                "type": "string",
+                "description": "Human-readable workspace name"
+              },
+              "workspace_icon": {
+                "type": "string",
+                "nullable": true,
+                "description": "URL to workspace icon image"
+              },
+              "owner": {
+                "type": "object",
+                "description": "Information about the integration owner",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["user", "workspace"]
+                  },
+                  "user": {
+                    "type": "object",
+                    "description": "User details if owner.type is 'user'"
+                  }
+                }
+              },
+              "duplicated_template_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "ID of duplicated template if applicable"
+              }
+            }
+          },
+          "error": {
+            "status": [400, 401, 403],
+            "schema": {
+              "error": {
+                "type": "string",
+                "description": "Error code"
+              },
+              "error_description": {
+                "type": "string",
+                "description": "Human-readable error description"
+              }
+            },
+            "codes": {
+              "invalid_request": "The request is missing a required parameter",
+              "invalid_client": "Client authentication failed",
+              "invalid_grant": "The authorization code is invalid or expired",
+              "unauthorized_client": "Client is not authorized for this grant type",
+              "unsupported_grant_type": "Grant type not supported"
+            }
+          }
+        },
+        "example_request": {
+          "url": "https://api.notion.com/v1/oauth/token",
+          "headers": {
+            "Authorization": "Basic YWJjMTIzOnNlY3JldF94eXo3ODk=",
+            "Content-Type": "application/json",
+            "Notion-Version": "2022-06-28"
+          },
+          "body": {
+            "grant_type": "authorization_code",
+            "code": "auth_code_from_callback",
+            "redirect_uri": "https://example.com/callback"
+          }
+        }
+      }
+    },
+
+    "token_management": {
+      "access_token": {
+        "expiration": "none",
+        "description": "Notion access tokens do not expire by default",
+        "revocation": {
+          "method": "User must revoke from Notion UI",
+          "url": "https://www.notion.so/my-integrations"
+        }
+      },
+      "refresh_token": {
+        "supported": false,
+        "description": "Notion does not provide refresh tokens as access tokens don't expire",
+        "note": "Users must re-authorize if token is revoked or integration access is removed"
+      },
+      "storage_requirements": {
+        "encryption_at_rest": true,
+        "encryption_engine": "Vault Transit",
+        "key_rotation": "Recommended every 90 days",
+        "audit_logging": true
+      }
+    },
+
+    "scopes": {
+      "note": "Notion uses capability-based permissions, not OAuth scopes",
+      "capabilities": [
+        "Read content",
+        "Update content",
+        "Insert content",
+        "Read comments",
+        "Create comments",
+        "Read user information"
+      ],
+      "configuration": "Capabilities are configured in the Notion integration settings, not during OAuth flow"
+    }
+  },
+
+  "vault_integration": {
+    "credential_storage": {
+      "engine": "KV v2",
+      "base_path": "secret/tenants/{tenant_id}/notion",
+      "schema": {
+        "access_token": {
+          "type": "string",
+          "encrypted": true,
+          "encryption_key": "transit/notion-{tenant_id}",
+          "required": true
+        },
+        "token_type": {
+          "type": "string",
+          "value": "bearer",
+          "required": true
+        },
+        "bot_id": {
+          "type": "string",
+          "required": true,
+          "indexed": true
+        },
+        "workspace_id": {
+          "type": "string",
+          "required": true,
+          "indexed": true
+        },
+        "workspace_name": {
+          "type": "string",
+          "required": false
+        },
+        "created_at": {
+          "type": "string",
+          "format": "iso8601",
+          "required": true
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "iso8601",
+          "required": true
+        },
+        "owner_type": {
+          "type": "string",
+          "enum": ["user", "workspace"],
+          "required": false
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "required": false
+        }
+      }
+    },
+
+    "encryption": {
+      "engine": "Transit",
+      "key_pattern": "notion-{tenant_id}",
+      "key_type": "aes256-gcm96",
+      "convergent_encryption": false,
+      "derived": false,
+      "rotation": {
+        "enabled": true,
+        "interval": "90d",
+        "automatic": false,
+        "note": "Automatic rotation requires custom automation script"
+      }
+    },
+
+    "policies": {
+      "required": [
+        "notion-oauth-policy"
+      ],
+      "policy_file": "/vault/policies/notion-oauth-policy.hcl",
+      "description": "Policy grants per-tenant access to Notion credentials with transit encryption"
+    }
+  },
+
+  "api_usage": {
+    "base_url": "https://api.notion.com/v1",
+    "authentication": {
+      "type": "bearer",
+      "header": "Authorization",
+      "format": "Bearer {access_token}"
+    },
+    "required_headers": {
+      "Notion-Version": {
+        "value": "2022-06-28",
+        "required": true,
+        "description": "API version must be specified in all requests"
+      },
+      "Content-Type": {
+        "value": "application/json",
+        "required": true,
+        "description": "Request body format"
+      }
+    },
+    "rate_limits": {
+      "requests_per_second": 3,
+      "note": "Notion implements adaptive rate limiting based on usage patterns",
+      "handling": "Implement exponential backoff with jitter on 429 responses"
+    }
+  },
+
+  "error_handling": {
+    "oauth_errors": {
+      "invalid_grant": {
+        "status": 400,
+        "action": "Restart OAuth flow - authorization code expired or invalid",
+        "retry": false
+      },
+      "invalid_client": {
+        "status": 401,
+        "action": "Verify client_id and client_secret in Vault configuration",
+        "retry": false
+      },
+      "access_denied": {
+        "status": 403,
+        "action": "User denied authorization - do not retry",
+        "retry": false
+      }
+    },
+    "api_errors": {
+      "unauthorized": {
+        "status": 401,
+        "action": "Token invalid or revoked - initiate re-authorization",
+        "retry": false
+      },
+      "rate_limited": {
+        "status": 429,
+        "action": "Implement exponential backoff (start with 1s, max 60s)",
+        "retry": true,
+        "backoff": "exponential"
+      },
+      "service_unavailable": {
+        "status": 503,
+        "action": "Temporary Notion API issue - retry with backoff",
+        "retry": true,
+        "backoff": "exponential"
+      }
+    }
+  },
+
+  "security_considerations": {
+    "state_parameter": {
+      "required": true,
+      "description": "Always use state parameter for CSRF protection",
+      "implementation": "Generate cryptographically secure random string, store in session"
+    },
+    "redirect_uri_validation": {
+      "required": true,
+      "description": "Must exactly match registered redirect URI in Notion settings",
+      "note": "Include protocol, domain, port, and path"
+    },
+    "token_storage": {
+      "encryption": "Always encrypt tokens with Vault Transit before storing",
+      "access_control": "Use per-tenant Vault policies for isolation",
+      "audit": "Enable audit logging for all credential access"
+    },
+    "client_secret": {
+      "storage": "Store in Vault, never in code or environment variables",
+      "rotation": "Rotate periodically via Notion integration settings",
+      "access": "Restrict to OAuth proxy service only"
+    }
+  },
+
+  "integration_flow": {
+    "steps": [
+      {
+        "step": 1,
+        "action": "User initiates OAuth flow",
+        "endpoint": "GET /oauth/authorize",
+        "description": "Redirect user to Notion authorization page"
+      },
+      {
+        "step": 2,
+        "action": "User approves integration",
+        "description": "User grants permissions in Notion UI"
+      },
+      {
+        "step": 3,
+        "action": "Notion redirects to callback",
+        "parameters": ["code", "state"],
+        "description": "Validate state parameter matches initial request"
+      },
+      {
+        "step": 4,
+        "action": "Exchange code for token",
+        "endpoint": "POST /oauth/token",
+        "description": "Backend exchanges authorization code for access token"
+      },
+      {
+        "step": 5,
+        "action": "Encrypt and store token",
+        "vault_operations": [
+          "Transit encrypt access_token",
+          "KV put encrypted credentials",
+          "Create/update tenant metadata"
+        ]
+      },
+      {
+        "step": 6,
+        "action": "Use token for API requests",
+        "description": "Decrypt token from Vault, inject into Authorization header"
+      }
+    ]
+  },
+
+  "testing": {
+    "sandbox": {
+      "available": false,
+      "note": "Notion does not provide a sandbox environment"
+    },
+    "test_workspace": {
+      "recommendation": "Create a dedicated test workspace in Notion",
+      "setup": "Create test integration with limited capabilities"
+    },
+    "mock_responses": {
+      "token_response": {
+        "access_token": "secret_test_token_abc123xyz789",
+        "token_type": "bearer",
+        "bot_id": "bot-test-123",
+        "workspace_id": "ws-test-456",
+        "workspace_name": "Test Workspace",
+        "workspace_icon": null,
+        "owner": {
+          "type": "user",
+          "user": {
+            "object": "user",
+            "id": "user-test-789"
+          }
+        }
+      }
+    }
+  },
+
+  "references": {
+    "notion_docs": "https://developers.notion.com/docs/authorization",
+    "oauth_spec": "https://datatracker.ietf.org/doc/html/rfc6749",
+    "vault_kv": "https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v2",
+    "vault_transit": "https://developer.hashicorp.com/vault/docs/secrets/transit"
+  }
+}
