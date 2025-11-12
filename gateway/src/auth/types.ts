@@ -199,3 +199,100 @@ export interface OAuthClientConfig {
   /** Redirect URI */
   redirectUri?: string;
 }
+
+/**
+ * Tenant OAuth configuration stored in Vault
+ * This is the configuration for the OAuth app, not user credentials
+ */
+export interface TenantOAuthConfig {
+  /** Tenant identifier */
+  tenantId: string;
+
+  /** Integration name (e.g., "github", "notion", "slack") */
+  integration: string;
+
+  /** OAuth client ID */
+  clientId: string;
+
+  /** OAuth client secret (encrypted in Vault) */
+  clientSecret: string;
+
+  /** Redirect URI for OAuth callback */
+  redirectUri: string;
+
+  /** Authorization endpoint URL */
+  authEndpoint: string;
+
+  /** Token endpoint URL */
+  tokenEndpoint: string;
+
+  /** OAuth scopes to request */
+  scopes?: string[];
+
+  /** Additional OAuth parameters */
+  additionalParams?: Record<string, string>;
+
+  /** Configuration metadata */
+  metadata?: TenantOAuthConfigMetadata;
+}
+
+/**
+ * Metadata for tenant OAuth configuration
+ */
+export interface TenantOAuthConfigMetadata {
+  /** Created timestamp */
+  createdAt: Date;
+
+  /** Last updated timestamp */
+  updatedAt: Date;
+
+  /** Created by (user/service) */
+  createdBy: string;
+
+  /** Configuration status */
+  status: 'active' | 'disabled' | 'expired';
+
+  /** Last used timestamp */
+  lastUsedAt?: Date;
+}
+
+/**
+ * Encrypted tenant OAuth config stored in Vault
+ */
+export interface EncryptedTenantOAuthConfig {
+  /** Encrypted client secret (Vault ciphertext) */
+  clientSecret: string;
+
+  /** Unencrypted fields */
+  clientId: string;
+  redirectUri: string;
+  authEndpoint: string;
+  tokenEndpoint: string;
+  scopes?: string[];
+  additionalParams?: Record<string, string>;
+}
+
+/**
+ * Request body for creating/updating OAuth config
+ */
+export interface CreateOAuthConfigRequest {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  authEndpoint: string;
+  tokenEndpoint: string;
+  scopes?: string[];
+  additionalParams?: Record<string, string>;
+}
+
+/**
+ * Response for OAuth config operations
+ */
+export interface OAuthConfigResponse {
+  success: boolean;
+  tenantId: string;
+  integration: string;
+  config?: Omit<TenantOAuthConfig, 'clientSecret'>; // Never return secret in response
+  message?: string;
+  error?: string;
+}

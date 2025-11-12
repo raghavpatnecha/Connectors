@@ -2,7 +2,18 @@
 
 ################################################################################
 # Notion OAuth Vault Initialization Script
+# ⚠️  DEPRECATED - Use init-tenant-oauth.sh instead
 ################################################################################
+#
+# DEPRECATION NOTICE:
+# This script is deprecated and maintained only for backward compatibility.
+# Please use the new unified multi-tenant script:
+#   ./vault/scripts/init-tenant-oauth.sh
+#
+# Migration:
+#   1. Copy config/tenants/example-notion.yaml
+#   2. Customize for your tenant
+#   3. Run: ./init-tenant-oauth.sh --tenant your-tenant --config your-config.yaml
 #
 # Purpose: Initialize HashiCorp Vault with Notion OAuth configuration
 #

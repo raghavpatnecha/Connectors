@@ -1,0 +1,77 @@
+# Example Multi-Tenant OAuth Configuration
+# Connectors Platform - Tenant OAuth Setup
+#
+# This configuration file demonstrates multi-integration OAuth setup for a single tenant.
+# Environment variables are substituted at runtime using ${VAR} syntax.
+#
+# Usage:
+#   1. Copy this file and customize for your tenant
+#   2. Set required environment variables (CLIENT_ID, CLIENT_SECRET for each integration)
+#   3. Run: ./vault/scripts/init-tenant-oauth.sh --tenant example-tenant-001 --config config/tenants/example-tenant.yaml
+#
+# Security:
+#   - NEVER commit actual credentials to git
+#   - Always use environment variable substitution
+#   - Store sensitive values in CI/CD secrets or .env files (gitignored)
+
+tenant_id: example-tenant-001
+tenant_name: Example Corporation
+environment: production
+
+integrations:
+  # Notion Integration - Workspace Collaboration
+  notion:
+    client_id: "${NOTION_CLIENT_ID}"
+    client_secret: "${NOTION_CLIENT_SECRET}"
+    redirect_uri: "https://app.example.com/oauth/callback/notion"
+    enabled: true
+    notes: "Notion integration for team workspace collaboration and knowledge management"
+
+  # GitHub Integration - Code Repository Management
+  github:
+    client_id: "${GITHUB_CLIENT_ID}"
+    client_secret: "${GITHUB_CLIENT_SECRET}"
+    redirect_uri: "https://app.example.com/oauth/callback/github"
+    scopes:
+      - repo              # Full repository access
+      - user              # User profile access
+      - write:repo_hook   # Webhook management
+    enabled: true
+    notes: "GitHub integration for repository operations and CI/CD workflows"
+
+  # Slack Integration - Team Communication (example, disabled by default)
+  slack:
+    client_id: "${SLACK_CLIENT_ID}"
+    client_secret: "${SLACK_CLIENT_SECRET}"
+    redirect_uri: "https://app.example.com/oauth/callback/slack"
+    scopes:
+      - chat:write
+      - channels:read
+      - users:read
+    enabled: false
+    notes: "Disabled pending security review - will be enabled in Q2 2025"
+
+  # Linear Integration - Issue Tracking (example, disabled by default)
+  linear:
+    client_id: "${LINEAR_CLIENT_ID}"
+    client_secret: "${LINEAR_CLIENT_SECRET}"
+    redirect_uri: "https://app.example.com/oauth/callback/linear"
+    scopes:
+      - read
+      - write
+    enabled: false
+    notes: "Linear integration for issue tracking - optional"
+
+# Vault Configuration Overrides (optional)
+vault_config:
+  kv_mount: secret
+  transit_mount: transit
+  enable_auto_rotate: true
+  rotation_interval_days: 90
+
+# Tenant Metadata
+metadata:
+  created_by: platform-admin
+  created_at: "2025-01-15T10:30:00Z"
+  updated_at: "2025-01-15T10:30:00Z"
+  contact_email: devops@example.com

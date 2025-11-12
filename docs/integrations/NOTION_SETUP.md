@@ -1,5 +1,24 @@
 # Notion Integration Setup Guide
 
+> **⚠️ MIGRATION NOTICE**
+>
+> This guide describes the **legacy single-tenant Notion setup**. The platform now supports **multi-tenant architecture** with multiple integrations per tenant.
+>
+> **For new installations:**
+> - Use the [Multi-Tenant Setup Guide](../MULTI_TENANT_SETUP.md)
+> - Configure tenants in `gateway/config/tenants.json`
+> - Support multiple integrations (Notion, GitHub, Slack, etc.) simultaneously
+>
+> **For existing single-tenant installations:**
+> - This guide still works for your current setup
+> - To migrate to multi-tenant, see [Migration Guide](../MIGRATION_SINGLE_TO_MULTI_TENANT.md)
+> - Migration takes ~30-60 minutes with minimal downtime
+>
+> **When to use this guide:**
+> - Legacy single-tenant Notion-only deployments
+> - Historical reference
+> - Understanding Notion-specific OAuth flow
+
 **Date:** 2025-11-12
 **Difficulty:** Easy (15-20 minutes)
 **Category:** Productivity

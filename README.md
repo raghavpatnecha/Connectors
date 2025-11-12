@@ -205,7 +205,14 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
 - [**Docker Deployment**](docs/DEPLOYMENT_STATUS_2025-11-11.md) - Deploy via Docker Compose or Kubernetes
 
 ### Integration Guides
-- [**Notion Setup**](docs/integrations/NOTION_SETUP.md) - Complete Notion integration guide with OAuth setup (15-20 mins)
+
+**Multi-Tenant Setup (Recommended):**
+- [**Multi-Tenant Setup Guide**](docs/MULTI_TENANT_SETUP.md) - **NEW** Complete guide for multi-tenant deployments with multiple integrations
+- [**Tenant OAuth Management API**](docs/API_TENANT_OAUTH.md) - REST API for managing tenants and OAuth credentials
+- [**Migration from Single to Multi-Tenant**](docs/MIGRATION_SINGLE_TO_MULTI_TENANT.md) - Step-by-step migration guide
+
+**Legacy Single-Tenant Setup:**
+- [**Notion Setup**](docs/integrations/NOTION_SETUP.md) - Legacy single-tenant Notion integration (for existing deployments)
 - [**Notion OAuth Flow**](docs/integrations/notion-oauth-flow.md) - Detailed OAuth 2.0 flow diagram and examples
 
 ### Architecture & Strategy

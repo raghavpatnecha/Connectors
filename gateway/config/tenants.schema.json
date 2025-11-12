@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://connectors.dev/schemas/tenants-config.json",
+  "title": "Tenants Configuration Schema",
+  "description": "Schema for multi-tenant configuration in Connectors Platform",
+  "type": "object",
+  "required": ["tenants"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this configuration file"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Configuration file version (semver)"
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Default settings for all tenants",
+      "properties": {
+        "autoRefresh": {
+          "type": "boolean",
+          "description": "Enable automatic token refresh by default"
+        },
+        "tokenRefreshBuffer": {
+          "type": "number",
+          "description": "Seconds before expiry to refresh tokens",
+          "minimum": 60
+        },
+        "enableAuditLogging": {
+          "type": "boolean",
+          "description": "Enable audit logging for all tenants"
+        }
+      }
+    },
+    "tenants": {
+      "type": "array",
+      "description": "Array of tenant configurations",
+      "items": {
+        "$ref": "#/definitions/tenant"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "description": "Configuration notes and instructions",
+      "items": {
+        "type": "string"
+      }
+    },
+    "vaultConfiguration": {
+      "type": "object",
+      "description": "HashiCorp Vault configuration",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Vault server address (can use ${ENV_VAR} syntax)"
+        },
+        "token": {
+          "type": "string",
+          "description": "Vault authentication token (can use ${ENV_VAR} syntax)"
+        },
+        "transitEngine": {
+          "type": "string",
+          "description": "Transit encryption engine mount path"
+        },
+        "kvEngine": {
+          "type": "string",
+          "description": "KV v2 secrets engine mount path"
+        },
+        "credentialPath": {
+          "type": "string",
+          "description": "Template path for credentials (use {tenantId} and {integration} placeholders)"
+        },
+        "encryptionKeyPath": {
+          "type": "string",
+          "description": "Template path for encryption keys (use {tenantId} placeholder)"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "tenant": {
+      "type": "object",
+      "required": ["id", "name", "integrations"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Unique tenant identifier (lowercase alphanumeric and hyphens only)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable tenant name"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this tenant is active",
+          "default": true
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional comment or note about this tenant"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Custom metadata for the tenant",
+          "properties": {
+            "organization": {
+              "type": "string",
+              "description": "Organization name"
+            },
+            "plan": {
+              "type": "string",
+              "enum": ["starter", "professional", "enterprise", "test"],
+              "description": "Subscription plan"
+            },
+            "region": {
+              "type": "string",
+              "description": "Geographic region or data center"
+            },
+            "contact": {
+              "type": "string",
+              "format": "email",
+              "description": "Contact email"
+            }
+          }
+        },
+        "integrations": {
+          "type": "array",
+          "description": "OAuth integrations configured for this tenant",
+          "items": {
+            "$ref": "#/definitions/integration"
+          }
+        },
+        "quotas": {
+          "type": "object",
+          "description": "Usage quotas and limits for this tenant",
+          "properties": {
+            "maxApiCalls": {
+              "type": "number",
+              "description": "Maximum API calls per month",
+              "minimum": 0
+            },
+            "maxTokensPerQuery": {
+              "type": "number",
+              "description": "Maximum tokens per semantic query",
+              "minimum": 100
+            },
+            "rateLimitPerSecond": {
+              "type": "number",
+              "description": "Maximum requests per second",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": ["notion", "github", "slack", "jira", "stripe", "aws", "gcp", "azure"],
+          "description": "Integration name"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this integration is active for the tenant",
+          "default": true
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional comment about this integration"
+        },
+        "credentials": {
+          "type": "object",
+          "description": "Credential configuration",
+          "required": ["source"],
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": ["vault", "env", "file"],
+              "description": "Where credentials are stored (always use 'vault' in production)"
+            },
+            "vaultPath": {
+              "type": "string",
+              "description": "Vault KV path to credentials (required if source is 'vault')"
+            },
+            "envPrefix": {
+              "type": "string",
+              "description": "Environment variable prefix (only if source is 'env')"
+            }
+          }
+        },
+        "config": {
+          "type": "object",
+          "description": "Integration-specific configuration",
+          "properties": {
+            "autoRefresh": {
+              "type": "boolean",
+              "description": "Enable automatic token refresh"
+            },
+            "scopes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "OAuth scopes granted"
+            },
+            "workspaceId": {
+              "type": "string",
+              "description": "Workspace/organization ID (integration-specific)"
+            },
+            "botId": {
+              "type": "string",
+              "description": "Bot user ID (integration-specific)"
+            },
+            "teamId": {
+              "type": "string",
+              "description": "Team ID (integration-specific, e.g., Slack)"
+            },
+            "botUserId": {
+              "type": "string",
+              "description": "Bot user ID (integration-specific)"
+            }
+          }
+        }
+      }
+    }
+  }
+}
