@@ -211,7 +211,7 @@ export class IntegrationRegistry {
       id: 'github',
       name: 'GitHub',
       category: 'code',
-      description: 'GitHub integration for repositories, issues, PRs, and actions (1,111 operations)',
+      description: 'GitHub unified integration for repositories, issues, PRs, and actions (29 tools)',
       enabled: process.env.GITHUB_ENABLED !== 'false',
       serverUrl: process.env.GITHUB_SERVER_URL || 'http://localhost:3110',
       rateLimit: parseInt(process.env.GITHUB_RATE_LIMIT || '60', 10),
