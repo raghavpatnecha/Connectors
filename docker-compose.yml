@@ -180,53 +180,114 @@ services:
       - connectors-network
 
   # ============================================
-  # MCP Server - Code Category (Placeholder)
+  # MCP Server - GitHub Integration
   # ============================================
-  mcp-code:
+  mcp-github:
     build:
       context: ./integrations/code
       dockerfile: Dockerfile
-    container_name: connectors-mcp-code
+    container_name: connectors-mcp-github
+    ports:
+      - "3110:3000"
     environment:
       - NODE_ENV=development
       - GATEWAY_URL=http://gateway:3000
       - LOG_LEVEL=debug
+      - INTEGRATION=github
     volumes:
       # Source code hot-reload
-      - ./integrations/code/src:/app/src:ro
-      - ./integrations/code/package.json:/app/package.json:ro
+      - ./integrations/code:/app:ro
     depends_on:
       gateway:
         condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - connectors-network
-    profiles:
-      - mcp-servers  # Only start when explicitly requested
-
-  # ============================================
-  # MCP Server - Communication Category (Placeholder)
-  # ============================================
-  mcp-communication:
-    build:
-      context: ./integrations/communication
-      dockerfile: Dockerfile
-    container_name: connectors-mcp-communication
-    environment:
-      - NODE_ENV=development
-      - GATEWAY_URL=http://gateway:3000
-      - LOG_LEVEL=debug
-    volumes:
-      - ./integrations/communication/src:/app/src:ro
-      - ./integrations/communication/package.json:/app/package.json:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
     networks:
       - connectors-network
     profiles:
       - mcp-servers
+      - github
+
+  # ============================================
+  # MCP Server - LinkedIn Integration
+  # ============================================
+  mcp-linkedin:
+    build:
+      context: ./integrations/communication/linkedin-unified
+      dockerfile: Dockerfile
+    container_name: connectors-mcp-linkedin
+    ports:
+      - "3120:3000"
+    environment:
+      - NODE_ENV=development
+      - GATEWAY_URL=http://gateway:3000
+      - LOG_LEVEL=debug
+      - INTEGRATION=linkedin
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+    volumes:
+      - ./integrations/communication/linkedin-unified/src:/app/src:ro
+      - ./integrations/communication/linkedin-unified/package.json:/app/package.json:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - connectors-network
+    profiles:
+      - mcp-servers
+      - linkedin
+
+  # ============================================
+  # MCP Server - Reddit Integration
+  # ============================================
+  mcp-reddit:
+    build:
+      context: ./integrations/communication/reddit-unified
+      dockerfile: Dockerfile
+    container_name: connectors-mcp-reddit
+    ports:
+      - "3200:3000"
+    environment:
+      - NODE_ENV=development
+      - GATEWAY_URL=http://gateway:3000
+      - LOG_LEVEL=debug
+      - INTEGRATION=reddit
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+    volumes:
+      - ./integrations/communication/reddit-unified/src:/app/src:ro
+      - ./integrations/communication/reddit-unified/package.json:/app/package.json:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - connectors-network
+    profiles:
+      - mcp-servers
+      - reddit
 
   # ============================================
   # MCP Server - Notion Integration

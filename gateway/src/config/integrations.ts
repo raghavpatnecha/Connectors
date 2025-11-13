@@ -6,6 +6,9 @@
 import { OAuthProxy } from '../auth/oauth-proxy';
 import { SemanticRouter } from '../routing/semantic-router';
 import { NotionIntegration, createNotionIntegration } from '../integrations/notion-integration';
+import { GitHubIntegration, createGitHubIntegration } from '../integrations/github-integration';
+import { LinkedInIntegration, createLinkedInIntegration } from '../integrations/linkedin-integration';
+import { RedditIntegration, createRedditIntegration } from '../integrations/reddit-integration';
 import { logger } from '../logging/logger';
 
 /**
@@ -64,13 +67,11 @@ export class IntegrationRegistry {
   async initialize(): Promise<void> {
     logger.info('Initializing integration registry');
 
-    // Register Notion integration
+    // Register all integrations
     this._registerNotion();
-
-    // TODO: Register other integrations
-    // this._registerGitHub();
-    // this._registerSlack();
-    // etc.
+    this._registerGitHub();
+    this._registerLinkedIn();
+    this._registerReddit();
 
     // Initialize all enabled integrations
     await this._initializeAll();
@@ -200,6 +201,87 @@ export class IntegrationRegistry {
     }
 
     logger.info('Registered Notion integration', metadata);
+  }
+
+  /**
+   * Register GitHub integration
+   */
+  private _registerGitHub(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'github',
+      name: 'GitHub',
+      category: 'code',
+      description: 'GitHub integration for repositories, issues, PRs, and actions (1,111 operations)',
+      enabled: process.env.GITHUB_ENABLED !== 'false',
+      serverUrl: process.env.GITHUB_SERVER_URL || 'http://localhost:3110',
+      rateLimit: parseInt(process.env.GITHUB_RATE_LIMIT || '60', 10),
+      requiresOAuth: true,
+      oauthProvider: 'github',
+      docsUrl: 'https://docs.github.com/en/rest'
+    };
+
+    this._integrations.set('github', metadata);
+
+    if (metadata.enabled) {
+      const instance = createGitHubIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('github', instance);
+    }
+
+    logger.info('Registered GitHub integration', metadata);
+  }
+
+  /**
+   * Register LinkedIn integration
+   */
+  private _registerLinkedIn(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'linkedin',
+      name: 'LinkedIn',
+      category: 'communication',
+      description: 'LinkedIn unified integration for profiles, connections, posts, and messaging',
+      enabled: process.env.LINKEDIN_ENABLED !== 'false',
+      serverUrl: process.env.LINKEDIN_SERVER_URL || 'http://localhost:3120',
+      rateLimit: parseInt(process.env.LINKEDIN_RATE_LIMIT || '100', 10),
+      requiresOAuth: true,
+      oauthProvider: 'linkedin',
+      docsUrl: 'https://learn.microsoft.com/en-us/linkedin/shared/authentication/authentication'
+    };
+
+    this._integrations.set('linkedin', metadata);
+
+    if (metadata.enabled) {
+      const instance = createLinkedInIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('linkedin', instance);
+    }
+
+    logger.info('Registered LinkedIn integration', metadata);
+  }
+
+  /**
+   * Register Reddit integration
+   */
+  private _registerReddit(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'reddit',
+      name: 'Reddit',
+      category: 'communication',
+      description: 'Reddit unified integration for browsing, posting, and community management (25 tools)',
+      enabled: process.env.REDDIT_ENABLED !== 'false',
+      serverUrl: process.env.REDDIT_SERVER_URL || 'http://localhost:3200',
+      rateLimit: parseInt(process.env.REDDIT_RATE_LIMIT || '60', 10),
+      requiresOAuth: true,
+      oauthProvider: 'reddit',
+      docsUrl: 'https://www.reddit.com/dev/api'
+    };
+
+    this._integrations.set('reddit', metadata);
+
+    if (metadata.enabled) {
+      const instance = createRedditIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('reddit', instance);
+    }
+
+    logger.info('Registered Reddit integration', metadata);
   }
 
   /**
