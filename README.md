@@ -110,6 +110,84 @@ See [Phase 1 Completion Report](docs/PHASE_1_COMPLETION_REPORT.md) for full deta
 
 ---
 
+## ⚠️ Current Status & Limitations
+
+### ✅ What's Production-Ready NOW
+
+**Multi-Tenant OAuth System** (Fully Operational):
+- ✅ Per-tenant credential encryption via Vault Transit engine
+- ✅ Automatic token refresh (5min before expiry)
+- ✅ REST API for OAuth config management
+- ✅ 2,000+ lines of tested production code
+- ✅ Works with GitHub, Notion, LinkedIn, Reddit
+
+**Integration Modules:**
+- ✅ 4 integration modules implemented (GitHub, Notion, LinkedIn, Reddit)
+- ✅ OAuth proxy with rate limiting
+- ✅ Error handling and health checks
+- ✅ Docker Compose configurations
+- ✅ **NOW wired to server** - Initialize on startup
+
+**Infrastructure:**
+- ✅ HashiCorp Vault (secrets management)
+- ✅ Redis (caching)
+- ✅ Neo4j (GraphRAG - database ready)
+- ✅ Docker & Kubernetes configs
+
+### ⚠️ Known Limitations (Setup Required)
+
+**Tool Selection APIs:**
+- ⚠️ **FAISS indices not pre-generated** - Run `npm run generate-embeddings` first
+- ⚠️ **Tools need indexing** - Integrations register tools on startup, but FAISS training required
+- ⚠️ **POST /api/v1/tools/select** will fail until indices exist
+
+**MCP Servers:**
+- ⚠️ **MCP servers not pre-built** - Run `docker compose build` first
+- ⚠️ **GitHub MCP servers** (44 servers) need to be built from source
+- ⚠️ **LinkedIn/Reddit servers** need Dockerfiles created
+
+**Metrics:**
+- ⚠️ **GET /api/v1/metrics** returns placeholder data (tracking not implemented yet)
+
+**GraphRAG:**
+- ⚠️ **Neo4j tool relationships** not pre-populated
+- ⚠️ **Usage learning** requires production data
+
+### 🔧 Setup Required Before Full Platform Works
+
+Before all endpoints work, you need to:
+
+1. **Generate FAISS Embeddings:**
+   ```bash
+   cd gateway
+   npm run generate-embeddings  # Creates category and tool indices
+   ```
+
+2. **Build MCP Servers:**
+   ```bash
+   docker compose build mcp-github mcp-linkedin mcp-reddit
+   ```
+
+3. **Start Infrastructure:**
+   ```bash
+   docker compose up -d vault redis neo4j
+   ```
+
+4. **Initialize Neo4j Schema:**
+   ```bash
+   ./scripts/init-neo4j.sh
+   ```
+
+5. **Start Gateway:**
+   ```bash
+   cd gateway && npm run dev
+   ```
+
+See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) and [docs/CODE_VS_README_VERIFICATION.md](docs/CODE_VS_README_VERIFICATION.md) for detailed information.
+
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -163,11 +241,16 @@ npm install
 npm run dev
 ```
 
-**Verify:**
+**Verify Health:**
 ```bash
 curl http://localhost:3000/health
-# {"status":"ok","uptime":12.5,"memory":{"heapUsed":50123456}}
+# {"status":"healthy","timestamp":"...","uptime":12.5}
+
+curl http://localhost:3000/ready
+# {"status":"ready","checks":{"semanticRouter":"ok","oauthProxy":"ok"}}
 ```
+
+**Note:** Tool selection endpoints require FAISS indices (run `npm run generate-embeddings`). See [Current Limitations](#️-current-status--limitations) above.
 
 ### 5. Run Your First Query
 
@@ -330,6 +413,8 @@ Currently in development - no auth required for localhost. Production will use A
 
 Find relevant tools for a natural language query.
 
+**⚠️ Requires:** FAISS indices generated (`npm run generate-embeddings`)
+
 **Request:**
 ```json
 {
@@ -346,6 +431,8 @@ Find relevant tools for a natural language query.
 **Response:**
 ```json
 {
+  "success": true,
+  "query": "create a GitHub pull request",
   "tools": {
     "tier1": [
       {
@@ -362,10 +449,10 @@ Find relevant tools for a natural language query.
     "tier3": [...]
   },
   "metadata": {
+    "totalTools": 5,
     "tokenUsage": 285,
-    "selectionLatency": 1,
-    "categoriesFound": ["code"],
-    "graphEnhanced": true
+    "tokenBudget": 2000,
+    "latency_ms": 1
   }
 }
 ```
@@ -373,6 +460,10 @@ Find relevant tools for a natural language query.
 #### `POST /tools/invoke` - Execute Tool
 
 Call a specific tool with parameters (OAuth auto-injected).
+
+**⚠️ Requires:**
+- MCP servers running (`docker compose --profile mcp-servers up`)
+- OAuth credentials configured for tenant
 
 **Request:**
 ```json
@@ -395,6 +486,7 @@ Call a specific tool with parameters (OAuth auto-injected).
 ```json
 {
   "success": true,
+  "toolId": "github.createPullRequest",
   "result": {
     "number": 12345,
     "url": "https://github.com/facebook/react/pull/12345",
@@ -402,8 +494,7 @@ Call a specific tool with parameters (OAuth auto-injected).
     "title": "Fix bug in useEffect"
   },
   "metadata": {
-    "latency": 450,
-    "serverUsed": "github-v3-rest-api---pulls-42"
+    "latency_ms": 450
   }
 }
 ```
@@ -452,14 +543,17 @@ Get all available integration categories.
 
 Get platform usage statistics.
 
+**⚠️ Note:** Currently returns placeholder data. Full metrics tracking will be implemented in Phase 2.
+
 **Response:**
 ```json
 {
-  "totalQueries": 1234,
-  "avgTokenReduction": 99.02,
-  "avgLatency": 45,
-  "toolCallCount": 5678,
-  "cacheHitRate": 0.85
+  "success": true,
+  "metrics": {
+    "requests": {"total": 0, "success": 0, "failed": 0},
+    "latency": {"p50": 0, "p95": 0, "p99": 0},
+    "tokenUsage": {"total": 0, "average": 0, "reduction": 0}
+  }
 }
 ```
 

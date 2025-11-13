@@ -19,6 +19,7 @@ import { ProgressiveLoader } from './optimization/progressive-loader';
 import { OAuthProxy } from './auth/oauth-proxy';
 import { VaultClient } from './auth/vault-client';
 import { RedisCache } from './caching/redis-cache';
+import { IntegrationRegistry, createIntegrationRegistry } from './config/integrations';
 import { logger } from './logging/logger';
 import { ToolSelectionError, OAuthError } from './errors/gateway-errors';
 import type { QueryContext } from './types/routing.types';
@@ -58,6 +59,7 @@ export class MCPGatewayServer {
   private readonly tokenOptimizer: TokenOptimizer;
   private readonly progressiveLoader: ProgressiveLoader;
   private readonly oauthProxy: OAuthProxy;
+  private readonly integrationRegistry: IntegrationRegistry;
 
   constructor() {
     this.app = express();
@@ -92,6 +94,12 @@ export class MCPGatewayServer {
       vaultClient,
       process.env.MCP_BASE_URL || 'http://localhost:4000',
       new Map()
+    );
+
+    // Initialize integration registry with all integrations
+    this.integrationRegistry = createIntegrationRegistry(
+      this.oauthProxy,
+      this.semanticRouter
     );
 
     this.setupMiddleware();
@@ -495,6 +503,9 @@ export class MCPGatewayServer {
       await this.semanticRouter.initialize();
       await this.oauthProxy.initialize();
 
+      // Initialize all integrations (GitHub, Notion, LinkedIn, Reddit)
+      await this.integrationRegistry.initialize();
+
       // Start HTTP server
       this.app.listen(PORT, () => {
         logger.info('MCP Gateway started', {
@@ -505,6 +516,7 @@ export class MCPGatewayServer {
         console.log(`🚀 MCP Gateway running on http://localhost:${PORT}`);
         console.log(`📊 Health: http://localhost:${PORT}/health`);
         console.log(`🔧 API: http://localhost:${PORT}/api/v1`);
+        console.log(`🔌 Integrations: 4 registered (GitHub, Notion, LinkedIn, Reddit)`);
       });
     } catch (error) {
       logger.error('Failed to start server', { error });
@@ -519,6 +531,7 @@ export class MCPGatewayServer {
     logger.info('Shutting down MCP Gateway...');
 
     // Close service connections
+    await this.integrationRegistry.close();
     await this.semanticRouter.close();
     await this.oauthProxy.close();
 
