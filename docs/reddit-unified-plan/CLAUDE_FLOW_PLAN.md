@@ -296,7 +296,7 @@ REQUIREMENTS:
 - Retry logic with exponential backoff
 - User-agent management
 
-CLASS METHODS (map to all 26 core tools):
+CLASS METHODS (map to all 25 core tools):
 
 BROWSE & DISCOVERY:
 1. browseFrontpage(params: { limit, sort }): Promise<Submission[]>
@@ -336,7 +336,6 @@ AUTHENTICATED OPERATIONS (require OAuth):
 23. createPost(subreddit, title, content, options): Promise<Submission>
 24. postComment(postId, content): Promise<Comment>
 25. replyToPost(postId, content): Promise<Comment>
-26. replyToComment(commentId, content): Promise<Comment>
 
 INITIALIZATION:
 - constructor(tenantId, oauthManager, rateLimiter, cache)
@@ -373,7 +372,7 @@ TYPES:
 - Define custom types for stats, karma breakdown
 
 Follow the architecture specified in ARCHITECTURE.md.
-Return complete 800-line TypeScript implementation with all 26 methods.
+Return complete 800-line TypeScript implementation with all 25 methods.
 ```
 
 ---
@@ -533,7 +532,7 @@ Task 4: Comment Tools Agent (3 tools)
 Task 5: Subreddit Tools Agent (2 tools)
 Task 6: User Tools Agent (3 tools)
 Task 7: Utility Tools Agent (1 tool)
-Task 8: Authenticated Tools Agent (6 tools)
+Task 8: Authenticated Tools Agent (5 tools)
 Task 9: Tool Registry Helper Agent
 
 PLUS: TodoWrite with ALL Phase 2 tasks
@@ -605,7 +604,7 @@ Return complete [XXX]-line TypeScript implementation.
 - Subreddit Tools: 2 tools, ~150 lines
 - User Tools: 3 tools, ~200 lines
 - Utility Tools: 1 tool, ~100 lines
-- Authenticated Tools: 6 tools, ~300 lines
+- Authenticated Tools: 5 tools, ~250 lines
 
 ---
 
@@ -692,11 +691,11 @@ REQUIREMENTS:
      * Browse tools (8)
      * Search tools (2)
      * Post tools (4)
-     * Comment tools (3)
+     * Comment tools (2)
      * Subreddit tools (2)
      * User tools (3)
      * Utility tools (1)
-     * Authenticated tools (6)
+     * Authenticated tools (5)
    - Setup MCP server handlers
 
 5. Graceful shutdown
@@ -782,7 +781,7 @@ PLUS: TodoWrite with Phase 4 tasks
 ### **Code Quality:**
 - [ ] 0 TypeScript compilation errors
 - [ ] 85%+ test coverage
-- [ ] All 26 core tools implemented
+- [ ] All 25 core tools implemented
 - [ ] All tests passing (unit + integration + e2e)
 
 ### **Feature Completeness:**

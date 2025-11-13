@@ -42,19 +42,19 @@
 **Authentication:** Two-tier (Read-only vs Authenticated)
 **Special Features:** AI-driven insights, engagement analysis, timing optimization
 
-**Read-Only Tools (6):**
+**Read-Only Tools (7):**
 1. `get_user_info` - Get detailed user analysis
 2. `get_top_posts` - Get and analyze top posts
-3. `get_subreddit_stats` - Get comprehensive subreddit analysis
+3. `get_subreddit_info` - Get detailed subreddit metadata
 4. `get_trending_subreddits` - Get trending communities
-5. `get_submission_by_url` - Fetch posts by URL
-6. `get_submission_by_id` - Fetch posts by ID
+5. `get_subreddit_stats` - Get comprehensive subreddit analysis
+6. `get_submission_by_url` - Fetch posts by URL
+7. `get_submission_by_id` - Fetch posts by ID
 
-**Authenticated Tools (4):**
-7. `who_am_i` - Get info about authenticated user
+**Authenticated Tools (3):**
 8. `create_post` - Create optimized posts with flair
 9. `reply_to_post` - Reply to posts with engagement insights
-10. `reply_to_comment` - Reply to comments strategically
+10. `who_am_i` - Get info about authenticated user
 
 ---
 
@@ -76,13 +76,13 @@
 ---
 
 ### Repository 5: adhikasp/mcp-reddit
-**Language:** Python
+**Language:** Python + redditwarp + FastMCP
 **Authentication:** Public API (no auth documented)
 **Special Features:** Smithery integration, supports text/link/gallery posts
 
 **Tools Provided (2):**
-1. `fetch_hot_threads` - Get popular/trending posts from subreddit
-2. `get_post_details` - Get comprehensive post info + comments
+1. `fetch_reddit_hot_threads` - Get popular/trending posts from subreddit
+2. `fetch_reddit_post_content` - Get comprehensive post info + comments
 
 ---
 
@@ -199,7 +199,7 @@
 
 ---
 
-## ✨ Final Unified Tool Set (26 Tools)
+## ✨ Final Unified Tool Set (25 Tools)
 
 ### **Read-Only Tools (20 tools)** - No authentication required
 
@@ -237,7 +237,7 @@
 
 ---
 
-### **Authenticated Tools (6 tools)** - Require OAuth
+### **Authenticated Tools (5 tools)** - Require OAuth
 
 **Account (1):**
 21. `who_am_i` - Get authenticated user's info
@@ -246,34 +246,33 @@
 22. `create_post` - Create text or link post
 23. `create_post_optimized` - Create post with AI engagement insights
 
-**Comments (3):**
+**Comments (2):**
 24. `post_comment` - Post comment on post
 25. `reply_to_post` - Reply to post with engagement insights
-26. `reply_to_comment` - Reply to comment
 
 ---
 
 ### **Additional Enhancements (Potential):**
 
 **Voting:**
-27. `upvote` - **NEW** - Upvote post or comment
-28. `downvote` - **NEW** - Downvote post or comment
-29. `remove_vote` - **NEW** - Remove vote from post or comment
+26. `upvote` - **NEW** - Upvote post or comment
+27. `downvote` - **NEW** - Downvote post or comment
+28. `remove_vote` - **NEW** - Remove vote from post or comment
 
 **Saving:**
-30. `save_post` - **NEW** - Save post to account
-31. `unsave_post` - **NEW** - Unsave post from account
-32. `get_saved_posts` - **NEW** - Get user's saved posts
+29. `save_post` - **NEW** - Save post to account
+30. `unsave_post` - **NEW** - Unsave post from account
+31. `get_saved_posts` - **NEW** - Get user's saved posts
 
 **Subscriptions:**
-33. `subscribe_subreddit` - **NEW** - Subscribe to subreddit
-34. `unsubscribe_subreddit` - **NEW** - Unsubscribe from subreddit
-35. `get_subscribed_subreddits` - **NEW** - Get user's subscribed subreddits
+32. `subscribe_subreddit` - **NEW** - Subscribe to subreddit
+33. `unsubscribe_subreddit` - **NEW** - Unsubscribe from subreddit
+34. `get_subscribed_subreddits` - **NEW** - Get user's subscribed subreddits
 
 **Messaging:**
-36. `send_message` - **NEW** - Send private message
-37. `get_messages` - **NEW** - Get inbox messages
-38. `mark_message_read` - **NEW** - Mark message as read
+35. `send_message` - **NEW** - Send private message
+36. `get_messages` - **NEW** - Get inbox messages
+37. `mark_message_read` - **NEW** - Mark message as read
 
 ---
 
@@ -306,7 +305,7 @@
 - Subscriptions (3 tools)
 - Messaging (3 tools)
 
-### **Total: 38 comprehensive Reddit tools**
+### **Total: 37 comprehensive Reddit tools** (25 core + 12 enhanced)
 
 ---
 
