@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger';
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerCompanyTools(
-  server: McpServer,
+  server: Server,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
@@ -35,7 +35,7 @@ export function registerCompanyTools(
       includeUpdates: z.boolean().default(true).describe('Include recent company posts and updates'),
       updatesLimit: z.number().min(1).max(20).default(5).describe('Number of recent updates to include (1-20)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-company-profile tool called', {
         tenantId,
         companyIdentifier: params.companyIdentifier
@@ -88,7 +88,7 @@ export function registerCompanyTools(
           tenantId,
           companyIdentifier: params.companyIdentifier
         });
-        throw new Error(`Failed to get company profile: ${error.message}`);
+        throw new Error(`Failed to get company profile: ${(error as Error).message}`);
       }
     }
   );
@@ -108,7 +108,7 @@ export function registerCompanyTools(
         companyNews: z.boolean().default(false).describe('Receive notifications for company news')
       }).optional().describe('Notification preferences when following (only applies to FOLLOW action)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.warn('follow-company tool called - WILL PERFORM REAL ACTION', {
         tenantId,
         companyIdentifier: params.companyIdentifier,
@@ -150,7 +150,7 @@ export function registerCompanyTools(
           companyIdentifier: params.companyIdentifier,
           action: params.action
         });
-        throw new Error(`Failed to ${params.action.toLowerCase()} company: ${error.message}`);
+        throw new Error(`Failed to ${params.action.toLowerCase()} company: ${(error as Error).message}`);
       }
     }
   );

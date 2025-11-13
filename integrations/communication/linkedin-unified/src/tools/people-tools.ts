@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger';
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerPeopleTools(
-  server: McpServer,
+  server: Server,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
@@ -35,7 +35,7 @@ export function registerPeopleTools(
       schools: z.array(z.string()).optional().describe('Education institutions'),
       limit: z.number().min(1).max(100).default(20).describe('Maximum results to return (1-100)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('search-people tool called', { tenantId, params });
 
       try {
@@ -44,10 +44,10 @@ export function registerPeopleTools(
           keywords: params.keywords,
           location: params.location,
           currentCompany: params.currentCompany,
-          pastCompanies: params.pastCompanies,
+          pastCompany: params.pastCompanies,
           industries: params.industries,
           schools: params.schools,
-          limit: params.limit
+          count: params.limit || 20
         });
 
         return {
@@ -73,7 +73,7 @@ export function registerPeopleTools(
         };
       } catch (error) {
         logger.error('search-people tool failed', { error, tenantId, params });
-        throw new Error(`Failed to search people: ${error.message}`);
+        throw new Error(`Failed to search people: ${(error as Error).message}`);
       }
     }
   );
@@ -96,7 +96,7 @@ export function registerPeopleTools(
         'publicIdentifier'
       ])).optional().describe('Specific fields to retrieve (default: all)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-profile-basic tool called', { tenantId, username: params.username });
 
       try {
@@ -124,7 +124,7 @@ export function registerPeopleTools(
         };
       } catch (error) {
         logger.error('get-profile-basic tool failed', { error, tenantId, username: params.username });
-        throw new Error(`Failed to get profile: ${error.message}`);
+        throw new Error(`Failed to get profile: ${(error as Error).message}`);
       }
     }
   );
@@ -143,7 +143,7 @@ export function registerPeopleTools(
       includeCertifications: z.boolean().default(true).describe('Include certifications'),
       includeConnections: z.boolean().default(false).describe('Include connection count and mutual connections')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-profile-comprehensive tool called', { tenantId, username: params.username });
 
       try {
@@ -152,7 +152,6 @@ export function registerPeopleTools(
           includeSkills: params.includeSkills,
           includeExperience: params.includeExperience,
           includeEducation: params.includeEducation,
-          includeCertifications: params.includeCertifications,
           includeConnections: params.includeConnections
         });
 
@@ -181,7 +180,7 @@ export function registerPeopleTools(
         };
       } catch (error) {
         logger.error('get-profile-comprehensive tool failed', { error, tenantId, username: params.username });
-        throw new Error(`Failed to get comprehensive profile: ${error.message}`);
+        throw new Error(`Failed to get comprehensive profile: ${(error as Error).message}`);
       }
     }
   );
@@ -195,7 +194,7 @@ export function registerPeopleTools(
     {
       includePrivateData: z.boolean().default(true).describe('Include private profile data (email, phone)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-my-profile tool called', { tenantId });
 
       try {
@@ -220,7 +219,7 @@ export function registerPeopleTools(
         };
       } catch (error) {
         logger.error('get-my-profile tool failed', { error, tenantId });
-        throw new Error(`Failed to get user profile: ${error.message}`);
+        throw new Error(`Failed to get user profile: ${(error as Error).message}`);
       }
     }
   );
@@ -234,7 +233,7 @@ export function registerPeopleTools(
     {
       includeGrowthMetrics: z.boolean().default(false).describe('Include historical growth data (requires API with premium access)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-network-stats tool called', { tenantId });
 
       try {
@@ -258,7 +257,7 @@ export function registerPeopleTools(
         };
       } catch (error) {
         logger.error('get-network-stats tool failed', { error, tenantId });
-        throw new Error(`Failed to get network stats: ${error.message}`);
+        throw new Error(`Failed to get network stats: ${(error as Error).message}`);
       }
     }
   );
@@ -274,7 +273,7 @@ export function registerPeopleTools(
       count: z.number().min(1).max(100).default(50).describe('Number of connections to return (1-100)'),
       sortBy: z.enum(['RECENTLY_ADDED', 'FIRST_NAME', 'LAST_NAME']).default('RECENTLY_ADDED').describe('Sort order for connections')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-connections tool called', { tenantId, params });
 
       try {
@@ -308,7 +307,7 @@ export function registerPeopleTools(
         };
       } catch (error) {
         logger.error('get-connections tool failed', { error, tenantId, params });
-        throw new Error(`Failed to get connections: ${error.message}`);
+        throw new Error(`Failed to get connections: ${(error as Error).message}`);
       }
     }
   );

@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger';
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerMessagingTools(
-  server: McpServer,
+  server: Server,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
@@ -38,7 +38,7 @@ export function registerMessagingTools(
       })).optional().describe('Attachments to include with message'),
       confirmBeforeSend: z.boolean().default(true).describe('Require confirmation before sending')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.warn('send-message tool called - WILL SEND REAL MESSAGE', {
         tenantId,
         recipientId: params.recipientId,
@@ -78,7 +78,7 @@ export function registerMessagingTools(
         };
       } catch (error) {
         logger.error('send-message tool failed', { error, tenantId, recipientId: params.recipientId });
-        throw new Error(`Failed to send message: ${error.message}`);
+        throw new Error(`Failed to send message: ${(error as Error).message}`);
       }
     }
   );
@@ -96,7 +96,7 @@ export function registerMessagingTools(
       sortBy: z.enum(['RECENT_ACTIVITY', 'OLDEST_FIRST', 'UNREAD_FIRST']).default('RECENT_ACTIVITY').describe('Sort order'),
       includePreview: z.boolean().default(true).describe('Include preview of last message')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-conversations tool called', { tenantId, params });
 
       try {
@@ -105,8 +105,7 @@ export function registerMessagingTools(
           limit: params.limit,
           offset: params.offset,
           filter: params.filter,
-          sortBy: params.sortBy,
-          includePreview: params.includePreview
+          sortBy: params.sortBy
         });
 
         return {
@@ -135,7 +134,7 @@ export function registerMessagingTools(
         };
       } catch (error) {
         logger.error('get-conversations tool failed', { error, tenantId, params });
-        throw new Error(`Failed to get conversations: ${error.message}`);
+        throw new Error(`Failed to get conversations: ${(error as Error).message}`);
       }
     }
   );
@@ -154,7 +153,7 @@ export function registerMessagingTools(
       includeAttachments: z.boolean().default(true).describe('Include attachment metadata in messages'),
       markAsRead: z.boolean().default(false).describe('Mark messages as read when retrieving')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-messages tool called', { tenantId, conversationId: params.conversationId });
 
       try {
@@ -198,7 +197,7 @@ export function registerMessagingTools(
         };
       } catch (error) {
         logger.error('get-messages tool failed', { error, tenantId, conversationId: params.conversationId });
-        throw new Error(`Failed to get messages: ${error.message}`);
+        throw new Error(`Failed to get messages: ${(error as Error).message}`);
       }
     }
   );

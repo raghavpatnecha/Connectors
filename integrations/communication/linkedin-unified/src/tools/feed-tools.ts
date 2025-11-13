@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger';
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerFeedTools(
-  server: McpServer,
+  server: Server,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
@@ -33,7 +33,7 @@ export function registerFeedTools(
       maxCommentsPerPost: z.number().min(0).max(50).default(5).describe('Maximum comments to include per post'),
       includeEngagementMetrics: z.boolean().default(true).describe('Include likes, shares, and comment counts')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('browse-feed tool called', { tenantId, params });
 
       try {
@@ -73,7 +73,7 @@ export function registerFeedTools(
         };
       } catch (error) {
         logger.error('browse-feed tool failed', { error, tenantId, params });
-        throw new Error(`Failed to browse feed: ${error.message}`);
+        throw new Error(`Failed to browse feed: ${(error as Error).message}`);
       }
     }
   );
@@ -96,7 +96,7 @@ export function registerFeedTools(
       ]).default('LIKE').describe('Type of reaction to give'),
       unlike: z.boolean().default(false).describe('Remove existing reaction instead of adding one')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.warn('like-post tool called - WILL PERFORM REAL ACTION', {
         tenantId,
         postUrl: params.postUrl,
@@ -106,11 +106,7 @@ export function registerFeedTools(
 
       try {
         const client = getClient(tenantId);
-        const result = await client.likePost({
-          postUrl: params.postUrl,
-          reactionType: params.reactionType,
-          unlike: params.unlike
-        });
+        const result = await client.likePost(params.postUrl);
 
         return {
           content: [
@@ -133,7 +129,7 @@ export function registerFeedTools(
         };
       } catch (error) {
         logger.error('like-post tool failed', { error, tenantId, postUrl: params.postUrl });
-        throw new Error(`Failed to like post: ${error.message}`);
+        throw new Error(`Failed to like post: ${(error as Error).message}`);
       }
     }
   );
@@ -156,7 +152,7 @@ export function registerFeedTools(
       })).optional().describe('Media attachments for comment'),
       confirmBeforePost: z.boolean().default(true).describe('Require confirmation before posting')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.warn('comment-on-post tool called - WILL POST REAL COMMENT', {
         tenantId,
         postUrl: params.postUrl,
@@ -198,7 +194,7 @@ export function registerFeedTools(
         };
       } catch (error) {
         logger.error('comment-on-post tool failed', { error, tenantId, postUrl: params.postUrl });
-        throw new Error(`Failed to comment on post: ${error.message}`);
+        throw new Error(`Failed to comment on post: ${(error as Error).message}`);
       }
     }
   );
@@ -227,7 +223,7 @@ export function registerFeedTools(
       shareUrl: z.string().url().optional().describe('URL to share in the post'),
       confirmBeforePublish: z.boolean().default(true).describe('Require confirmation before publishing')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.warn('create-post tool called - WILL PUBLISH REAL POST', {
         tenantId,
         contentLength: params.content.length,
@@ -244,8 +240,7 @@ export function registerFeedTools(
           media: params.media,
           hashtags: params.hashtags,
           mentionUsers: params.mentionUsers,
-          shareUrl: params.shareUrl,
-          confirmBeforePublish: params.confirmBeforePublish
+          shareUrl: params.shareUrl
         });
 
         return {
@@ -273,7 +268,7 @@ export function registerFeedTools(
         };
       } catch (error) {
         logger.error('create-post tool failed', { error, tenantId });
-        throw new Error(`Failed to create post: ${error.message}`);
+        throw new Error(`Failed to create post: ${(error as Error).message}`);
       }
     }
   );

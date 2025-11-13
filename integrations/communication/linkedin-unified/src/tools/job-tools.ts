@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger';
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerJobTools(
-  server: McpServer,
+  server: Server,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
@@ -50,7 +50,7 @@ export function registerJobTools(
       postedWithin: z.enum(['24HR', 'WEEK', 'MONTH', 'ANY_TIME']).default('ANY_TIME').describe('Filter by posting date'),
       limit: z.number().min(1).max(100).default(25).describe('Maximum results to return (1-100)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('search-jobs tool called', { tenantId, params });
 
       try {
@@ -91,7 +91,7 @@ export function registerJobTools(
         };
       } catch (error) {
         logger.error('search-jobs tool failed', { error, tenantId, params });
-        throw new Error(`Failed to search jobs: ${error.message}`);
+        throw new Error(`Failed to search jobs: ${(error as Error).message}`);
       }
     }
   );
@@ -107,7 +107,7 @@ export function registerJobTools(
       includeCompanyInfo: z.boolean().default(true).describe('Include detailed company information'),
       includeApplicationDetails: z.boolean().default(true).describe('Include how to apply and application requirements')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-job-details tool called', { tenantId, jobId: params.jobId });
 
       try {
@@ -138,7 +138,7 @@ export function registerJobTools(
         };
       } catch (error) {
         logger.error('get-job-details tool failed', { error, tenantId, jobId: params.jobId });
-        throw new Error(`Failed to get job details: ${error.message}`);
+        throw new Error(`Failed to get job details: ${(error as Error).message}`);
       }
     }
   );
@@ -154,7 +154,7 @@ export function registerJobTools(
       filterByRelevance: z.boolean().default(true).describe('Filter by relevance score threshold'),
       minRelevanceScore: z.number().min(0).max(100).default(60).describe('Minimum relevance score (0-100)')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.info('get-recommended-jobs tool called', { tenantId, params });
 
       try {
@@ -187,7 +187,7 @@ export function registerJobTools(
         };
       } catch (error) {
         logger.error('get-recommended-jobs tool failed', { error, tenantId, params });
-        throw new Error(`Failed to get recommended jobs: ${error.message}`);
+        throw new Error(`Failed to get recommended jobs: ${(error as Error).message}`);
       }
     }
   );
@@ -206,7 +206,7 @@ export function registerJobTools(
       useEasyApply: z.boolean().default(true).describe('Use LinkedIn Easy Apply if available'),
       confirmBeforeSubmit: z.boolean().default(true).describe('Wait for confirmation before final submission')
     },
-    async (params, { tenantId }) => {
+    async (params: any, { tenantId }: { tenantId: string }) => {
       logger.warn('apply-to-job tool called - WILL SUBMIT REAL APPLICATION', {
         tenantId,
         jobId: params.jobId,
@@ -246,7 +246,7 @@ export function registerJobTools(
         };
       } catch (error) {
         logger.error('apply-to-job tool failed', { error, tenantId, jobId: params.jobId });
-        throw new Error(`Failed to apply to job: ${error.message}`);
+        throw new Error(`Failed to apply to job: ${(error as Error).message}`);
       }
     }
   );
