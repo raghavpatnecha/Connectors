@@ -1,0 +1,700 @@
+{
+  "integration": "reddit",
+  "category": "communication",
+  "version": "1.0.0",
+  "source": "connectors-platform",
+  "serverUrl": "http://localhost:3200",
+  "description": "Reddit Unified MCP - Browse, search, post, comment, and manage Reddit communities with 25 comprehensive tools",
+  "auth": {
+    "type": "oauth2",
+    "vaultPath": "secret/tenants/{tenant_id}/reddit",
+    "authorizationUrl": "https://www.reddit.com/api/v1/authorize",
+    "tokenUrl": "https://www.reddit.com/api/v1/access_token",
+    "scopes": ["identity", "read", "submit", "edit", "vote", "save", "subscribe", "mysubreddits"],
+    "grantType": "authorization_code",
+    "tokenExpiry": 3600,
+    "supportsRefresh": true,
+    "refreshBuffer": 300
+  },
+  "rateLimit": {
+    "requestsPerMinute": 60,
+    "requestsPer10Minutes": 600,
+    "burstLimit": 10
+  },
+  "tools": [
+    {
+      "id": "reddit.browse_frontpage",
+      "name": "browse_frontpage",
+      "description": "Browse the Reddit frontpage (personalized feed if authenticated, or r/popular if not). Returns hot posts from subscribed subreddits (if authenticated) or popular posts across Reddit.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "description": "Optional tenant ID for personalized feed"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of posts to return (1-100)",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 25
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor for next page"
+          }
+        }
+      },
+      "tokenCost": 120,
+      "requiredScopes": [],
+      "aliases": ["browseFrontpage", "getHotPosts", "popularPosts"]
+    },
+    {
+      "id": "reddit.browse_subreddit",
+      "name": "browse_subreddit",
+      "description": "Browse hot posts from a specific subreddit. Returns the most popular and trending posts currently in the subreddit.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Subreddit name (without r/ prefix)",
+            "pattern": "^[A-Za-z0-9_]+$"
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "Optional tenant ID for authentication"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of posts to return",
+            "default": 25
+          },
+          "after": {
+            "type": "string",
+            "description": "Pagination cursor"
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 130,
+      "requiredScopes": [],
+      "aliases": ["browseSubreddit", "getSubredditPosts", "subredditHot"]
+    },
+    {
+      "id": "reddit.browse_subreddit_new",
+      "name": "browse_subreddit_new",
+      "description": "Browse newest posts from a specific subreddit. Returns posts sorted by submission time (most recent first).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Subreddit name"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 125,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.browse_subreddit_top",
+      "name": "browse_subreddit_top",
+      "description": "Browse top-rated posts from a subreddit with time filter (hour, day, week, month, year, all).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Subreddit name"
+          },
+          "time": {
+            "type": "string",
+            "enum": ["hour", "day", "week", "month", "year", "all"],
+            "default": "day"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 135,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.browse_subreddit_rising",
+      "name": "browse_subreddit_rising",
+      "description": "Browse rising posts from a subreddit (posts gaining traction quickly).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 120,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.browse_subreddit_controversial",
+      "name": "browse_subreddit_controversial",
+      "description": "Browse controversial posts from a subreddit (high engagement with mixed upvotes/downvotes).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string",
+            "enum": ["hour", "day", "week", "month", "year", "all"],
+            "default": "day"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 130,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_trending_subreddits",
+      "name": "get_trending_subreddits",
+      "description": "Get list of currently trending subreddits on Reddit.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "default": 10
+          }
+        }
+      },
+      "tokenCost": 100,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.browse_popular",
+      "name": "browse_popular",
+      "description": "Browse r/popular (globally popular posts across all Reddit).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        }
+      },
+      "tokenCost": 110,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.search_posts",
+      "name": "search_posts",
+      "description": "Search Reddit posts with filters (query, subreddit, sort, time, author, flair). Returns relevant posts matching search criteria.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query string"
+          },
+          "subreddit": {
+            "type": "string",
+            "description": "Optional: Limit search to specific subreddit"
+          },
+          "sort": {
+            "type": "string",
+            "enum": ["relevance", "hot", "top", "new", "comments"],
+            "default": "relevance"
+          },
+          "time": {
+            "type": "string",
+            "enum": ["hour", "day", "week", "month", "year", "all"],
+            "default": "all"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["query"]
+      },
+      "tokenCost": 150,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.search_subreddits",
+      "name": "search_subreddits",
+      "description": "Search for subreddits by name or description. Returns matching subreddit communities.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["query"]
+      },
+      "tokenCost": 120,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_post",
+      "name": "get_post",
+      "description": "Get a specific Reddit post by URL or ID. Returns full post details including title, content, author, scores, and metadata.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Post URL or ID"
+          }
+        },
+        "required": ["identifier"]
+      },
+      "tokenCost": 110,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_post_by_url",
+      "name": "get_post_by_url",
+      "description": "Get Reddit post by full URL. Accepts any valid Reddit post URL.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Full Reddit post URL"
+          }
+        },
+        "required": ["url"]
+      },
+      "tokenCost": 105,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_post_by_id",
+      "name": "get_post_by_id",
+      "description": "Get Reddit post by alphanumeric ID.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+$",
+            "description": "Post ID"
+          }
+        },
+        "required": ["postId"]
+      },
+      "tokenCost": 105,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_user_posts",
+      "name": "get_user_posts",
+      "description": "Get posts submitted by a specific user. Returns user's post history with sorting options.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Reddit username (without u/ prefix)"
+          },
+          "sort": {
+            "type": "string",
+            "enum": ["new", "hot", "top", "controversial"],
+            "default": "new"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["username"]
+      },
+      "tokenCost": 125,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_post_comments",
+      "name": "get_post_comments",
+      "description": "Get comments from a Reddit post. Returns nested comment tree with sorting, depth control, and pagination.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string",
+            "description": "Post ID"
+          },
+          "sort": {
+            "type": "string",
+            "enum": ["confidence", "top", "new", "controversial", "old", "qa"],
+            "default": "confidence"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          },
+          "depth": {
+            "type": "number",
+            "description": "Maximum comment depth to fetch",
+            "default": 5
+          }
+        },
+        "required": ["postId"]
+      },
+      "tokenCost": 140,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_user_comments",
+      "name": "get_user_comments",
+      "description": "Get comments posted by a specific user. Returns user's comment history.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string",
+            "enum": ["new", "hot", "top", "controversial"],
+            "default": "new"
+          },
+          "limit": {
+            "type": "number",
+            "default": 25
+          }
+        },
+        "required": ["username"]
+      },
+      "tokenCost": 130,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_subreddit_info",
+      "name": "get_subreddit_info",
+      "description": "Get detailed information about a subreddit including description, rules, subscriber count, and settings.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "Subreddit name"
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 115,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_subreddit_stats",
+      "name": "get_subreddit_stats",
+      "description": "Get subreddit statistics including subscriber count, active users, post counts, and growth metrics.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string"
+          }
+        },
+        "required": ["subreddit"]
+      },
+      "tokenCost": 110,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_user_info",
+      "name": "get_user_info",
+      "description": "Get Reddit user profile information including karma, account age, trophies, and bio.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Reddit username"
+          }
+        },
+        "required": ["username"]
+      },
+      "tokenCost": 115,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_user_trophies",
+      "name": "get_user_trophies",
+      "description": "Get user's Reddit trophies and achievements.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": ["username"]
+      },
+      "tokenCost": 105,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.get_user_karma",
+      "name": "get_user_karma",
+      "description": "Get user's karma breakdown by subreddit (post karma and comment karma).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": ["username"]
+      },
+      "tokenCost": 110,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.reddit_explain",
+      "name": "reddit_explain",
+      "description": "Explain Reddit terminology and concepts. Returns clear explanation of Reddit-specific terms (karma, subreddit, upvote, etc.).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string",
+            "description": "Reddit term to explain (e.g., 'karma', 'subreddit', 'AMA')"
+          }
+        },
+        "required": ["term"]
+      },
+      "tokenCost": 95,
+      "requiredScopes": []
+    },
+    {
+      "id": "reddit.who_am_i",
+      "name": "who_am_i",
+      "description": "Get authenticated user's profile (requires OAuth). Returns current logged-in user information.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "description": "Tenant ID for authentication"
+          }
+        },
+        "required": ["tenantId"]
+      },
+      "tokenCost": 105,
+      "requiredScopes": ["identity"]
+    },
+    {
+      "id": "reddit.create_post",
+      "name": "create_post",
+      "description": "Create a new Reddit post (requires OAuth). Supports text posts (self posts) and link posts.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "subreddit": {
+            "type": "string",
+            "description": "Subreddit to post in"
+          },
+          "title": {
+            "type": "string",
+            "description": "Post title",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "content": {
+            "type": "string",
+            "description": "Post content (for text posts) or URL (for link posts)"
+          },
+          "isLink": {
+            "type": "boolean",
+            "description": "True for link post, false for text post",
+            "default": false
+          },
+          "nsfw": {
+            "type": "boolean",
+            "default": false
+          },
+          "spoiler": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": ["tenantId", "subreddit", "title"]
+      },
+      "tokenCost": 145,
+      "requiredScopes": ["submit"]
+    },
+    {
+      "id": "reddit.create_post_optimized",
+      "name": "create_post_optimized",
+      "description": "Create a Reddit post with AI-powered engagement insights and optimization tips (requires OAuth). Provides timing, title quality, and content depth analysis.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "subreddit": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": ["tenantId", "subreddit", "title"]
+      },
+      "tokenCost": 165,
+      "requiredScopes": ["submit"]
+    },
+    {
+      "id": "reddit.post_comment",
+      "name": "post_comment",
+      "description": "Post a comment on a Reddit post (requires OAuth).",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "postId": {
+            "type": "string",
+            "description": "Post ID to comment on"
+          },
+          "text": {
+            "type": "string",
+            "description": "Comment text",
+            "minLength": 1,
+            "maxLength": 10000
+          }
+        },
+        "required": ["tenantId", "postId", "text"]
+      },
+      "tokenCost": 135,
+      "requiredScopes": ["submit"]
+    },
+    {
+      "id": "reddit.reply_to_post",
+      "name": "reply_to_post",
+      "description": "Reply to a Reddit post with engagement insights (requires OAuth). Includes tips for better engagement.",
+      "category": "communication",
+      "integration": "reddit",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "postId": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": ["tenantId", "postId", "text"]
+      },
+      "tokenCost": 140,
+      "requiredScopes": ["submit"]
+    }
+  ],
+  "metadata": {
+    "totalTools": 25,
+    "authenticatedTools": 5,
+    "readOnlyTools": 20,
+    "categories": ["communication"],
+    "maintainer": "Connectors Platform",
+    "documentation": "https://github.com/connectors-platform/reddit-unified",
+    "healthCheckEndpoint": "/health",
+    "supportsMultiTenant": true,
+    "cachingEnabled": true,
+    "cacheStrategy": "LRU",
+    "cacheTTL": 300
+  }
+}
