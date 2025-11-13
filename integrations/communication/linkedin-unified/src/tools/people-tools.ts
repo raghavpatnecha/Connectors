@@ -6,24 +6,24 @@
  */
 
 import { z } from 'zod';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ToolRegistry } from '../utils/tool-registry-helper';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
 /**
  * Register all people-related tools with the MCP server
  *
- * @param server - MCP server instance
+ * @param registry - ToolRegistry instance for registering tools
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerPeopleTools(
-  server: Server,
+  registry: ToolRegistry,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
   // Tool 1: search-people
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'search-people',
     'Search LinkedIn profiles with advanced filters. Returns up to 100 results. Supports keywords, location, company, industry filters. Uses API first, falls back to browser if needed.',
     {
@@ -81,7 +81,7 @@ export function registerPeopleTools(
   // ============================================================================
   // Tool 2: get-profile-basic
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-profile-basic',
     'Get basic LinkedIn profile information via official API. Fast and efficient for public profile data. Returns name, headline, location, summary.',
     {
@@ -132,7 +132,7 @@ export function registerPeopleTools(
   // ============================================================================
   // Tool 3: get-profile-comprehensive
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-profile-comprehensive',
     'Get comprehensive LinkedIn profile with full work history, education, skills, certifications, and connections. Uses browser scraping for maximum detail. Slower but more complete than basic profile.',
     {
@@ -188,7 +188,7 @@ export function registerPeopleTools(
   // ============================================================================
   // Tool 4: get-my-profile
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-my-profile',
     'Get the authenticated user\'s own LinkedIn profile. Returns complete profile data for the current user including private information.',
     {
@@ -227,7 +227,7 @@ export function registerPeopleTools(
   // ============================================================================
   // Tool 5: get-network-stats
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-network-stats',
     'Get network statistics for the authenticated user. Returns connection count, follower count, and network growth metrics.',
     {
@@ -265,7 +265,7 @@ export function registerPeopleTools(
   // ============================================================================
   // Tool 6: get-connections
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-connections',
     'Get list of LinkedIn connections for the authenticated user. Returns basic profile info for each connection. Paginated results.',
     {

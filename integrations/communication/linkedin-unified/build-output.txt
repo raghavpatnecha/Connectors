@@ -1,0 +1,61 @@
+
+> @connectors/linkedin-unified-mcp-server@1.0.0 build
+> tsc
+
+src/clients/unified-client.ts(116,13): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/clients/unified-client.ts(119,13): error TS2322: Type 'string[] | undefined' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/clients/unified-client.ts(296,66): error TS2554: Expected 1 arguments, but got 2.
+src/clients/unified-client.ts(719,7): error TS2322: Type '{ title: string; companyName: string; location: string | undefined; startDate: string | undefined; endDate: string | undefined; description: string | undefined; }[]' is not assignable to type 'Position[]'.
+  Type '{ title: string; companyName: string; location: string | undefined; startDate: string | undefined; endDate: string | undefined; description: string | undefined; }' is not assignable to type 'Position'.
+    Types of property 'startDate' are incompatible.
+      Type 'string | undefined' is not assignable to type '{ year: number; month?: number | undefined; } | undefined'.
+        Type 'string' is not assignable to type '{ year: number; month?: number | undefined; }'.
+src/clients/unified-client.ts(727,7): error TS2322: Type '{ schoolName: string; degreeName: string | undefined; fieldOfStudy: string | undefined; startDate: string | undefined; endDate: string | undefined; }[]' is not assignable to type 'Education[]'.
+  Type '{ schoolName: string; degreeName: string | undefined; fieldOfStudy: string | undefined; startDate: string | undefined; endDate: string | undefined; }' is not assignable to type 'Education'.
+    Types of property 'startDate' are incompatible.
+      Type 'string | undefined' is not assignable to type '{ year: number; } | undefined'.
+        Type 'string' is not assignable to type '{ year: number; }'.
+src/tools/company-tools.ts(26,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/company-tools.ts(49,11): error TS2353: Object literal may only specify known properties, and 'employeeLimit' does not exist in type '{ companyIdentifier: string; includeEmployees?: boolean | undefined; includeJobPostings?: boolean | undefined; includeUpdates?: boolean | undefined; }'.
+src/tools/company-tools.ts(99,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/feed-tools.ts(26,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/feed-tools.ts(41,46): error TS2345: Argument of type '{ limit: any; feedType: any; includeComments: any; maxCommentsPerPost: any; includeEngagementMetrics: any; }' is not assignable to parameter of type 'number'.
+src/tools/feed-tools.ts(54,29): error TS2339: Property 'posts' does not exist on type 'Post[]'.
+src/tools/feed-tools.ts(56,31): error TS2339: Property 'posts' does not exist on type 'Post[]'.
+src/tools/feed-tools.ts(65,39): error TS2339: Property 'posts' does not exist on type 'Post[]'.
+src/tools/feed-tools.ts(65,53): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/tools/feed-tools.ts(65,58): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/tools/feed-tools.ts(66,42): error TS2339: Property 'posts' does not exist on type 'Post[]'.
+src/tools/feed-tools.ts(66,56): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/tools/feed-tools.ts(66,61): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/tools/feed-tools.ts(67,40): error TS2339: Property 'posts' does not exist on type 'Post[]'.
+src/tools/feed-tools.ts(67,54): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/tools/feed-tools.ts(67,59): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/tools/feed-tools.ts(84,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/feed-tools.ts(123,34): error TS2339: Property 'status' does not exist on type '{ success: boolean; wasAlreadyLiked: boolean; }'.
+src/tools/feed-tools.ts(124,42): error TS2339: Property 'newLikeCount' does not exist on type '{ success: boolean; wasAlreadyLiked: boolean; }'.
+src/tools/feed-tools.ts(140,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/feed-tools.ts(166,37): error TS2554: Expected 2 arguments, but got 1.
+src/tools/feed-tools.ts(205,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/job-tools.ts(26,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/job-tools.ts(64,11): error TS2353: Object literal may only specify known properties, and 'remote' does not exist in type 'JobSearchParams'.
+src/tools/job-tools.ts(74,31): error TS2339: Property 'jobs' does not exist on type 'JobPosting[]'.
+src/tools/job-tools.ts(76,34): error TS2339: Property 'jobs' does not exist on type 'JobPosting[]'.
+src/tools/job-tools.ts(102,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/job-tools.ts(149,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/job-tools.ts(198,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/job-tools.ts(220,53): error TS2345: Argument of type '{ jobId: any; resume: any; coverLetter: any; answers: any; useEasyApply: any; confirmBeforeSubmit: any; }' is not assignable to parameter of type 'string'.
+src/tools/job-tools.ts(240,39): error TS2339: Property 'status' does not exist on type '{ success: boolean; }'.
+src/tools/messaging-tools.ts(26,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/messaging-tools.ts(51,37): error TS2554: Expected 2 arguments, but got 1.
+src/tools/messaging-tools.ts(73,43): error TS2339: Property 'conversationId' does not exist on type '{ messageId: string; status: string; }'.
+src/tools/messaging-tools.ts(89,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/messaging-tools.ts(145,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/people-tools.ts(26,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/people-tools.ts(84,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/people-tools.ts(135,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/people-tools.ts(191,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/people-tools.ts(230,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.
+src/tools/people-tools.ts(268,10): error TS2339: Property 'tool' does not exist on type 'Server<{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; }, { ...; }, objectOutputType<...>>'.

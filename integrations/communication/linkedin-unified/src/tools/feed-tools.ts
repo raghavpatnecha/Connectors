@@ -6,24 +6,24 @@
  */
 
 import { z } from 'zod';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ToolRegistry } from '../utils/tool-registry-helper';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
 /**
  * Register all feed and post-related tools with the MCP server
  *
- * @param server - MCP server instance
+ * @param registry - ToolRegistry instance for registering tools
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerFeedTools(
-  server: Server,
+  registry: ToolRegistry,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
   // Tool 1: browse-feed
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'browse-feed',
     'Browse LinkedIn feed and retrieve posts. Returns posts with content, author info, engagement metrics, and comments. Uses browser automation for complete feed access.',
     {
@@ -38,33 +38,27 @@ export function registerFeedTools(
 
       try {
         const client = getClient(tenantId);
-        const feed = await client.browseFeed({
-          limit: params.limit,
-          feedType: params.feedType,
-          includeComments: params.includeComments,
-          maxCommentsPerPost: params.maxCommentsPerPost,
-          includeEngagementMetrics: params.includeEngagementMetrics
-        });
+        const feed = await client.browseFeed(params.limit || 10);
 
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify({
-                posts: feed.posts,
+                posts: feed,
                 metadata: {
-                  count: feed.posts.length,
+                  count: feed.length,
                   method: client.getLastUsedMethod(),
                   timestamp: new Date().toISOString(),
-                  feed_type: params.feedType,
+                  feed_type: params.feedType || 'recent',
                   includes: {
                     comments: params.includeComments,
                     engagement_metrics: params.includeEngagementMetrics
                   },
                   total_engagement: {
-                    total_likes: feed.posts.reduce((sum, p) => sum + (p.likeCount || 0), 0),
-                    total_comments: feed.posts.reduce((sum, p) => sum + (p.commentCount || 0), 0),
-                    total_shares: feed.posts.reduce((sum, p) => sum + (p.shareCount || 0), 0)
+                    total_likes: feed.reduce((sum: number, p: any) => sum + (p.likeCount || 0), 0),
+                    total_comments: feed.reduce((sum: number, p: any) => sum + (p.commentCount || 0), 0),
+                    total_shares: feed.reduce((sum: number, p: any) => sum + (p.shareCount || 0), 0)
                   }
                 }
               }, null, 2)
@@ -81,7 +75,7 @@ export function registerFeedTools(
   // ============================================================================
   // Tool 2: like-post
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'like-post',
     'Like a LinkedIn post. Supports different reaction types (like, celebrate, support, insightful, funny). WARNING: This will perform a real action on LinkedIn!',
     {
@@ -120,8 +114,8 @@ export function registerFeedTools(
                   reaction_type: params.reactionType,
                   method: client.getLastUsedMethod(),
                   timestamp: new Date().toISOString(),
-                  status: result.status,
-                  new_like_count: result.newLikeCount
+                  success: result.success,
+                  was_already_liked: result.wasAlreadyLiked
                 }
               }, null, 2)
             }
@@ -137,7 +131,7 @@ export function registerFeedTools(
   // ============================================================================
   // Tool 3: comment-on-post
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'comment-on-post',
     'Comment on a LinkedIn post. Supports text comments with optional media attachments. WARNING: This will post a real comment!',
     {
@@ -163,13 +157,7 @@ export function registerFeedTools(
 
       try {
         const client = getClient(tenantId);
-        const result = await client.commentOnPost({
-          postUrl: params.postUrl,
-          comment: params.comment,
-          parentCommentId: params.parentCommentId,
-          attachments: params.attachments,
-          confirmBeforePost: params.confirmBeforePost
-        });
+        const result = await client.commentOnPost(params.postUrl, params.comment);
 
         return {
           content: [
@@ -202,7 +190,7 @@ export function registerFeedTools(
   // ============================================================================
   // Tool 4: create-post
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'create-post',
     'Create a new LinkedIn post. Supports text, images, videos, documents, and links. WARNING: This will publish a real post to your LinkedIn profile!',
     {

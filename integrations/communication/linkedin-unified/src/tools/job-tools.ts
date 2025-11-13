@@ -6,24 +6,24 @@
  */
 
 import { z } from 'zod';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ToolRegistry } from '../utils/tool-registry-helper';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
 /**
  * Register all job-related tools with the MCP server
  *
- * @param server - MCP server instance
+ * @param registry - ToolRegistry instance for registering tools
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerJobTools(
-  server: Server,
+  registry: ToolRegistry,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
   // Tool 1: search-jobs
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'search-jobs',
     'Search LinkedIn job postings with advanced filters. Returns job listings with title, company, location, and description. Uses API for fast results.',
     {
@@ -61,9 +61,9 @@ export function registerJobTools(
           companies: params.companies,
           experienceLevel: params.experienceLevel,
           jobType: params.jobType,
-          remote: params.remote,
-          postedWithin: params.postedWithin,
-          limit: params.limit
+          remoteFilter: params.remote ? 'REMOTE' : undefined,
+          datePosted: params.postedWithin,
+          count: params.limit
         });
 
         return {
@@ -71,9 +71,9 @@ export function registerJobTools(
             {
               type: 'text',
               text: JSON.stringify({
-                jobs: results.jobs,
+                jobs: results,
                 metadata: {
-                  count: results.jobs.length,
+                  count: results.length,
                   method: client.getLastUsedMethod(),
                   timestamp: new Date().toISOString(),
                   filters_applied: {
@@ -99,7 +99,7 @@ export function registerJobTools(
   // ============================================================================
   // Tool 2: get-job-details
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-job-details',
     'Get detailed information about a specific job posting by ID. Returns full job description, requirements, benefits, company info, and application details.',
     {
@@ -146,7 +146,7 @@ export function registerJobTools(
   // ============================================================================
   // Tool 3: get-recommended-jobs
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-recommended-jobs',
     'Get personalized job recommendations for the authenticated user based on profile, skills, and preferences. Uses LinkedIn\'s recommendation algorithm.',
     {
@@ -195,7 +195,7 @@ export function registerJobTools(
   // ============================================================================
   // Tool 4: apply-to-job
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'apply-to-job',
     'Apply to a LinkedIn job posting using browser automation. Requires authenticated session. Can handle Easy Apply and external applications. WARNING: This will submit a real job application!',
     {
@@ -217,14 +217,7 @@ export function registerJobTools(
         const client = getClient(tenantId);
 
         // This is a high-risk operation - requires browser automation
-        const application = await client.applyToJob({
-          jobId: params.jobId,
-          resume: params.resume,
-          coverLetter: params.coverLetter,
-          answers: params.answers,
-          useEasyApply: params.useEasyApply,
-          confirmBeforeSubmit: params.confirmBeforeSubmit
-        });
+        const application = await client.applyToJob(params.jobId, params.coverLetter);
 
         return {
           content: [
@@ -237,7 +230,7 @@ export function registerJobTools(
                   method: client.getLastUsedMethod(),
                   timestamp: new Date().toISOString(),
                   application_method: params.useEasyApply ? 'Easy Apply' : 'External',
-                  status: application.status,
+                  success: application.success,
                   confirmation_required: params.confirmBeforeSubmit
                 }
               }, null, 2)

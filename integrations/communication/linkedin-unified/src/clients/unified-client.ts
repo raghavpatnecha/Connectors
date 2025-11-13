@@ -113,10 +113,10 @@ export class UnifiedClient {
 
         try {
           const browserParams: SearchPeopleParams = {
-            keywords: params.keywords,
-            location: params.location,
-            title: params.title,
-            currentCompany: params.currentCompany
+            keywords: params.keywords || '',
+            ...(params.location && { location: params.location }),
+            ...(params.title && { title: params.title }),
+            ...(params.currentCompany?.[0] && { currentCompany: params.currentCompany[0] })
           };
           const results = await this.browserClient.searchPeopleViaUI(browserParams);
           this.lastUsedMethod = 'browser';
@@ -293,7 +293,11 @@ export class UnifiedClient {
       messageLength: message.length
     });
 
-    const result = await this.apiClient.sendMessage(recipientId, message);
+    const result = await this.apiClient.sendMessage({
+      recipientUrn: recipientId,
+      messageBody: message,
+      subject: 'LinkedIn Message'
+    });
     this.lastUsedMethod = 'api';
 
     logger.info('Message sent', {
@@ -705,6 +709,25 @@ export class UnifiedClient {
   }
 
   /**
+   * Helper: Parse date string to { year, month } format
+   */
+  private parseDate(dateStr: string | undefined): { year: number; month?: number } | undefined {
+    if (!dateStr) return undefined;
+
+    // Handle various date formats: "2020", "2020-01", "2020-01-15", "Jan 2020"
+    const yearMatch = dateStr.match(/\d{4}/);
+    if (!yearMatch) {
+      return { year: new Date().getFullYear() };
+    }
+
+    const year = parseInt(yearMatch[0], 10);
+    const monthMatch = dateStr.match(/-(\d{1,2})/);
+    const month = monthMatch ? parseInt(monthMatch[1], 10) : undefined;
+
+    return { year, month };
+  }
+
+  /**
    * Helper: Convert ComprehensiveProfile to Profile
    */
   private convertComprehensiveToProfile(comprehensive: ComprehensiveProfile): Profile {
@@ -720,16 +743,16 @@ export class UnifiedClient {
         title: exp.positionTitle,
         companyName: exp.company,
         location: exp.location,
-        startDate: exp.fromDate,
-        endDate: exp.toDate,
+        startDate: this.parseDate(exp.fromDate),
+        endDate: this.parseDate(exp.toDate),
         description: exp.description
       })),
       educations: comprehensive.educations.map(edu => ({
         schoolName: edu.institution,
         degreeName: edu.degree,
         fieldOfStudy: edu.fieldOfStudy,
-        startDate: edu.fromDate,
-        endDate: edu.toDate
+        startDate: this.parseDate(edu.fromDate),
+        endDate: this.parseDate(edu.toDate)
       })),
       skills: comprehensive.skills.map(skill => ({ name: skill }))
     };

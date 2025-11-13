@@ -22,6 +22,16 @@ import { SessionManager } from './auth/session-manager';
 
 // Import utilities
 import { logger } from './utils/logger';
+import { ToolRegistry } from './utils/tool-registry-helper';
+
+// Import tool registration functions
+import {
+  registerPeopleTools,
+  registerJobTools,
+  registerMessagingTools,
+  registerFeedTools,
+  registerCompanyTools
+} from './tools';
 
 // Load environment variables
 dotenv.config();
@@ -89,38 +99,32 @@ function registerTools(
 ): void {
   logger.info('Registering LinkedIn MCP tools...');
 
-  // Note: Tool implementations will be added by other agents
-  // This function provides the registration framework
+  // Create tool registry
+  const registry = new ToolRegistry();
+  logger.info('Created ToolRegistry');
 
-  // Tools to be registered (18 total):
-  // - People & Profiles: search-people, get-profile, get-my-profile, get-connections, get-network-stats
-  // - Jobs: search-jobs, get-job-details, get-recommended-jobs, apply-to-job
-  // - Messaging: send-message, get-conversations
-  // - Feed & Posts: browse-feed, like-post, comment-on-post, create-post
-  // - Companies: get-company-profile, follow-company, get-company-updates
+  // Create client getter function for tools
+  const getClient = (tenantId: string) => {
+    // TODO: Implement proper UnifiedClient retrieval using sessionManager
+    // For now, this is a placeholder
+    throw new Error('Client retrieval not yet implemented');
+  };
 
-  // Example tool registration pattern (will be populated by tool implementation agents):
-  /*
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [
-      {
-        name: "search-people",
-        description: "Search for LinkedIn profiles with advanced filtering",
-        inputSchema: {
-          type: "object",
-          properties: {
-            keywords: { type: "string" },
-            location: { type: "string" },
-            currentCompany: { type: "array", items: { type: "string" } }
-          }
-        }
-      },
-      // ... more tools
-    ]
-  }));
-  */
+  // Register all 19 tools across 5 categories
+  registerPeopleTools(registry, getClient);
+  registerJobTools(registry, getClient);
+  registerMessagingTools(registry, getClient);
+  registerFeedTools(registry, getClient);
+  registerCompanyTools(registry, getClient);
 
-  logger.info('Tool registration framework ready (awaiting tool implementations)');
+  logger.info('Registered all tools', {
+    count: registry.getToolCount(),
+    tools: registry.getRegisteredTools()
+  });
+
+  // Setup server with registered tools
+  registry.setupServer(server);
+  logger.info('ToolRegistry connected to MCP server');
 }
 
 /**

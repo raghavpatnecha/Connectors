@@ -6,24 +6,24 @@
  */
 
 import { z } from 'zod';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ToolRegistry } from '../utils/tool-registry-helper';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
 /**
  * Register all messaging-related tools with the MCP server
  *
- * @param server - MCP server instance
+ * @param registry - ToolRegistry instance for registering tools
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerMessagingTools(
-  server: Server,
+  registry: ToolRegistry,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
   // Tool 1: send-message
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'send-message',
     'Send a direct message to a LinkedIn connection. Requires existing connection or InMail credits for non-connections. WARNING: This will send a real message!',
     {
@@ -48,13 +48,7 @@ export function registerMessagingTools(
 
       try {
         const client = getClient(tenantId);
-        const result = await client.sendMessage({
-          recipientId: params.recipientId,
-          message: params.message,
-          subject: params.subject,
-          attachments: params.attachments,
-          confirmBeforeSend: params.confirmBeforeSend
-        });
+        const result = await client.sendMessage(params.recipientId, params.message);
 
         return {
           content: [
@@ -70,7 +64,7 @@ export function registerMessagingTools(
                   method: client.getLastUsedMethod(),
                   timestamp: new Date().toISOString(),
                   status: result.status,
-                  conversation_id: result.conversationId
+                  message_id: result.messageId
                 }
               }, null, 2)
             }
@@ -86,7 +80,7 @@ export function registerMessagingTools(
   // ============================================================================
   // Tool 2: get-conversations
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-conversations',
     'Get list of recent message conversations for the authenticated user. Returns conversation metadata, participants, and latest message preview.',
     {
@@ -142,7 +136,7 @@ export function registerMessagingTools(
   // ============================================================================
   // Tool 3: get-messages
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-messages',
     'Get messages from a specific conversation thread. Returns message history with sender info, timestamps, and content. Supports pagination for long threads.',
     {

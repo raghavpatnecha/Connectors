@@ -6,24 +6,24 @@
  */
 
 import { z } from 'zod';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ToolRegistry } from '../utils/tool-registry-helper';
 import { UnifiedClient } from '../clients/unified-client';
 import { logger } from '../utils/logger';
 
 /**
  * Register all company-related tools with the MCP server
  *
- * @param server - MCP server instance
+ * @param registry - ToolRegistry instance for registering tools
  * @param getClient - Function to retrieve UnifiedClient for a tenant
  */
 export function registerCompanyTools(
-  server: Server,
+  registry: ToolRegistry,
   getClient: (tenantId: string) => UnifiedClient
 ): void {
   // ============================================================================
   // Tool 1: get-company-profile
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'get-company-profile',
     'Get detailed LinkedIn company profile information. Returns company overview, employee count, locations, specialties, recent updates, and affiliated companies.',
     {
@@ -46,11 +46,8 @@ export function registerCompanyTools(
         const company = await client.getCompanyProfile({
           companyIdentifier: params.companyIdentifier,
           includeEmployees: params.includeEmployees,
-          employeeLimit: params.employeeLimit,
           includeJobPostings: params.includeJobPostings,
-          jobPostingsLimit: params.jobPostingsLimit,
-          includeUpdates: params.includeUpdates,
-          updatesLimit: params.updatesLimit
+          includeUpdates: params.includeUpdates
         });
 
         return {
@@ -96,7 +93,7 @@ export function registerCompanyTools(
   // ============================================================================
   // Tool 2: follow-company
   // ============================================================================
-  server.tool(
+  registry.registerTool(
     'follow-company',
     'Follow or unfollow a LinkedIn company page. Updates will appear in your feed when following. WARNING: This will perform a real action!',
     {
