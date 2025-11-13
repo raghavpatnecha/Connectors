@@ -1,0 +1,9 @@
+[submodule "integrations/communication/linkedin-api"]
+	path = integrations/communication/linkedin-api
+	url = https://github.com/raghavpatnecha/linkedin-mcp-server.git
+[submodule "integrations/communication/linkedin-automation"]
+	path = integrations/communication/linkedin-automation
+	url = https://github.com/alinaqi/mcp-linkedin-server.git
+[submodule "integrations/communication/linkedin-stickerdaniel"]
+	path = integrations/communication/linkedin-stickerdaniel
+	url = https://github.com/stickerdaniel/linkedin-mcp-server.git

@@ -3,7 +3,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Phase 1: Complete](https://img.shields.io/badge/Phase%201-Complete-brightgreen.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
 [![Token Reduction: 99.02%](https://img.shields.io/badge/Token%20Reduction-99.02%25-success.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
-[![MCP Servers: 44](https://img.shields.io/badge/MCP%20Servers-44-blue.svg)](integrations/)
+[![MCP Servers: 47](https://img.shields.io/badge/MCP%20Servers-47-blue.svg)](integrations/)
 
 **The open-source integration platform for AI agents that solves the MCP token bloat problem.**
 
@@ -39,6 +39,7 @@ Result: 99.02% token reduction, 198K tokens free for actual work
 
 ### 🔌 **500+ Integrations (Target)**
 - **44 GitHub MCP servers** currently operational (1,111 operations)
+- **3 LinkedIn MCP servers** integrated (API, automation, scraping approaches)
 - **Notion productivity suite** integrated (19 tools for pages, databases, blocks)
 - **Auto-generation pipeline**: Generate MCP servers from OpenAPI specs in minutes
 - **Category-based organization**: code, communication, project management, cloud, data, productivity
@@ -82,6 +83,7 @@ Result: 99.02% token reduction, 198K tokens free for actual work
 - 92 comprehensive tests (89% passing)
 - 200KB+ documentation
 - 44 GitHub MCP servers operational
+- 3 LinkedIn MCP servers integrated (communication category)
 
 See [Phase 1 Completion Report](docs/PHASE_1_COMPLETION_REPORT.md) for full details.
 
