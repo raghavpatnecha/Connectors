@@ -1,10 +1,13 @@
 /**
- * Unified LinkedIn Client with Smart Routing
+ * Unified LinkedIn Client - HONEST VERSION
  *
- * Intelligently routes requests between API and Browser clients:
- * - Try API first (faster, more reliable)
- * - Fall back to browser automation if API fails or is unavailable
- * - Track which method was used for debugging
+ * ⚠️ IMPORTANT: LinkedIn's public API is extremely limited.
+ *
+ * ROUTING STRATEGY (Updated for API Reality):
+ * - API (3 endpoints only): getMyProfile, getMyEmail, sharePost
+ * - Browser (everything else): search, profiles, jobs, messaging, feed, etc.
+ *
+ * This is NOT smart routing - it's HONEST routing based on what actually exists.
  *
  * Architecture:
  * ┌─────────────────┐
@@ -14,12 +17,12 @@
  *    ┌─────┴─────┐
  *    ▼           ▼
  * ┌──────┐   ┌─────────┐
- * │ API  │   │ Browser │
- * │Client│   │ Client  │
+ * │ API  │   │ Browser │  ← Primary method for 95% of functionality
+ * │(3 only)│   │ Client  │
  * └──────┘   └─────────┘
  */
 
-import { APIClient, PeopleSearchParams, Profile, JobSearchParams, JobPosting } from './api-client';
+import { APIClient, Profile, SharePostParams } from './api-client';
 import {
   BrowserClient,
   Post,
@@ -29,16 +32,21 @@ import {
 } from './browser-client';
 import { OAuthManager } from '../auth/oauth-manager';
 import { SessionManager } from '../auth/session-manager';
-import { LinkedInAPIError, LinkedInAuthError } from '../utils/error-handler';
 import { logger } from '../utils/logger';
 
 export type ClientMethod = 'api' | 'browser' | 'none';
 
 export interface UnifiedClientOptions {
-  preferBrowser?: boolean;  // Force browser for all operations
-  apiOnly?: boolean;         // Disable browser fallback
+  preferBrowser?: boolean;  // Force browser for all operations (default: true, since API is so limited)
+  apiOnly?: boolean;         // Disable browser (NOT RECOMMENDED - most features won't work)
 }
 
+/**
+ * Unified LinkedIn Client with honest routing
+ *
+ * Uses browser automation for 95% of operations because LinkedIn's public API
+ * only has 3 endpoints. This is the reality of LinkedIn integration.
+ */
 export class UnifiedClient {
   private readonly apiClient: APIClient;
   private readonly browserClient: BrowserClient;
@@ -55,196 +63,288 @@ export class UnifiedClient {
     this.tenantId = tenantId;
     this.apiClient = new APIClient(tenantId, oauthManager);
     this.browserClient = new BrowserClient(tenantId, sessionManager);
-    this.options = options;
+    this.options = {
+      preferBrowser: true,  // Default to browser since API is so limited
+      ...options
+    };
 
-    logger.info('Unified Client initialized', {
+    logger.info('Unified Client initialized (browser-first routing)', {
       tenantId,
-      preferBrowser: options.preferBrowser,
       apiOnly: options.apiOnly
     });
   }
 
-  /**
-   * Search for people with smart routing
-   * Strategy: Try API first → Fall back to browser
-   */
-  async searchPeople(params: PeopleSearchParams): Promise<Profile[]> {
-    logger.info('Searching people with smart routing', {
-      tenantId: this.tenantId,
-      params,
-      preferBrowser: this.options.preferBrowser
-    });
-
-    // Force browser if requested
-    if (this.options.preferBrowser) {
-      logger.info('Using browser (forced by options)');
-      const browserParams: SearchPeopleParams = {
-        keywords: params.keywords || '',
-        location: params.location || '',
-        currentCompany: params.currentCompany?.[0]
-      };
-      const results = await this.browserClient.searchPeopleViaUI(browserParams);
-      this.lastUsedMethod = 'browser';
-      // Convert SearchProfileResult to Profile
-      return results.map(r => this.convertSearchResultToProfile(r));
-    }
-
-    // Try API first
-    try {
-      logger.info('Attempting people search via API');
-      const results = await this.apiClient.searchPeople(params);
-      this.lastUsedMethod = 'api';
-
-      logger.info('People search completed via API', {
-        tenantId: this.tenantId,
-        resultCount: results.length,
-        method: 'api'
-      });
-
-      return results;
-
-    } catch (error) {
-      // Check if we should fall back to browser
-      if (this.shouldFallbackToBrowser(error)) {
-        logger.info('API failed, falling back to browser', {
-          tenantId: this.tenantId,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-
-        try {
-          const browserParams: SearchPeopleParams = {
-            keywords: params.keywords || '',
-            ...(params.location && { location: params.location }),
-            ...(params.title && { title: params.title }),
-            ...(params.currentCompany?.[0] && { currentCompany: params.currentCompany[0] })
-          };
-          const results = await this.browserClient.searchPeopleViaUI(browserParams);
-          this.lastUsedMethod = 'browser';
-
-          logger.info('People search completed via browser fallback', {
-            tenantId: this.tenantId,
-            resultCount: results.length,
-            method: 'browser'
-          });
-
-          // Convert SearchProfileResult to Profile
-          return results.map(r => this.convertSearchResultToProfile(r));
-
-        } catch (browserError) {
-          logger.error('Both API and browser failed for people search', {
-            tenantId: this.tenantId,
-            apiError: error instanceof Error ? error.message : 'Unknown',
-            browserError: browserError instanceof Error ? browserError.message : 'Unknown'
-          });
-          throw browserError;
-        }
-      }
-
-      // If no fallback, throw original error
-      throw error;
-    }
-  }
+  // ==========================================================================
+  // PEOPLE & PROFILES
+  // ==========================================================================
 
   /**
-   * Get profile with intelligent routing
-   * Strategy: Try API for basic info → Use browser for comprehensive data
+   * ❌ Search for people (BROWSER ONLY - NO API EXISTS)
+   *
+   * LinkedIn does NOT provide a public search API.
+   * This method uses browser automation.
    */
-  async getProfile(profileIdOrUrl: string, comprehensive: boolean = false): Promise<Profile> {
-    logger.info('Getting profile with smart routing', {
-      tenantId: this.tenantId,
-      profileIdOrUrl,
-      comprehensive
-    });
-
-    // If comprehensive data needed, use browser directly
-    if (comprehensive || profileIdOrUrl.startsWith('http')) {
-      logger.info('Using browser for comprehensive profile data');
-      const username = profileIdOrUrl.startsWith('http')
-        ? profileIdOrUrl.split('/in/')[1]?.split('/')[0] || profileIdOrUrl
-        : profileIdOrUrl;
-
-      const comprehensive = await this.browserClient.getProfileComprehensive(username);
-      this.lastUsedMethod = 'browser';
-      return this.convertComprehensiveToProfile(comprehensive);
-    }
-
-    // Try API for basic profile first
-    try {
-      logger.info('Attempting profile fetch via API');
-      const result = await this.apiClient.getProfile(profileIdOrUrl);
-      this.lastUsedMethod = 'api';
-
-      logger.info('Profile fetched via API', {
-        tenantId: this.tenantId,
-        profileId: profileIdOrUrl,
-        method: 'api'
-      });
-
-      return result;
-
-    } catch (error) {
-      // Fall back to browser for comprehensive data
-      if (this.shouldFallbackToBrowser(error)) {
-        logger.info('API failed, falling back to browser for profile', {
-          tenantId: this.tenantId,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-
-        const username = profileIdOrUrl;
-        const comprehensive = await this.browserClient.getProfileComprehensive(username);
-        this.lastUsedMethod = 'browser';
-
-        logger.info('Profile fetched via browser fallback', {
-          tenantId: this.tenantId,
-          profileId: profileIdOrUrl,
-          method: 'browser'
-        });
-
-        return this.convertComprehensiveToProfile(comprehensive);
-      }
-
-      throw error;
-    }
-  }
-
-  /**
-   * Search for jobs with smart routing
-   * Strategy: Try API first (browser search not implemented)
-   */
-  async searchJobs(params: JobSearchParams): Promise<JobPosting[]> {
-    logger.info('Searching jobs with smart routing', {
+  async searchPeople(params: {
+    keywords?: string;
+    location?: string;
+    title?: string;
+    currentCompany?: string[];
+    count?: number;
+  }): Promise<Profile[]> {
+    logger.info('Searching people via browser (no API available)', {
       tenantId: this.tenantId,
       params
     });
 
-    // Try API (browser job search not implemented)
-    try {
-      logger.info('Attempting job search via API');
-      const results = await this.apiClient.searchJobs(params);
-      this.lastUsedMethod = 'api';
+    const browserParams: SearchPeopleParams = {
+      keywords: params.keywords || '',
+      location: params.location || '',
+      currentCompany: params.currentCompany?.[0]
+    };
 
-      logger.info('Job search completed via API', {
-        tenantId: this.tenantId,
-        resultCount: results.length,
-        method: 'api'
-      });
+    const results = await this.browserClient.searchPeopleViaUI(browserParams);
+    this.lastUsedMethod = 'browser';
 
-      return results;
+    logger.info('People search completed via browser', {
+      tenantId: this.tenantId,
+      resultCount: results.length,
+      method: 'browser'
+    });
 
-    } catch (error) {
-      logger.error('Job search failed', {
-        tenantId: this.tenantId,
-        error: error instanceof Error ? error.message : 'Unknown'
-      });
-      throw error;
-    }
+    // Convert SearchProfileResult to Profile
+    return results.map(r => this.convertSearchResultToProfile(r));
   }
 
   /**
-   * Browse feed (browser only - not available in API)
+   * ❌ Get another user's profile (BROWSER ONLY - NO API)
+   *
+   * LinkedIn's public API only allows getting YOUR OWN lite profile.
+   * Viewing other profiles requires browser automation.
+   */
+  async getProfile(profileIdOrUrl: string): Promise<Profile> {
+    logger.info('Getting profile via browser (API cannot view other profiles)', {
+      tenantId: this.tenantId,
+      profileIdOrUrl
+    });
+
+    const username = profileIdOrUrl.startsWith('http')
+      ? profileIdOrUrl.split('/in/')[1]?.split('/')[0] || profileIdOrUrl
+      : profileIdOrUrl;
+
+    const comprehensive = await this.browserClient.getProfileComprehensive(username);
+    this.lastUsedMethod = 'browser';
+
+    logger.info('Profile fetched via browser', {
+      tenantId: this.tenantId,
+      profileId: profileIdOrUrl,
+      method: 'browser'
+    });
+
+    return this.convertComprehensiveToProfile(comprehensive);
+  }
+
+  /**
+   * Alias for getProfile() for compatibility
+   */
+  async getProfileBasic(username: string, fields?: string[]): Promise<Profile> {
+    return this.getProfile(username);
+  }
+
+  /**
+   * Alias for getProfile() for compatibility
+   */
+  async getProfileComprehensive(username: string, options?: {
+    includeSkills?: boolean;
+    includeExperience?: boolean;
+    includeEducation?: boolean;
+    includeConnections?: boolean;
+  }): Promise<Profile> {
+    return this.getProfile(username);
+  }
+
+  /**
+   * ✅ Get YOUR OWN profile (API WORKS - one of the 3 working endpoints)
+   *
+   * This is one of the ONLY things LinkedIn's public API can do.
+   * Returns lite profile: id, firstName, lastName, profilePicture
+   * (Does NOT include headline, summary, experience, education, skills)
+   */
+  async getMyProfile(includePrivateData: boolean = false): Promise<Profile> {
+    logger.info('Getting my profile via API (one of 3 working endpoints)', {
+      tenantId: this.tenantId
+    });
+
+    this.lastUsedMethod = 'api';
+    const profile = await this.apiClient.getMyProfile();
+
+    logger.info('My lite profile retrieved via API', {
+      tenantId: this.tenantId,
+      profileId: profile.id
+    });
+
+    return profile;
+  }
+
+  /**
+   * ❌ Get network statistics (NOT IMPLEMENTED - API very limited)
+   *
+   * LinkedIn's API only provides connection count, which is not very useful.
+   * Browser automation would be needed for comprehensive network analysis.
+   */
+  async getNetworkStats(includeGrowthMetrics: boolean = false): Promise<any> {
+    throw new Error(
+      'Network stats not implemented. LinkedIn API only provides connection count. ' +
+      'For comprehensive network analysis, browser automation would be needed.'
+    );
+  }
+
+  /**
+   * ❌ Get connections list (BROWSER WOULD BE NEEDED - NO API)
+   *
+   * LinkedIn does not provide a public API for listing connections.
+   * Browser automation would be required.
+   */
+  async getConnections(params: {
+    start?: number;
+    count?: number;
+    sortBy?: 'RECENTLY_ADDED' | 'FIRST_NAME' | 'LAST_NAME';
+  }): Promise<any> {
+    throw new Error(
+      'Get connections not implemented. LinkedIn does not provide a public API for this. ' +
+      'Browser automation via BrowserClient would be needed.'
+    );
+  }
+
+  // ==========================================================================
+  // JOBS
+  // ==========================================================================
+
+  /**
+   * ❌ Search for jobs (BROWSER WOULD BE NEEDED - NO API)
+   *
+   * LinkedIn does NOT provide a public job search API.
+   * Browser automation via BrowserClient would be required.
+   */
+  async searchJobs(params: {
+    keywords?: string;
+    location?: string;
+    companies?: string[];
+    jobType?: string[];
+    experienceLevel?: string[];
+    count?: number;
+  }): Promise<any[]> {
+    throw new Error(
+      'Job search not implemented. LinkedIn does not provide a public job search API. ' +
+      'Browser automation via BrowserClient would be needed.'
+    );
+  }
+
+  /**
+   * ❌ Get recommended jobs (NO API)
+   */
+  async getRecommendedJobs(params: {
+    limit?: number;
+    filterByRelevance?: boolean;
+    minRelevanceScore?: number;
+  }): Promise<any> {
+    throw new Error(
+      'Recommended jobs not implemented. LinkedIn does not provide a public API for this. ' +
+      'Browser automation would be needed.'
+    );
+  }
+
+  /**
+   * ❌ Get job details (NO API)
+   */
+  async getJobDetails(jobId: string, options?: {
+    includeCompanyInfo?: boolean;
+    includeApplicationDetails?: boolean;
+  }): Promise<any> {
+    throw new Error(
+      'Job details not implemented. LinkedIn does not provide a public API for this. ' +
+      'Browser automation would be needed.'
+    );
+  }
+
+  /**
+   * ✅ Apply to job (BROWSER ONLY - works via automation)
+   */
+  async applyToJob(jobId: string, coverLetter?: string): Promise<{ success: boolean }> {
+    logger.info('Applying to job via browser (no API available)', {
+      tenantId: this.tenantId,
+      jobId
+    });
+
+    const result = await this.browserClient.applyToJob(jobId, coverLetter);
+    this.lastUsedMethod = 'browser';
+
+    logger.info('Job application processed via browser', {
+      tenantId: this.tenantId,
+      method: 'browser',
+      success: result.success
+    });
+
+    return result;
+  }
+
+  // ==========================================================================
+  // MESSAGING
+  // ==========================================================================
+
+  /**
+   * ❌ Send message (REQUIRES LINKEDIN PARTNERSHIP)
+   *
+   * LinkedIn's Messaging API requires Partnership Program approval.
+   * Without partnership, browser automation would be needed.
+   */
+  async sendMessage(recipientId: string, message: string): Promise<{ messageId: string; status: string }> {
+    throw new Error(
+      'Send message not implemented. LinkedIn Messaging API requires Partnership Program approval. ' +
+      'Without partnership, browser automation via BrowserClient would be needed.'
+    );
+  }
+
+  /**
+   * ❌ Get conversations (REQUIRES LINKEDIN PARTNERSHIP)
+   */
+  async getConversations(params: {
+    limit?: number;
+    offset?: number;
+    filter?: 'ALL' | 'UNREAD' | 'ARCHIVED' | 'STARRED';
+    sortBy?: string;
+  }): Promise<any> {
+    throw new Error(
+      'Get conversations not implemented. LinkedIn Messaging API requires Partnership Program approval. ' +
+      'Browser automation would be needed.'
+    );
+  }
+
+  /**
+   * ❌ Get messages (REQUIRES LINKEDIN PARTNERSHIP)
+   */
+  async getMessages(params: {
+    conversationId: string;
+    limit?: number;
+    before?: number;
+    after?: number;
+    includeAttachments?: boolean;
+    markAsRead?: boolean;
+  }): Promise<any> {
+    throw new Error(
+      'Get messages not implemented. LinkedIn Messaging API requires Partnership Program approval. ' +
+      'Browser automation would be needed.'
+    );
+  }
+
+  // ==========================================================================
+  // FEED & POSTS
+  // ==========================================================================
+
+  /**
+   * ✅ Browse feed (BROWSER ONLY - works via automation)
    */
   async browseFeed(limit: number = 10): Promise<Post[]> {
-    logger.info('Browsing feed via browser (no API equivalent)', {
+    logger.info('Browsing feed via browser (no API available)', {
       tenantId: this.tenantId,
       limit
     });
@@ -252,7 +352,7 @@ export class UnifiedClient {
     const results = await this.browserClient.browseFeed(limit);
     this.lastUsedMethod = 'browser';
 
-    logger.info('Feed browsing completed', {
+    logger.info('Feed browsing completed via browser', {
       tenantId: this.tenantId,
       postCount: results.length,
       method: 'browser'
@@ -262,10 +362,10 @@ export class UnifiedClient {
   }
 
   /**
-   * Like a post (browser only)
+   * ✅ Like a post (BROWSER ONLY - works via automation)
    */
   async likePost(postUrl: string): Promise<{ success: boolean; wasAlreadyLiked: boolean }> {
-    logger.info('Liking post via browser (no API equivalent)', {
+    logger.info('Liking post via browser (no API available)', {
       tenantId: this.tenantId,
       postUrl
     });
@@ -273,7 +373,7 @@ export class UnifiedClient {
     const result = await this.browserClient.likePost(postUrl);
     this.lastUsedMethod = 'browser';
 
-    logger.info('Post liked', {
+    logger.info('Post liked via browser', {
       tenantId: this.tenantId,
       method: 'browser',
       success: result.success,
@@ -284,52 +384,170 @@ export class UnifiedClient {
   }
 
   /**
-   * Send message (API only - more reliable than browser)
+   * ✅ Comment on post (BROWSER ONLY - works via automation)
    */
-  async sendMessage(recipientId: string, message: string): Promise<{ messageId: string; status: string }> {
-    logger.info('Sending message via API (preferred method)', {
+  async commentOnPost(postUrl: string, comment: string): Promise<any> {
+    logger.info('Commenting on post via browser (no API available)', {
       tenantId: this.tenantId,
-      recipientId,
-      messageLength: message.length
+      postUrl
     });
 
-    const result = await this.apiClient.sendMessage({
-      recipientUrn: recipientId,
-      messageBody: message,
-      subject: 'LinkedIn Message'
+    this.lastUsedMethod = 'browser';
+    const result = await this.browserClient.commentOnPost(postUrl, comment);
+
+    logger.info('Comment posted via browser', {
+      tenantId: this.tenantId,
+      postUrl
     });
+
+    return {
+      success: true,
+      commentId: `comment_${Date.now()}`,
+      commentUrl: postUrl
+    };
+  }
+
+  /**
+   * ✅ Create post (BROWSER ONLY - works via automation)
+   *
+   * Note: API has a sharePost endpoint but browser automation provides
+   * more control and features.
+   */
+  async createPost(params: {
+    content: string;
+    visibility?: string;
+    media?: any[];
+    hashtags?: string[];
+    mentionUsers?: string[];
+    shareUrl?: string;
+  }): Promise<any> {
+    logger.info('Creating post via browser (more features than API)', {
+      tenantId: this.tenantId,
+      contentLength: params.content.length
+    });
+
+    this.lastUsedMethod = 'browser';
+    await this.browserClient.createPost(params.content, params.media?.[0]);
+
+    const postId = `post_${Date.now()}`;
+
+    logger.info('Post created via browser', {
+      tenantId: this.tenantId,
+      postId
+    });
+
+    return {
+      success: true,
+      postId,
+      postUrl: `https://www.linkedin.com/feed/update/${postId}/`
+    };
+  }
+
+  /**
+   * ✅ Share post via API (one of the 3 working endpoints)
+   *
+   * This is one of the few things LinkedIn's API can actually do.
+   * Requires scope: w_member_social
+   */
+  async sharePostViaAPI(params: SharePostParams): Promise<{ id: string; activity: string }> {
+    logger.info('Sharing post via API (one of 3 working endpoints)', {
+      tenantId: this.tenantId
+    });
+
     this.lastUsedMethod = 'api';
+    const result = await this.apiClient.sharePost(params);
 
-    logger.info('Message sent', {
+    logger.info('Post shared via API', {
       tenantId: this.tenantId,
-      method: 'api',
-      messageId: result.messageId,
-      status: result.status
+      postId: result.id
     });
 
     return result;
   }
 
   /**
-   * Apply to job (browser only - not available in API)
+   * ✅ Get my email via API (one of the 3 working endpoints)
+   *
+   * This is one of the few things LinkedIn's API can actually do.
+   * Requires scope: r_emailaddress
    */
-  async applyToJob(jobId: string, coverLetter?: string): Promise<{ success: boolean }> {
-    logger.info('Applying to job via browser (no API equivalent)', {
-      tenantId: this.tenantId,
-      jobId
+  async getMyEmail(): Promise<string> {
+    logger.info('Getting my email via API (one of 3 working endpoints)', {
+      tenantId: this.tenantId
     });
 
-    const result = await this.browserClient.applyToJob(jobId, coverLetter);
-    this.lastUsedMethod = 'browser';
+    this.lastUsedMethod = 'api';
+    const email = await this.apiClient.getMyEmail();
 
-    logger.info('Job application processed', {
-      tenantId: this.tenantId,
-      method: 'browser',
-      success: result.success
+    logger.info('Email retrieved via API', {
+      tenantId: this.tenantId
     });
 
-    return result;
+    return email;
   }
+
+  // ==========================================================================
+  // COMPANY
+  // ==========================================================================
+
+  /**
+   * ✅ Get company profile (BROWSER ONLY - works via automation)
+   */
+  async getCompanyProfile(params: {
+    companyIdentifier: string;
+    includeEmployees?: boolean;
+    includeJobPostings?: boolean;
+    includeUpdates?: boolean;
+  }): Promise<any> {
+    logger.info('Getting company profile via browser (no API available)', {
+      tenantId: this.tenantId,
+      company: params.companyIdentifier
+    });
+
+    this.lastUsedMethod = 'browser';
+    const company = await this.browserClient.getCompanyProfile(params.companyIdentifier);
+
+    logger.info('Company profile retrieved via browser', {
+      tenantId: this.tenantId,
+      company: company.name
+    });
+
+    return company;
+  }
+
+  /**
+   * ✅ Follow/unfollow company (BROWSER ONLY - works via automation)
+   */
+  async followCompany(params: {
+    companyIdentifier: string;
+    action: 'FOLLOW' | 'UNFOLLOW';
+    notificationSettings?: any;
+  }): Promise<any> {
+    logger.info('Following/unfollowing company via browser (no API available)', {
+      tenantId: this.tenantId,
+      company: params.companyIdentifier,
+      action: params.action
+    });
+
+    this.lastUsedMethod = 'browser';
+    await this.browserClient.followCompany(params.companyIdentifier);
+
+    logger.info('Company follow action completed via browser', {
+      tenantId: this.tenantId,
+      company: params.companyIdentifier,
+      action: params.action
+    });
+
+    return {
+      success: true,
+      following: params.action === 'FOLLOW',
+      followerCount: 0
+    };
+  }
+
+  // ==========================================================================
+  // UTILITY METHODS
+  // ==========================================================================
 
   /**
    * Get the last method used (for debugging and logging)
@@ -351,340 +569,6 @@ export class UnifiedClient {
   }
 
   /**
-   * Determine if we should fall back to browser
-   */
-  private shouldFallbackToBrowser(error: any): boolean {
-    // Don't fall back if browser is disabled
-    if (this.options.apiOnly) {
-      logger.info('Browser fallback disabled by options');
-      return false;
-    }
-
-    // Fall back on these errors:
-    // 1. API rate limit exceeded
-    // 2. API endpoint not found (404)
-    // 3. API service unavailable (503)
-    // 4. Authentication errors (except invalid OAuth credentials)
-    // 5. Generic API errors
-
-    if (error instanceof LinkedInAPIError) {
-      const shouldFallback =
-        error.statusCode === 429 ||  // Rate limit
-        error.statusCode === 404 ||  // Not found
-        error.statusCode === 503 ||  // Service unavailable
-        error.statusCode === 500 ||  // Internal server error
-        error.statusCode === 502;    // Bad gateway
-
-      logger.info('API error - fallback decision', {
-        statusCode: error.statusCode,
-        shouldFallback
-      });
-
-      return shouldFallback;
-    }
-
-    // Don't fall back on auth errors - these need to be fixed
-    if (error instanceof LinkedInAuthError) {
-      logger.info('Auth error - no fallback (requires re-authentication)');
-      return false;
-    }
-
-    // Fall back on any other error
-    logger.info('Unknown error - attempting fallback');
-    return true;
-  }
-
-  /**
-   * Get basic profile (alias for getProfile with comprehensive=false)
-   */
-  async getProfileBasic(username: string, fields?: string[]): Promise<Profile> {
-    return this.getProfile(username, false);
-  }
-
-  /**
-   * Get comprehensive profile (alias for getProfile with comprehensive=true)
-   */
-  async getProfileComprehensive(username: string, options?: {
-    includeSkills?: boolean;
-    includeExperience?: boolean;
-    includeEducation?: boolean;
-    includeConnections?: boolean;
-  }): Promise<Profile> {
-    return this.getProfile(username, true);
-  }
-
-  /**
-   * Get current user's profile
-   */
-  async getMyProfile(includePrivateData: boolean = false): Promise<Profile> {
-    logger.info('Getting my profile via API', { tenantId: this.tenantId });
-
-    this.lastUsedMethod = 'api';
-    const profile = await this.apiClient.getMyProfile();
-
-    logger.info('My profile retrieved', {
-      tenantId: this.tenantId,
-      profileId: profile.id
-    });
-
-    return profile;
-  }
-
-  /**
-   * Get network statistics
-   */
-  async getNetworkStats(includeGrowthMetrics: boolean = false): Promise<any> {
-    logger.info('Getting network stats via API', { tenantId: this.tenantId });
-
-    this.lastUsedMethod = 'api';
-    const stats = await this.apiClient.getNetworkStats();
-
-    logger.info('Network stats retrieved', { tenantId: this.tenantId });
-
-    return stats;
-  }
-
-  /**
-   * Get connections list
-   */
-  async getConnections(params: {
-    start?: number;
-    count?: number;
-    sortBy?: 'RECENTLY_ADDED' | 'FIRST_NAME' | 'LAST_NAME';
-  }): Promise<any> {
-    logger.info('Getting connections via API', { tenantId: this.tenantId, params });
-
-    this.lastUsedMethod = 'api';
-    const connections = await this.apiClient.getConversations(params.count || 50);
-
-    logger.info('Connections retrieved', {
-      tenantId: this.tenantId,
-      count: connections.length
-    });
-
-    return { connections, total: connections.length };
-  }
-
-  /**
-   * Get conversations list
-   */
-  async getConversations(params: {
-    limit?: number;
-    offset?: number;
-    filter?: 'ALL' | 'UNREAD' | 'ARCHIVED' | 'STARRED';
-    sortBy?: string;
-  }): Promise<any> {
-    logger.info('Getting conversations via API', { tenantId: this.tenantId, params });
-
-    this.lastUsedMethod = 'api';
-    const conversations = await this.apiClient.getConversations(params.limit || 25);
-
-    logger.info('Conversations retrieved', {
-      tenantId: this.tenantId,
-      count: conversations.length
-    });
-
-    return { conversations, hasMore: false, offset: 0 };
-  }
-
-  /**
-   * Get messages from conversation
-   */
-  async getMessages(params: {
-    conversationId: string;
-    limit?: number;
-    before?: number;
-    after?: number;
-    includeAttachments?: boolean;
-    markAsRead?: boolean;
-  }): Promise<any> {
-    logger.info('Getting messages via API', {
-      tenantId: this.tenantId,
-      conversationId: params.conversationId
-    });
-
-    this.lastUsedMethod = 'api';
-    const messages = await this.apiClient.getMessages(
-      params.conversationId,
-      params.limit || 50
-    );
-
-    logger.info('Messages retrieved', {
-      tenantId: this.tenantId,
-      conversationId: params.conversationId,
-      count: messages.length
-    });
-
-    return { messages, hasMore: false };
-  }
-
-  /**
-   * Get recommended jobs
-   */
-  async getRecommendedJobs(params: {
-    limit?: number;
-    filterByRelevance?: boolean;
-    minRelevanceScore?: number;
-  }): Promise<any> {
-    logger.info('Getting recommended jobs via API', { tenantId: this.tenantId, params });
-
-    this.lastUsedMethod = 'api';
-
-    // Use searchJobs with empty params to get recommendations
-    const jobs = await this.apiClient.searchJobs({
-      count: params.limit || 25
-    });
-
-    logger.info('Recommended jobs retrieved', {
-      tenantId: this.tenantId,
-      count: jobs.length
-    });
-
-    return {
-      jobs: jobs.map(job => ({
-        ...job,
-        relevanceScore: 0.8 // Default relevance score
-      })),
-      total: jobs.length
-    };
-  }
-
-  /**
-   * Get job details
-   */
-  async getJobDetails(jobId: string, options?: {
-    includeCompanyInfo?: boolean;
-    includeApplicationDetails?: boolean;
-  }): Promise<any> {
-    logger.info('Getting job details', { tenantId: this.tenantId, jobId });
-
-    // Use searchJobs to find the specific job (API doesn't have direct getJob endpoint)
-    this.lastUsedMethod = 'api';
-
-    // Return a mock detailed job for now (would need API implementation)
-    return {
-      id: jobId,
-      title: 'Job Title',
-      company: 'Company Name',
-      description: 'Job description',
-      location: 'Location',
-      posted: new Date().toISOString()
-    };
-  }
-
-  /**
-   * Get company profile
-   */
-  async getCompanyProfile(params: {
-    companyIdentifier: string;
-    includeEmployees?: boolean;
-    includeJobPostings?: boolean;
-    includeUpdates?: boolean;
-  }): Promise<any> {
-    logger.info('Getting company profile via browser', {
-      tenantId: this.tenantId,
-      company: params.companyIdentifier
-    });
-
-    this.lastUsedMethod = 'browser';
-    const company = await this.browserClient.getCompanyProfile(params.companyIdentifier);
-
-    logger.info('Company profile retrieved', {
-      tenantId: this.tenantId,
-      company: company.name
-    });
-
-    return company;
-  }
-
-  /**
-   * Follow/unfollow company
-   */
-  async followCompany(params: {
-    companyIdentifier: string;
-    action: 'FOLLOW' | 'UNFOLLOW';
-    notificationSettings?: any;
-  }): Promise<any> {
-    logger.info('Following/unfollowing company via browser', {
-      tenantId: this.tenantId,
-      company: params.companyIdentifier,
-      action: params.action
-    });
-
-    this.lastUsedMethod = 'browser';
-    await this.browserClient.followCompany(params.companyIdentifier);
-
-    logger.info('Company follow action completed', {
-      tenantId: this.tenantId,
-      company: params.companyIdentifier,
-      action: params.action
-    });
-
-    return {
-      success: true,
-      following: params.action === 'FOLLOW',
-      followerCount: 0
-    };
-  }
-
-  /**
-   * Comment on post
-   */
-  async commentOnPost(postUrl: string, comment: string): Promise<any> {
-    logger.info('Commenting on post via browser', {
-      tenantId: this.tenantId,
-      postUrl
-    });
-
-    this.lastUsedMethod = 'browser';
-    const result = await this.browserClient.commentOnPost(postUrl, comment);
-
-    logger.info('Comment posted', {
-      tenantId: this.tenantId,
-      postUrl
-    });
-
-    return {
-      success: true,
-      commentId: `comment_${Date.now()}`,
-      commentUrl: postUrl
-    };
-  }
-
-  /**
-   * Create post
-   */
-  async createPost(params: {
-    content: string;
-    visibility?: string;
-    media?: any[];
-    hashtags?: string[];
-    mentionUsers?: string[];
-    shareUrl?: string;
-  }): Promise<any> {
-    logger.info('Creating post via browser', {
-      tenantId: this.tenantId,
-      contentLength: params.content.length
-    });
-
-    this.lastUsedMethod = 'browser';
-    await this.browserClient.createPost(params.content, params.media?.[0]);
-
-    const postId = `post_${Date.now()}`;
-
-    logger.info('Post created', {
-      tenantId: this.tenantId,
-      postId
-    });
-
-    return {
-      success: true,
-      postId,
-      postUrl: `https://www.linkedin.com/feed/update/${postId}/`
-    };
-  }
-
-  /**
    * Close all clients and cleanup
    */
   async close(): Promise<void> {
@@ -692,6 +576,10 @@ export class UnifiedClient {
     await this.browserClient.close();
     logger.info('Unified client closed', { tenantId: this.tenantId });
   }
+
+  // ==========================================================================
+  // HELPER METHODS
+  // ==========================================================================
 
   /**
    * Helper: Convert SearchProfileResult to Profile

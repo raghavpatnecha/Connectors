@@ -44,9 +44,6 @@ export function registerPeopleTools(
           keywords: params.keywords,
           location: params.location,
           currentCompany: params.currentCompany,
-          pastCompany: params.pastCompanies,
-          industries: params.industries,
-          schools: params.schools,
           count: params.limit || 20
         });
 

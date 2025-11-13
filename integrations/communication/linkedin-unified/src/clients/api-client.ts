@@ -1,13 +1,29 @@
 /**
- * LinkedIn REST API Client
+ * LinkedIn REST API Client - HONEST VERSION
  *
- * Wraps LinkedIn's official REST API v2 with:
- * - Automatic OAuth token management
- * - Rate limit handling
- * - Error handling
- * - Type-safe interfaces
+ * ⚠️ IMPORTANT: LinkedIn's public API is EXTREMELY LIMITED
  *
- * Reference: https://learn.microsoft.com/en-us/linkedin/shared/api-guide/concepts
+ * Without LinkedIn Partnership approval, only 3 endpoints are available:
+ * 1. GET /v2/me - Get authenticated user's LITE profile (firstName, lastName, profilePicture, id)
+ * 2. GET /v2/emailAddress - Get authenticated user's email
+ * 3. POST /v2/ugcPosts - Share content to LinkedIn
+ *
+ * ALL OTHER FUNCTIONALITY requires browser automation (web scraping), which is what
+ * the BrowserClient handles.
+ *
+ * What DOES NOT EXIST in LinkedIn's public API:
+ * ❌ Search People API
+ * ❌ Search Jobs API
+ * ❌ View Other Profiles API (can only view your own lite profile)
+ * ❌ Messaging API (requires LinkedIn Partnership)
+ * ❌ Browse Feed API
+ * ❌ Company Search API
+ * ❌ Get Connections API
+ * ❌ Get Conversations API
+ * ❌ Job Recommendations API
+ *
+ * Reference: https://learn.microsoft.com/en-us/linkedin/shared/integrations/people/profile-api
+ * Partnership Program: https://docs.microsoft.com/en-us/linkedin/shared/references/partner-program
  */
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -51,34 +67,43 @@ export class RateLimitError extends LinkedInAPIError {
   }
 }
 
-// ============================================================================
-// Search & Profile Parameters
-// ============================================================================
-
 /**
- * Parameters for searching people on LinkedIn
+ * LinkedIn Lite Profile (Only available via /v2/me)
+ * This is ALL that LinkedIn's public API returns without partnership.
+ *
+ * Does NOT include: headline, summary, experience, education, skills, industry
  */
-export interface PeopleSearchParams {
-  keywords?: string;
-  currentCompany?: string[];
-  pastCompany?: string[];
-  industries?: string[];
-  location?: string;
-  schools?: string[];
-  firstName?: string;
-  lastName?: string;
-  title?: string;
-  start?: number;
-  count?: number;
+export interface LiteProfile {
+  id: string;
+  firstName: {
+    localized: {
+      en_US: string;
+    };
+  };
+  lastName: {
+    localized: {
+      en_US: string;
+    };
+  };
+  profilePicture?: {
+    displayImage: string;
+  };
 }
 
 /**
- * LinkedIn Profile Response
+ * Profile for external use
+ *
+ * Note: API only returns id, firstName, lastName, profilePicture
+ * Browser automation can return additional fields (headline, summary, etc.)
  */
 export interface Profile {
   id: string;
   firstName?: string;
   lastName?: string;
+  profilePicture?: {
+    displayImage: string;
+  };
+  // Additional fields from browser automation
   headline?: string;
   summary?: string;
   industry?: string;
@@ -86,150 +111,47 @@ export interface Profile {
     country?: string;
     city?: string;
   };
-  profilePicture?: {
-    displayImage: string;
-  };
-  positions?: Position[];
-  educations?: Education[];
-  skills?: Skill[];
+  positions?: any[];
+  educations?: any[];
+  skills?: any[];
 }
 
 /**
- * Position/Experience on LinkedIn
+ * LinkedIn Email Address Response
  */
-export interface Position {
-  title: string;
-  companyName: string;
-  companyUrn?: string;
-  description?: string;
-  startDate?: {
-    year: number;
-    month?: number;
-  };
-  endDate?: {
-    year: number;
-    month?: number;
-  };
-  location?: string;
-}
-
-/**
- * Education on LinkedIn
- */
-export interface Education {
-  schoolName: string;
-  schoolUrn?: string;
-  degreeName?: string;
-  fieldOfStudy?: string;
-  startDate?: {
-    year: number;
-  };
-  endDate?: {
-    year: number;
+export interface EmailAddress {
+  handle: string;
+  'handle~': {
+    emailAddress: string;
   };
 }
 
 /**
- * Skill on LinkedIn
+ * Parameters for sharing a post on LinkedIn
  */
-export interface Skill {
-  name: string;
-  urn?: string;
-}
-
-// ============================================================================
-// Job Search Parameters
-// ============================================================================
-
-/**
- * Parameters for searching jobs on LinkedIn
- */
-export interface JobSearchParams {
-  keywords?: string;
-  companies?: string[];
-  location?: string;
-  jobType?: string[]; // FULL_TIME, PART_TIME, CONTRACT, TEMPORARY, INTERNSHIP, VOLUNTEER
-  experienceLevel?: string[]; // ENTRY_LEVEL, ASSOCIATE, MID_SENIOR, DIRECTOR, EXECUTIVE
-  industries?: string[];
-  datePosted?: string; // PAST_24_HOURS, PAST_WEEK, PAST_MONTH
-  remoteFilter?: string; // ON_SITE, REMOTE, HYBRID
-  start?: number;
-  count?: number;
+export interface SharePostParams {
+  author: string; // URN format: urn:li:person:{personId}
+  lifecycleState: 'PUBLISHED' | 'DRAFT';
+  visibility: 'PUBLIC' | 'CONNECTIONS';
+  text: string;
+  media?: {
+    status: 'READY';
+    description: {
+      text: string;
+    };
+    media: string; // Media URN
+    title: {
+      text: string;
+    };
+  };
 }
 
 /**
- * LinkedIn Job Posting Response
+ * Share Post Response
  */
-export interface JobPosting {
+export interface SharePostResponse {
   id: string;
-  title: string;
-  companyName: string;
-  companyUrn?: string;
-  location?: string;
-  description?: string;
-  employmentType?: string;
-  experienceLevel?: string;
-  industries?: string[];
-  postedAt?: number;
-  expiresAt?: number;
-  applyUrl?: string;
-}
-
-// ============================================================================
-// Messaging Parameters
-// ============================================================================
-
-/**
- * Parameters for sending a message
- */
-export interface SendMessageParams {
-  recipientUrn: string;
-  messageBody: string;
-  subject?: string;
-}
-
-/**
- * LinkedIn Conversation
- */
-export interface Conversation {
-  id: string;
-  participants: string[];
-  lastActivityAt: number;
-  unreadCount: number;
-  lastMessage?: Message;
-}
-
-/**
- * LinkedIn Message
- */
-export interface Message {
-  id: string;
-  conversationId: string;
-  from: string;
-  body: string;
-  createdAt: number;
-  attachments?: Attachment[];
-}
-
-/**
- * Message Attachment
- */
-export interface Attachment {
-  type: string;
-  url: string;
-  name?: string;
-}
-
-// ============================================================================
-// Network Statistics
-// ============================================================================
-
-/**
- * LinkedIn Network Statistics
- */
-export interface NetworkStats {
-  firstDegreeSize: number;
-  secondDegreeSize: number;
+  activity: string; // Activity URN
 }
 
 // ============================================================================
@@ -253,9 +175,12 @@ interface RequestOptions {
 // ============================================================================
 
 /**
- * LinkedIn REST API Client
+ * LinkedIn REST API Client (Honest Version)
  *
- * Handles all interactions with LinkedIn's official REST API v2
+ * ⚠️ This client ONLY implements the 3 endpoints that actually exist in
+ * LinkedIn's public API. All other functionality requires browser automation.
+ *
+ * For search, profiles, jobs, messaging, etc., use the BrowserClient instead.
  */
 export class APIClient {
   private readonly baseURL = 'https://api.linkedin.com/v2';
@@ -266,7 +191,7 @@ export class APIClient {
   constructor(tenantId: string, oauthManager: OAuthManager) {
     this.tenantId = tenantId;
     this.oauthManager = oauthManager;
-    logger.info('API Client initialized', { tenantId });
+    logger.info('API Client initialized (limited to 3 public endpoints)', { tenantId });
   }
 
   // ==========================================================================
@@ -386,7 +311,7 @@ export class APIClient {
         // Handle 403 Forbidden - insufficient permissions
         if (status === 403) {
           throw new LinkedInAuthError(
-            `Insufficient permissions: ${errorData?.message || 'Access denied'}`,
+            `Insufficient permissions: ${errorData?.message || 'Access denied'}. This endpoint may require LinkedIn Partnership approval.`,
             this.tenantId,
             error
           );
@@ -405,7 +330,7 @@ export class APIClient {
         // Handle 404 Not Found
         if (status === 404) {
           throw new LinkedInAPIError(
-            `Resource not found: ${endpoint}`,
+            `Resource not found: ${endpoint}. This endpoint may not exist in LinkedIn's public API.`,
             404,
             endpoint,
             error
@@ -482,302 +407,111 @@ export class APIClient {
     return Date.now() + 60 * 60 * 1000;
   }
 
-  /**
-   * Build query string from search parameters
-   */
-  private buildSearchQuery(params: Record<string, any>): string {
-    const queryParams = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
-
-      if (Array.isArray(value)) {
-        value.forEach((item, index) => {
-          queryParams.append(`${key}[${index}]`, item);
-        });
-      } else {
-        queryParams.append(key, String(value));
-      }
-    });
-
-    return queryParams.toString();
-  }
-
   // ==========================================================================
-  // Public API Methods
+  // Public API Methods (ONLY THE 3 THAT ACTUALLY WORK)
   // ==========================================================================
 
   /**
-   * Search for people on LinkedIn
+   * ✅ METHOD 1/3: Get current user's Lite Profile
    *
-   * @param params Search parameters (keywords, location, company, etc.)
-   * @returns Array of profiles matching search criteria
-   */
-  async searchPeople(params: PeopleSearchParams): Promise<Profile[]> {
-    logger.info('Searching people', { tenantId: this.tenantId, params });
-
-    const queryString = this.buildSearchQuery({
-      keywords: params.keywords,
-      'current-company': params.currentCompany,
-      'past-company': params.pastCompany,
-      'facet-industry': params.industries,
-      location: params.location,
-      schools: params.schools,
-      'first-name': params.firstName,
-      'last-name': params.lastName,
-      title: params.title,
-      start: params.start || 0,
-      count: params.count || 25
-    });
-
-    const response = await this.makeRequest<any>(
-      `/search/people?${queryString}`
-    );
-
-    // Transform response to Profile[] format
-    const profiles: Profile[] = (response.elements || []).map((element: any) => ({
-      id: element.entityUrn || element.id,
-      firstName: element.firstName?.localized?.en_US,
-      lastName: element.lastName?.localized?.en_US,
-      headline: element.headline?.localized?.en_US,
-      summary: element.summary,
-      industry: element.industryName,
-      location: element.location,
-      profilePicture: element.profilePicture,
-      positions: element.positions?.elements || [],
-      educations: element.educations?.elements || [],
-      skills: element.skills?.elements || []
-    }));
-
-    return profiles;
-  }
-
-  /**
-   * Get detailed profile by URN or public ID
+   * This is the ONLY profile endpoint available in LinkedIn's public API.
+   * It only returns: id, firstName, lastName, profilePicture
    *
-   * @param id Profile URN or public identifier
-   * @returns Detailed profile information
+   * Does NOT include: headline, summary, experience, education, skills, industry
+   *
+   * Scope required: r_liteprofile or r_basicprofile
+   *
+   * @returns Current user's lite profile information
    */
-  async getProfile(id: string): Promise<Profile> {
-    logger.info('Getting profile', { tenantId: this.tenantId, id });
+  async getMyLiteProfile(): Promise<Profile> {
+    logger.info('Getting my lite profile', { tenantId: this.tenantId });
 
-    const encodedId = encodeURIComponent(id);
-    const projection = '(id,firstName,lastName,profilePicture,headline,summary,industry,location,positions,educations,skills)';
-
-    const response = await this.makeRequest<any>(
-      `/people/${encodedId}?projection=${projection}`
-    );
+    const response = await this.makeRequest<LiteProfile>('/me');
 
     return {
       id: response.id,
       firstName: response.firstName?.localized?.en_US,
       lastName: response.lastName?.localized?.en_US,
-      headline: response.headline?.localized?.en_US,
-      summary: response.summary,
-      industry: response.industryName,
-      location: response.location,
-      profilePicture: response.profilePicture,
-      positions: response.positions?.elements || [],
-      educations: response.educations?.elements || [],
-      skills: response.skills?.elements || []
+      profilePicture: response.profilePicture
     };
   }
 
   /**
-   * Get current user's profile
-   *
-   * @returns Current user's profile information
+   * Alias for getMyLiteProfile() to maintain compatibility with UnifiedClient
    */
   async getMyProfile(): Promise<Profile> {
-    logger.info('Getting my profile', { tenantId: this.tenantId });
+    return this.getMyLiteProfile();
+  }
 
-    const projection = '(id,firstName,lastName,profilePicture,headline,summary,industry,location,positions,educations,skills)';
+  /**
+   * ✅ METHOD 2/3: Get current user's email address
+   *
+   * Scope required: r_emailaddress
+   *
+   * @returns Current user's email address
+   */
+  async getMyEmail(): Promise<string> {
+    logger.info('Getting my email', { tenantId: this.tenantId });
+
+    const response = await this.makeRequest<EmailAddress>(
+      '/emailAddress?q=members&projection=(elements*(handle~))'
+    );
+
+    const email = response['handle~']?.emailAddress;
+
+    if (!email) {
+      throw new LinkedInAPIError(
+        'Email address not found in response',
+        undefined,
+        '/emailAddress'
+      );
+    }
+
+    return email;
+  }
+
+  /**
+   * ✅ METHOD 3/3: Share a post on LinkedIn
+   *
+   * This allows posting content to the authenticated user's LinkedIn feed.
+   *
+   * Scope required: w_member_social
+   *
+   * @param params Post content and visibility settings
+   * @returns Share post response with activity URN
+   */
+  async sharePost(params: SharePostParams): Promise<SharePostResponse> {
+    logger.info('Sharing post', { tenantId: this.tenantId });
+
+    const postData = {
+      author: params.author,
+      lifecycleState: params.lifecycleState || 'PUBLISHED',
+      specificContent: {
+        'com.linkedin.ugc.ShareContent': {
+          shareCommentary: {
+            text: params.text
+          },
+          shareMediaCategory: params.media ? 'ARTICLE' : 'NONE',
+          ...(params.media && { media: [params.media] })
+        }
+      },
+      visibility: {
+        'com.linkedin.ugc.MemberNetworkVisibility': params.visibility || 'PUBLIC'
+      }
+    };
 
     const response = await this.makeRequest<any>(
-      `/me?projection=${projection}`
+      '/ugcPosts',
+      {
+        method: 'POST',
+        data: postData
+      }
     );
 
     return {
       id: response.id,
-      firstName: response.firstName?.localized?.en_US,
-      lastName: response.lastName?.localized?.en_US,
-      headline: response.headline?.localized?.en_US,
-      summary: response.summary,
-      industry: response.industryName,
-      location: response.location,
-      profilePicture: response.profilePicture,
-      positions: response.positions?.elements || [],
-      educations: response.educations?.elements || [],
-      skills: response.skills?.elements || []
+      activity: response.activity || `urn:li:activity:${response.id}`
     };
-  }
-
-  /**
-   * Search for jobs on LinkedIn
-   *
-   * @param params Job search parameters
-   * @returns Array of job postings matching criteria
-   */
-  async searchJobs(params: JobSearchParams): Promise<JobPosting[]> {
-    logger.info('Searching jobs', { tenantId: this.tenantId, params });
-
-    const queryString = this.buildSearchQuery({
-      keywords: params.keywords,
-      'company-name': params.companies,
-      location: params.location,
-      'job-type': params.jobType,
-      'experience-level': params.experienceLevel,
-      'facet-industry': params.industries,
-      'date-posted': params.datePosted,
-      'remote-filter': params.remoteFilter,
-      start: params.start || 0,
-      count: params.count || 25
-    });
-
-    const response = await this.makeRequest<any>(
-      `/jobs/search?${queryString}`
-    );
-
-    // Transform response to JobPosting[] format
-    const jobs: JobPosting[] = (response.elements || []).map((element: any) => ({
-      id: element.entityUrn || element.id,
-      title: element.title,
-      companyName: element.companyDetails?.company?.name,
-      companyUrn: element.companyDetails?.company?.entityUrn,
-      location: element.location,
-      description: element.description?.text,
-      employmentType: element.employmentType,
-      experienceLevel: element.experienceLevel,
-      industries: element.industries,
-      postedAt: element.listedAt,
-      expiresAt: element.expireAt,
-      applyUrl: element.applyMethod?.url
-    }));
-
-    return jobs;
-  }
-
-  /**
-   * Send a message to a LinkedIn connection
-   *
-   * @param params Message parameters (recipient, body, subject)
-   * @returns Message send confirmation
-   */
-  async sendMessage(params: SendMessageParams): Promise<{ messageId: string; status: string }> {
-    logger.info('Sending message', { tenantId: this.tenantId, recipient: params.recipientUrn });
-
-    const messageData = {
-      recipients: [params.recipientUrn],
-      subject: params.subject || 'LinkedIn Message',
-      body: {
-        text: params.messageBody
-      },
-      messageType: 'MEMBER_TO_MEMBER'
-    };
-
-    const response = await this.makeRequest<any>(
-      '/messaging/conversations',
-      {
-        method: 'POST',
-        data: messageData
-      }
-    );
-
-    return {
-      messageId: response.value?.entityUrn || response.id,
-      status: 'sent'
-    };
-  }
-
-  /**
-   * Get network statistics
-   *
-   * @returns Network size statistics (1st and 2nd degree connections)
-   */
-  async getNetworkStats(): Promise<NetworkStats> {
-    logger.info('Getting network stats', { tenantId: this.tenantId });
-
-    const response = await this.makeRequest<any>(
-      '/networkSizes/urn:li:person:~?edgeType=FIRST_DEGREE_CONNECTION'
-    );
-
-    return {
-      firstDegreeSize: response.firstDegreeSize || 0,
-      secondDegreeSize: response.secondDegreeSize || 0
-    };
-  }
-
-  /**
-   * Get recent conversations
-   *
-   * @param limit Maximum number of conversations to retrieve (default: 25)
-   * @returns Array of recent conversations
-   */
-  async getConversations(limit: number = 25): Promise<Conversation[]> {
-    logger.info('Getting conversations', { tenantId: this.tenantId, limit });
-
-    const response = await this.makeRequest<any>(
-      '/messaging/conversations',
-      {
-        params: {
-          count: limit
-        }
-      }
-    );
-
-    // Transform response to Conversation[] format
-    const conversations: Conversation[] = (response.elements || []).map((element: any) => ({
-      id: element.entityUrn || element.id,
-      participants: element.participants?.map((p: any) => p.entityUrn) || [],
-      lastActivityAt: element.lastActivityAt || 0,
-      unreadCount: element.unreadCount || 0,
-      lastMessage: element.lastMessage ? {
-        id: element.lastMessage.entityUrn,
-        conversationId: element.entityUrn,
-        from: element.lastMessage.from,
-        body: element.lastMessage.body?.text || '',
-        createdAt: element.lastMessage.createdAt
-      } : undefined
-    }));
-
-    return conversations;
-  }
-
-  /**
-   * Get messages from a conversation
-   *
-   * @param conversationId Conversation URN
-   * @param limit Maximum number of messages to retrieve (default: 50)
-   * @returns Array of messages in the conversation
-   */
-  async getMessages(conversationId: string, limit: number = 50): Promise<Message[]> {
-    logger.info('Getting messages', { tenantId: this.tenantId, conversationId, limit });
-
-    const encodedId = encodeURIComponent(conversationId);
-    const response = await this.makeRequest<any>(
-      `/messaging/conversations/${encodedId}/messages`,
-      {
-        params: {
-          count: limit
-        }
-      }
-    );
-
-    // Transform response to Message[] format
-    const messages: Message[] = (response.elements || []).map((element: any) => ({
-      id: element.entityUrn || element.id,
-      conversationId,
-      from: element.from,
-      body: element.body?.text || '',
-      createdAt: element.createdAt || 0,
-      attachments: element.attachments?.map((a: any) => ({
-        type: a.type,
-        url: a.url,
-        name: a.name
-      })) || []
-    }));
-
-    return messages;
   }
 
   /**
@@ -787,5 +521,123 @@ export class APIClient {
    */
   getRateLimitInfo(): RateLimitInfo | null {
     return this.rateLimitInfo;
+  }
+
+  // ==========================================================================
+  // METHODS THAT DO NOT EXIST (Documented for clarity)
+  // ==========================================================================
+
+  /**
+   * ❌ NOT AVAILABLE: Search People
+   *
+   * LinkedIn does NOT provide a public search API for people.
+   * Use BrowserClient.searchPeopleViaUI() instead.
+   *
+   * @throws Error explaining this method doesn't exist
+   */
+  async searchPeople(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn does NOT provide a public People Search API. Use BrowserClient.searchPeopleViaUI() instead.',
+      403,
+      '/search/people'
+    );
+  }
+
+  /**
+   * ❌ NOT AVAILABLE: Get Other User's Profile
+   *
+   * LinkedIn's public API only allows getting YOUR OWN lite profile via /v2/me.
+   * Viewing other profiles requires browser automation.
+   * Use BrowserClient.getProfileComprehensive() instead.
+   *
+   * @throws Error explaining this method doesn't exist
+   */
+  async getProfile(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn does NOT allow viewing other profiles via public API. Use BrowserClient.getProfileComprehensive() instead.',
+      403,
+      '/people'
+    );
+  }
+
+  /**
+   * ❌ NOT AVAILABLE: Search Jobs
+   *
+   * LinkedIn does NOT provide a public job search API.
+   * Use BrowserClient for job searching via browser automation.
+   *
+   * @throws Error explaining this method doesn't exist
+   */
+  async searchJobs(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn does NOT provide a public Job Search API. Use BrowserClient for job searches.',
+      403,
+      '/jobs/search'
+    );
+  }
+
+  /**
+   * ❌ NOT AVAILABLE: Send Messages
+   *
+   * LinkedIn's Messaging API requires LinkedIn Partnership Program approval.
+   * Without partnership, use BrowserClient for messaging via browser automation.
+   *
+   * @throws Error explaining this method requires partnership
+   */
+  async sendMessage(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn Messaging API requires Partnership Program approval. Use BrowserClient.sendMessageViaUI() for messaging.',
+      403,
+      '/messaging/conversations'
+    );
+  }
+
+  /**
+   * ❌ NOT AVAILABLE: Get Conversations
+   *
+   * LinkedIn's Messaging API requires LinkedIn Partnership Program approval.
+   * Use BrowserClient for messaging operations.
+   *
+   * @throws Error explaining this method requires partnership
+   */
+  async getConversations(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn Messaging API requires Partnership Program approval. Use BrowserClient for messaging.',
+      403,
+      '/messaging/conversations'
+    );
+  }
+
+  /**
+   * ❌ NOT AVAILABLE: Get Messages
+   *
+   * LinkedIn's Messaging API requires LinkedIn Partnership Program approval.
+   * Use BrowserClient for messaging operations.
+   *
+   * @throws Error explaining this method requires partnership
+   */
+  async getMessages(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn Messaging API requires Partnership Program approval. Use BrowserClient for messaging.',
+      403,
+      '/messaging/conversations'
+    );
+  }
+
+  /**
+   * ❌ LIMITED AVAILABILITY: Network Stats
+   *
+   * LinkedIn's public API only provides very limited network statistics
+   * (just connection count). For comprehensive network analysis, use
+   * browser automation.
+   *
+   * @throws Error explaining limited availability
+   */
+  async getNetworkStats(): Promise<never> {
+    throw new LinkedInAPIError(
+      'LinkedIn Network API is very limited (connection count only). Not implemented in this version.',
+      403,
+      '/networkSizes'
+    );
   }
 }

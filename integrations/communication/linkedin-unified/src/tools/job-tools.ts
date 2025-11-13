@@ -61,8 +61,6 @@ export function registerJobTools(
           companies: params.companies,
           experienceLevel: params.experienceLevel,
           jobType: params.jobType,
-          remoteFilter: params.remote ? 'REMOTE' : undefined,
-          datePosted: params.postedWithin,
           count: params.limit
         });
 
