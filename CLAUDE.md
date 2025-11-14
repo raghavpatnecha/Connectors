@@ -7,6 +7,8 @@
 2. **NEVER save working files, text/mds and tests to the root folder**
 3. ALWAYS organize files in appropriate subdirectories
 4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
+5. **ALWAYS use Claude Flow swarm orchestration first** - For parallel tasks, use swarm (see .claude/skills/claude-flow-orchestration.md)
+6. **ALWAYS query memory before any change** - Use `npx claude-flow memory query` to gather context from previous work
 
 ### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
 
