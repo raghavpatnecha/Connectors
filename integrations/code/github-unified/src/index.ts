@@ -128,8 +128,7 @@ function registerTools(
  * Create Express server for OAuth callbacks
  */
 function createExpressServer(
-  oauthManager: OAuthManager,
-  port: number
+  oauthManager: OAuthManager
 ): express.Application {
   const app = express();
 
@@ -138,7 +137,7 @@ function createExpressServer(
   app.use(express.urlencoded({ extended: true }));
 
   // Health check endpoint
-  app.get('/health', (req: Request, res: Response) => {
+  app.get('/health', (_req: Request, res: Response) => {
     res.json({
       status: 'healthy',
       service: 'github-unified-mcp',
@@ -148,15 +147,16 @@ function createExpressServer(
   });
 
   // OAuth authorization endpoint
-  app.get('/oauth/authorize', (req: Request, res: Response) => {
+  app.get('/oauth/authorize', (req: Request, res: Response): void => {
     try {
       const tenantId = req.query.tenant_id as string;
 
       if (!tenantId) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Missing required parameter',
           message: 'tenant_id is required',
         });
+        return;
       }
 
       const authUrl = oauthManager.generateAuthUrl(tenantId);
@@ -175,7 +175,7 @@ function createExpressServer(
   });
 
   // OAuth callback endpoint
-  app.get('/oauth/callback', async (req: Request, res: Response) => {
+  app.get('/oauth/callback', async (req: Request, res: Response): Promise<void> => {
     try {
       const code = req.query.code as string;
       const state = req.query.state as string;
@@ -184,7 +184,7 @@ function createExpressServer(
       // Handle OAuth errors
       if (error) {
         logger.error('OAuth authorization failed', { error });
-        return res.status(400).send(`
+        res.status(400).send(`
           <html>
             <head><title>Authentication Failed</title></head>
             <body style="font-family: Arial, sans-serif; padding: 50px; text-align: center;">
@@ -197,10 +197,11 @@ function createExpressServer(
             </body>
           </html>
         `);
+        return;
       }
 
       if (!code || !state) {
-        return res.status(400).send(`
+        res.status(400).send(`
           <html>
             <head><title>Invalid Request</title></head>
             <body style="font-family: Arial, sans-serif; padding: 50px; text-align: center;">
@@ -212,10 +213,50 @@ function createExpressServer(
             </body>
           </html>
         `);
+        return;
       }
 
-      // Extract tenant ID from state (state format: tenantId:randomValue)
-      const tenantId = state.split(':')[0];
+      // Extract tenant ID from state (state format: tenantId:timestamp:random)
+      const parts = state.split(':');
+      if (parts.length !== 3) {
+        logger.error('Invalid state parameter format', { state });
+        res.status(400).send(`
+          <html>
+            <head><title>Invalid State</title></head>
+            <body style="font-family: Arial, sans-serif; padding: 50px; text-align: center;">
+              <h1 style="color: #d32f2f;">❌ Invalid State Parameter</h1>
+              <p>The OAuth state parameter has an invalid format.</p>
+              <p>Please try authenticating again.</p>
+              <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+                Close Window
+              </button>
+            </body>
+          </html>
+        `);
+        return;
+      }
+
+      const [tenantId, timestamp] = parts;
+
+      // Optional: Verify state is not too old (10 min timeout)
+      const stateAge = Date.now() - parseInt(timestamp, 36);
+      if (stateAge > 10 * 60 * 1000) {
+        logger.warn('State parameter expired', { tenantId, stateAge });
+        res.status(400).send(`
+          <html>
+            <head><title>State Expired</title></head>
+            <body style="font-family: Arial, sans-serif; padding: 50px; text-align: center;">
+              <h1 style="color: #d32f2f;">❌ Authentication State Expired</h1>
+              <p>The authentication request has expired (>10 minutes old).</p>
+              <p>Please try authenticating again.</p>
+              <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+                Close Window
+              </button>
+            </body>
+          </html>
+        `);
+        return;
+      }
 
       // Exchange authorization code for access token
       logger.info('Processing OAuth callback', { tenantId });
@@ -263,15 +304,16 @@ function createExpressServer(
   });
 
   // Revoke credentials endpoint (for testing/cleanup)
-  app.delete('/oauth/revoke', async (req: Request, res: Response) => {
+  app.delete('/oauth/revoke', async (req: Request, res: Response): Promise<void> => {
     try {
       const tenantId = req.query.tenant_id as string;
 
       if (!tenantId) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Missing required parameter',
           message: 'tenant_id is required',
         });
+        return;
       }
 
       await oauthManager.revokeCredentials(tenantId);
@@ -335,7 +377,7 @@ async function main() {
 
     // 7. Create Express server for OAuth callbacks
     const port = parseInt(process.env.PORT || '3000', 10);
-    const app = createExpressServer(oauthManager, port);
+    const app = createExpressServer(oauthManager);
 
     const httpServer = app.listen(port, () => {
       logger.info(`OAuth callback server listening on port ${port}`);
@@ -424,11 +466,12 @@ async function main() {
 }
 
 // Start the server
-if (require.main === module) {
-  main().catch((error) => {
-    logger.error('Fatal error', { error });
-    process.exit(1);
+main().catch((error) => {
+  logger.error('Fatal error', {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
   });
-}
+  process.exit(1);
+});
 
 export { main };

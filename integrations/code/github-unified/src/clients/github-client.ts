@@ -9,7 +9,6 @@ import { OAuthManager } from '../auth/oauth-manager.js';
 
 export class GitHubClient {
   private oauthManager: OAuthManager;
-  private clients: Map<string, Octokit> = new Map();
 
   constructor(oauthManager: OAuthManager) {
     this.oauthManager = oauthManager;

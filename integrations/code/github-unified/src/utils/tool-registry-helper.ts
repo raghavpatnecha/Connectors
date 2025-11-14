@@ -95,11 +95,12 @@ export class ToolRegistry {
 
       try {
         // Extract tenant ID from args or use default
-        const tenantId = args?.tenantId || args?.tenant_id || 'default';
+        const toolArgs: any = args || {};
+        const tenantId: string = toolArgs.tenantId || toolArgs.tenant_id || 'default';
 
         // Execute tool handler
         const handler = this.handlers.get(name)!;
-        const result = await handler(args || {}, tenantId);
+        const result = await handler(toolArgs, tenantId);
 
         logger.info('Tool execution successful', {
           tool: name,

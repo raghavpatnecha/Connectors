@@ -42,8 +42,10 @@ export class OAuthManager {
    * Generate OAuth authorization URL
    */
   generateAuthUrl(tenantId: string): string {
-    // Generate random state for CSRF protection
-    const state = crypto.randomBytes(32).toString('hex');
+    // Generate state with embedded tenant ID for security
+    const state = this.generateState(tenantId);
+
+    // Store state for optional server-side validation
     this.pendingStates.set(state, tenantId);
 
     // Clean up state after 10 minutes
@@ -242,5 +244,16 @@ export class OAuthManager {
   async revokeCredentials(tenantId: string): Promise<void> {
     await this.vaultClient.deleteCredentials(tenantId);
     logger.info('Credentials revoked', { tenantId });
+  }
+
+  /**
+   * Generate state parameter with embedded tenant ID
+   * Format: tenantId:timestamp:random
+   * This allows extracting tenant ID from state in callback without server-side storage
+   */
+  private generateState(tenantId: string): string {
+    const random = crypto.randomBytes(16).toString('hex');
+    const timestamp = Date.now().toString(36);
+    return `${tenantId}:${timestamp}:${random}`;
   }
 }
