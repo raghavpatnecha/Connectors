@@ -9,6 +9,9 @@ import { NotionIntegration, createNotionIntegration } from '../integrations/noti
 import { GitHubIntegration, createGitHubIntegration } from '../integrations/github-integration';
 import { LinkedInIntegration, createLinkedInIntegration } from '../integrations/linkedin-integration';
 import { RedditIntegration, createRedditIntegration } from '../integrations/reddit-integration';
+import { GmailIntegration, createGmailIntegration } from '../integrations/gmail-integration';
+import { DriveIntegration, createDriveIntegration } from '../integrations/drive-integration';
+import { CalendarIntegration, createCalendarIntegration } from '../integrations/calendar-integration';
 import { logger } from '../logging/logger';
 
 /**
@@ -72,6 +75,9 @@ export class IntegrationRegistry {
     this._registerGitHub();
     this._registerLinkedIn();
     this._registerReddit();
+    this._registerGmail();
+    this._registerDrive();
+    this._registerCalendar();
 
     // Initialize all enabled integrations
     await this._initializeAll();
@@ -282,6 +288,87 @@ export class IntegrationRegistry {
     }
 
     logger.info('Registered Reddit integration', metadata);
+  }
+
+  /**
+   * Register Gmail integration
+   */
+  private _registerGmail(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'gmail',
+      name: 'Gmail',
+      category: 'communication',
+      description: 'Gmail unified integration for messages, labels, threads, drafts, and settings (66 tools)',
+      enabled: process.env.GMAIL_ENABLED !== 'false',
+      serverUrl: process.env.GMAIL_SERVER_URL || 'http://localhost:3130',
+      rateLimit: parseInt(process.env.GMAIL_RATE_LIMIT || '25', 10),
+      requiresOAuth: true,
+      oauthProvider: 'gmail',
+      docsUrl: 'https://developers.google.com/gmail/api'
+    };
+
+    this._integrations.set('gmail', metadata);
+
+    if (metadata.enabled) {
+      const instance = createGmailIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('gmail', instance);
+    }
+
+    logger.info('Registered Gmail integration', metadata);
+  }
+
+  /**
+   * Register Google Drive integration
+   */
+  private _registerDrive(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'drive',
+      name: 'Google Drive',
+      category: 'storage',
+      description: 'Google Drive unified integration for files, folders, permissions, comments, and shared drives (41 tools)',
+      enabled: process.env.DRIVE_ENABLED !== 'false',
+      serverUrl: process.env.DRIVE_SERVER_URL || 'http://localhost:3132',
+      rateLimit: parseInt(process.env.DRIVE_RATE_LIMIT || '10', 10),
+      requiresOAuth: true,
+      oauthProvider: 'drive',
+      docsUrl: 'https://developers.google.com/drive/api'
+    };
+
+    this._integrations.set('drive', metadata);
+
+    if (metadata.enabled) {
+      const instance = createDriveIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('drive', instance);
+    }
+
+    logger.info('Registered Drive integration', metadata);
+  }
+
+  /**
+   * Register Google Calendar integration
+   */
+  private _registerCalendar(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'calendar',
+      name: 'Google Calendar',
+      category: 'productivity',
+      description: 'Google Calendar unified integration for events, calendars, and access control (29 tools)',
+      enabled: process.env.CALENDAR_ENABLED !== 'false',
+      serverUrl: process.env.CALENDAR_SERVER_URL || 'http://localhost:3131',
+      rateLimit: parseInt(process.env.CALENDAR_RATE_LIMIT || '5', 10),
+      requiresOAuth: true,
+      oauthProvider: 'calendar',
+      docsUrl: 'https://developers.google.com/calendar/api'
+    };
+
+    this._integrations.set('calendar', metadata);
+
+    if (metadata.enabled) {
+      const instance = createCalendarIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('calendar', instance);
+    }
+
+    logger.info('Registered Calendar integration', metadata);
   }
 
   /**

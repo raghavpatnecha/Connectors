@@ -327,6 +327,141 @@ services:
       - notion
 
   # ============================================
+  # MCP Server - Gmail Integration (Google Workspace Phase 1)
+  # ============================================
+  mcp-gmail:
+    build:
+      context: ./integrations/communication/gmail-unified
+      dockerfile: Dockerfile
+    container_name: connectors-mcp-gmail
+    ports:
+      - "3130:3000"
+    environment:
+      - NODE_ENV=development
+      - GATEWAY_URL=http://gateway:3000
+      - LOG_LEVEL=debug
+      - INTEGRATION=gmail
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GMAIL_REDIRECT_URI=http://localhost:3130/oauth/callback
+      - PORT=3000
+    volumes:
+      # Source code hot-reload
+      - ./integrations/communication/gmail-unified/src:/app/src:ro
+      - ./integrations/communication/gmail-unified/package.json:/app/package.json:ro
+      - ./integrations/shared:/app/shared:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - connectors-network
+    profiles:
+      - mcp-servers
+      - google-workspace
+      - gmail
+
+  # ============================================
+  # MCP Server - Google Calendar Integration (Google Workspace Phase 1)
+  # ============================================
+  mcp-calendar:
+    build:
+      context: ./integrations/productivity/calendar-unified
+      dockerfile: Dockerfile
+    container_name: connectors-mcp-calendar
+    ports:
+      - "3131:3000"
+    environment:
+      - NODE_ENV=development
+      - GATEWAY_URL=http://gateway:3000
+      - LOG_LEVEL=debug
+      - INTEGRATION=calendar
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - CALENDAR_REDIRECT_URI=http://localhost:3131/oauth/callback
+      - PORT=3000
+    volumes:
+      # Source code hot-reload
+      - ./integrations/productivity/calendar-unified/src:/app/src:ro
+      - ./integrations/productivity/calendar-unified/package.json:/app/package.json:ro
+      - ./integrations/shared:/app/shared:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - connectors-network
+    profiles:
+      - mcp-servers
+      - google-workspace
+      - calendar
+
+  # ============================================
+  # MCP Server - Google Drive Integration (Google Workspace Phase 1)
+  # ============================================
+  mcp-drive:
+    build:
+      context: ./integrations/storage/drive-unified
+      dockerfile: Dockerfile
+    container_name: connectors-mcp-drive
+    ports:
+      - "3132:3000"
+    environment:
+      - NODE_ENV=development
+      - GATEWAY_URL=http://gateway:3000
+      - LOG_LEVEL=debug
+      - INTEGRATION=drive
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - DRIVE_REDIRECT_URI=http://localhost:3132/oauth/callback
+      - PORT=3000
+    volumes:
+      # Source code hot-reload
+      - ./integrations/storage/drive-unified/src:/app/src:ro
+      - ./integrations/storage/drive-unified/package.json:/app/package.json:ro
+      - ./integrations/shared:/app/shared:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - connectors-network
+    profiles:
+      - mcp-servers
+      - google-workspace
+      - drive
+
+  # ============================================
   # Monitoring - Prometheus (Optional)
   # ============================================
   prometheus:
