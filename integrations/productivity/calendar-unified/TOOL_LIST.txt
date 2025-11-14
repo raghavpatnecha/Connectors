@@ -1,0 +1,219 @@
+═══════════════════════════════════════════════════════════════
+  GOOGLE CALENDAR MCP SERVER - COMPLETE TOOL INVENTORY
+═══════════════════════════════════════════════════════════════
+
+📁 Location: /home/user/Connectors/integrations/productivity/calendar-unified/
+🔌 Port: 3131
+📦 Total Tools: 29
+
+───────────────────────────────────────────────────────────────
+📅 EVENTS CATEGORY (12 tools)
+───────────────────────────────────────────────────────────────
+
+ 1. calendar_list_events
+    ├─ Handler: listEvents()
+    ├─ Schema: listEventsSchema
+    └─ Description: List events from calendar with filtering (timeMin, timeMax, query, orderBy)
+
+ 2. calendar_get_event
+    ├─ Handler: getEvent()
+    ├─ Schema: getEventSchema
+    └─ Description: Get detailed event information (supports detailed mode with attachments)
+
+ 3. calendar_create_event
+    ├─ Handler: createEvent()
+    ├─ Schema: createEventSchema
+    └─ Description: Create event with attendees, reminders, Google Meet, attachments
+
+ 4. calendar_update_event
+    ├─ Handler: updateEvent()
+    ├─ Schema: updateEventSchema
+    └─ Description: Full update of existing event (all fields)
+
+ 5. calendar_patch_event
+    ├─ Handler: patchEvent()
+    ├─ Schema: patchEventSchema
+    └─ Description: Partial update (only specified fields)
+
+ 6. calendar_delete_event
+    ├─ Handler: deleteEvent()
+    ├─ Schema: deleteEventSchema
+    └─ Description: Delete event with notification options
+
+ 7. calendar_import_event
+    ├─ Handler: importEvent()
+    ├─ Schema: importEventSchema
+    └─ Description: Import event from external calendar data (JSON)
+
+ 8. calendar_move_event
+    ├─ Handler: moveEvent()
+    ├─ Schema: moveEventSchema
+    └─ Description: Move event between calendars
+
+ 9. calendar_quick_add_event
+    ├─ Handler: quickAddEvent()
+    ├─ Schema: quickAddEventSchema
+    └─ Description: Natural language event creation ("Lunch tomorrow at 12pm")
+
+10. calendar_get_instances
+    ├─ Handler: getInstances()
+    ├─ Schema: getInstancesSchema
+    └─ Description: Get instances of recurring events
+
+11. calendar_watch_events
+    ├─ Handler: watchEvents()
+    ├─ Schema: watchEventsSchema
+    └─ Description: Setup push notifications for event changes (webhooks)
+
+12. calendar_stop_channel
+    ├─ Handler: stopChannel()
+    ├─ Schema: stopChannelSchema
+    └─ Description: Stop receiving push notifications
+
+───────────────────────────────────────────────────────────────
+📆 CALENDARS CATEGORY (8 tools)
+───────────────────────────────────────────────────────────────
+
+13. calendar_list_calendars
+    ├─ Handler: listCalendars()
+    ├─ Schema: listCalendarsSchema
+    └─ Description: List all accessible calendars with access roles
+
+14. calendar_get_calendar
+    ├─ Handler: getCalendar()
+    ├─ Schema: getCalendarSchema
+    └─ Description: Get calendar metadata (summary, timezone, location, description)
+
+15. calendar_insert_calendar
+    ├─ Handler: insertCalendar()
+    ├─ Schema: insertCalendarSchema
+    └─ Description: Create new calendar with metadata
+
+16. calendar_update_calendar
+    ├─ Handler: updateCalendar()
+    ├─ Schema: updateCalendarSchema
+    └─ Description: Full update of calendar metadata
+
+17. calendar_patch_calendar
+    ├─ Handler: patchCalendar()
+    ├─ Schema: patchCalendarSchema
+    └─ Description: Partial update of calendar metadata
+
+18. calendar_delete_calendar
+    ├─ Handler: deleteCalendar()
+    ├─ Schema: deleteCalendarSchema
+    └─ Description: Delete entire calendar
+
+19. calendar_clear_calendar
+    ├─ Handler: clearCalendar()
+    ├─ Schema: clearCalendarSchema
+    └─ Description: Delete all events from calendar (keeps calendar)
+
+20. calendar_freebusy_query
+    ├─ Handler: freebusyQuery()
+    ├─ Schema: freebusyQuerySchema
+    └─ Description: Query free/busy times for scheduling across multiple calendars
+
+───────────────────────────────────────────────────────────────
+📋 CALENDAR LIST CATEGORY (3 tools)
+───────────────────────────────────────────────────────────────
+
+21. calendar_list_calendar_list
+    ├─ Handler: listCalendarList()
+    ├─ Schema: listCalendarListSchema
+    └─ Description: List user's calendar subscriptions
+
+22. calendar_insert_calendar_list
+    ├─ Handler: insertCalendarList()
+    ├─ Schema: insertCalendarListSchema
+    └─ Description: Subscribe to calendar (add to user's calendar list)
+
+23. calendar_delete_calendar_list
+    ├─ Handler: deleteCalendarList()
+    ├─ Schema: deleteCalendarListSchema
+    └─ Description: Unsubscribe from calendar (remove from list)
+
+───────────────────────────────────────────────────────────────
+🔐 ACCESS CONTROL (ACL) CATEGORY (6 tools)
+───────────────────────────────────────────────────────────────
+
+24. calendar_list_acl
+    ├─ Handler: listAcl()
+    ├─ Schema: listAclSchema
+    └─ Description: List all access control rules for calendar
+
+25. calendar_get_acl
+    ├─ Handler: getAcl()
+    ├─ Schema: getAclSchema
+    └─ Description: Get specific ACL rule details
+
+26. calendar_insert_acl
+    ├─ Handler: insertAcl()
+    ├─ Schema: insertAclSchema
+    └─ Description: Share calendar (create ACL rule with role/scope)
+
+27. calendar_update_acl
+    ├─ Handler: updateAcl()
+    ├─ Schema: updateAclSchema
+    └─ Description: Full update of ACL rule
+
+28. calendar_patch_acl
+    ├─ Handler: patchAcl()
+    ├─ Schema: patchAclSchema
+    └─ Description: Partial update of ACL rule
+
+29. calendar_delete_acl
+    ├─ Handler: deleteAcl()
+    ├─ Schema: deleteAclSchema
+    └─ Description: Revoke calendar access (delete ACL rule)
+
+═══════════════════════════════════════════════════════════════
+📊 IMPLEMENTATION SUMMARY
+═══════════════════════════════════════════════════════════════
+
+✅ Events:        12/12 tools (100%)
+✅ Calendars:      8/8 tools (100%)
+✅ CalendarList:   3/3 tools (100%)
+✅ ACL:            6/6 tools (100%)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ TOTAL:         29/29 tools (100%)
+
+═══════════════════════════════════════════════════════════════
+🔧 TECHNICAL STACK
+═══════════════════════════════════════════════════════════════
+
+Language:        TypeScript (ES2022)
+API:             Google Calendar v3 (googleapis)
+Validation:      Zod schemas
+Server:          MCP SDK (@modelcontextprotocol/sdk)
+Port:            3131
+OAuth:           Gateway-injected credentials
+Reference:       taylorwilsdon/google_workspace_mcp
+
+═══════════════════════════════════════════════════════════════
+📂 FILE STRUCTURE
+═══════════════════════════════════════════════════════════════
+
+calendar-unified/
+├── src/
+│   ├── index.ts               (Main server, 29 tool registrations)
+│   ├── clients/
+│   │   └── calendar-client.ts (OAuth client factory)
+│   ├── utils/
+│   │   └── helpers.ts         (Shared utilities)
+│   └── tools/
+│       ├── events.ts          (12 event tools)
+│       ├── calendars.ts       (8 calendar tools)
+│       ├── calendar-list.ts   (3 calendar list tools)
+│       ├── acl.ts             (6 ACL tools)
+│       └── index.ts           (Exports)
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+├── README.md
+├── VERIFICATION.md
+└── TOOL_LIST.txt (this file)
+
+═══════════════════════════════════════════════════════════════
+✨ STATUS: IMPLEMENTATION COMPLETE
+═══════════════════════════════════════════════════════════════
