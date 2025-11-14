@@ -3,11 +3,12 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Phase 1: Complete](https://img.shields.io/badge/Phase%201-Complete-brightgreen.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
 [![Token Reduction: 99.02%](https://img.shields.io/badge/Token%20Reduction-99.02%25-success.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
-[![MCP Servers: 47](https://img.shields.io/badge/MCP%20Servers-47-blue.svg)](integrations/)
+[![Integrations: 4 Operational](https://img.shields.io/badge/Integrations-4%20Operational-brightgreen.svg)](integrations/)
+[![Target: 100+](https://img.shields.io/badge/Target-100%2B-blue.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
 
 **The open-source integration platform for AI agents that solves the MCP token bloat problem.**
 
-Enable your AI agents to use 500+ integrations while consuming **99% less context window space** through semantic routing, GraphRAG-powered tool discovery, and progressive schema loading.
+**4 integrations operational** (GitHub, Notion, LinkedIn, Reddit) with **99% token reduction**. Target: 100+ integrations through semantic routing, GraphRAG-powered tool discovery, and progressive schema loading.
 
 ---
 
@@ -37,19 +38,34 @@ Result: 99.02% token reduction, 198K tokens free for actual work
 - **GraphRAG enhancement**: Intelligent tool suggestions via Neo4j relationship graph
 - **Result**: 759 tokens instead of 77,698 (99.02% reduction)
 
-### 🔌 **500+ Integrations (Target)**
-- **44 GitHub MCP servers** currently operational (1,111 operations)
-- **3 LinkedIn MCP servers** integrated (API, automation, scraping approaches)
-- **Notion productivity suite** integrated (19 tools for pages, databases, blocks)
+### 🔌 **4 Integrations Operational, 100+ Target**
+
+**Currently Operational (Phase 1 Complete):**
+- ✅ **GitHub** - Repository, issues, PRs, actions (29 tools, unified server) - FULLY INTEGRATED
+- ✅ **Notion** - Pages, databases, blocks (19 tools) - FULLY INTEGRATED
+- ✅ **LinkedIn** - Profiles, connections, posts, messaging (12 tools) - FULLY INTEGRATED
+- ✅ **Reddit** - Browsing, posting, communities (25 tools) - FULLY INTEGRATED
+
+**What "Fully Integrated" Means:**
+- ✅ Gateway integration module with OAuth proxy
+- ✅ Per-tenant credential management via Vault
+- ✅ Rate limiting and error handling
+- ✅ Health checks and monitoring
+- ✅ Docker Compose service configuration
+
+**Platform Features:**
 - **Auto-generation pipeline**: Generate MCP servers from OpenAPI specs in minutes
 - **Category-based organization**: code, communication, project management, cloud, data, productivity
 - **Existing server integration**: 5-15 minute setup for any standard MCP server
+- **Target goal**: 100+ integrations via auto-generation and community contributions
 
-### 🔐 **Enterprise-Grade OAuth**
-- **Per-tenant credential encryption** via HashiCorp Vault
-- **Automatic token refresh** (5min before expiry)
+### 🔐 **Enterprise-Grade Multi-Tenant OAuth (Phase 1 ✅)**
+- **Per-tenant credential encryption** via HashiCorp Vault Transit engine
+- **Automatic token refresh** (5min before expiry, background scheduler)
 - **Transparent injection**: MCP servers don't handle auth - gateway does
-- **Multi-provider support**: GitHub, Notion, Slack, Jira, Stripe, AWS, and more
+- **REST API**: Tenant OAuth config management endpoints
+- **Currently supported**: GitHub, Notion, LinkedIn, Reddit
+- **2,000+ lines of production OAuth code** with comprehensive error handling
 
 ### 🧠 **Intelligent Tool Discovery**
 - **Two-level retrieval**: Category selection → Tool selection (19.4% better accuracy)
@@ -73,19 +89,102 @@ Result: 99.02% token reduction, 198K tokens free for actual work
 |--------|--------|----------|--------|
 | **Token Reduction** | 95% | **99.02%** | ✅ 33% better |
 | **Tool Selection Latency** | <100ms | **1ms** | ✅ 99x faster |
-| **MCP Servers Generated** | 1 prototype | **44 servers** | ✅ 44x more |
+| **MCP Servers Generated** | 1 prototype | **1 unified server** | ✅ Production-ready |
 | **Test Coverage** | 85% | **89%** (critical paths) | ✅ On target |
-| **Integration Count** | GitHub only | **1,111 operations** | ✅ Excellent |
+| **Integrations Operational** | 1 prototype | **4 integrations** | ✅ Production-ready |
+| **MCP Servers (Internal)** | 1 | **4 servers** | ✅ 4x more |
 
 **Deliverables:**
 - 950+ files created
 - 50,000+ lines of production code
 - 92 comprehensive tests (89% passing)
 - 200KB+ documentation
-- 44 GitHub MCP servers operational
-- 3 LinkedIn MCP servers integrated (communication category)
+- **4 integrations fully gateway-integrated:**
+  - GitHub (code category) - unified server, 29 tools
+  - Notion (productivity category)
+  - LinkedIn (communication category)
+  - Reddit (communication category)
+- **Multi-tenant OAuth system**: 2,000+ lines with Vault, auto-refresh, REST API
 
 See [Phase 1 Completion Report](docs/PHASE_1_COMPLETION_REPORT.md) for full details.
+
+---
+
+## ⚠️ Current Status & Limitations
+
+### ✅ What's Production-Ready NOW
+
+**Multi-Tenant OAuth System** (Fully Operational):
+- ✅ Per-tenant credential encryption via Vault Transit engine
+- ✅ Automatic token refresh (5min before expiry)
+- ✅ REST API for OAuth config management
+- ✅ 2,000+ lines of tested production code
+- ✅ Works with GitHub, Notion, LinkedIn, Reddit
+
+**Integration Modules:**
+- ✅ 4 integration modules implemented (GitHub, Notion, LinkedIn, Reddit)
+- ✅ OAuth proxy with rate limiting
+- ✅ Error handling and health checks
+- ✅ Docker Compose configurations
+- ✅ **NOW wired to server** - Initialize on startup
+
+**Infrastructure:**
+- ✅ HashiCorp Vault (secrets management)
+- ✅ Redis (caching)
+- ✅ Neo4j (GraphRAG - database ready)
+- ✅ Docker & Kubernetes configs
+
+### ⚠️ Known Limitations (Setup Required)
+
+**Tool Selection APIs:**
+- ⚠️ **FAISS indices not pre-generated** - Run `npm run generate-embeddings` first
+- ⚠️ **Tools need indexing** - Integrations register tools on startup, but FAISS training required
+- ⚠️ **POST /api/v1/tools/select** will fail until indices exist
+
+**MCP Servers:**
+- ⚠️ **MCP servers not pre-built** - Run `docker compose build` first
+- ✅ **GitHub unified MCP server** - Production-ready, built from source
+- ⚠️ **LinkedIn/Reddit servers** need Dockerfiles created
+
+**Metrics:**
+- ⚠️ **GET /api/v1/metrics** returns placeholder data (tracking not implemented yet)
+
+**GraphRAG:**
+- ⚠️ **Neo4j tool relationships** not pre-populated
+- ⚠️ **Usage learning** requires production data
+
+### 🔧 Setup Required Before Full Platform Works
+
+Before all endpoints work, you need to:
+
+1. **Generate FAISS Embeddings:**
+   ```bash
+   cd gateway
+   npm run generate-embeddings  # Creates category and tool indices
+   ```
+
+2. **Build MCP Servers:**
+   ```bash
+   docker compose build mcp-github mcp-linkedin mcp-reddit
+   ```
+
+3. **Start Infrastructure:**
+   ```bash
+   docker compose up -d vault redis neo4j
+   ```
+
+4. **Initialize Neo4j Schema:**
+   ```bash
+   ./scripts/init-neo4j.sh
+   ```
+
+5. **Start Gateway:**
+   ```bash
+   cd gateway && npm run dev
+   ```
+
+See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) and [docs/CODE_VS_README_VERIFICATION.md](docs/CODE_VS_README_VERIFICATION.md) for detailed information.
+
 
 ---
 
@@ -142,11 +241,16 @@ npm install
 npm run dev
 ```
 
-**Verify:**
+**Verify Health:**
 ```bash
 curl http://localhost:3000/health
-# {"status":"ok","uptime":12.5,"memory":{"heapUsed":50123456}}
+# {"status":"healthy","timestamp":"...","uptime":12.5}
+
+curl http://localhost:3000/ready
+# {"status":"ready","checks":{"semanticRouter":"ok","oauthProxy":"ok"}}
 ```
+
+**Note:** Tool selection endpoints require FAISS indices (run `npm run generate-embeddings`). See [Current Limitations](#️-current-status--limitations) above.
 
 ### 5. Run Your First Query
 
@@ -268,9 +372,9 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
           ┌──────────────────┼──────────────────┐
           │                  │                  │
 ┌─────────▼────────┐  ┌──────▼──────┐  ┌───────▼────────┐
-│ GitHub MCP (44)  │  │ Slack MCP   │  │ Jira MCP       │
-│ 1,111 operations │  │ 18 tools    │  │ 40 tools       │
-│ Auto-generated   │  │ TypeScript  │  │ TypeScript     │
+│ GitHub MCP       │  │ Slack MCP   │  │ Jira MCP       │
+│ 29 tools         │  │ 18 tools    │  │ 40 tools       │
+│ Unified server   │  │ TypeScript  │  │ TypeScript     │
 └──────────────────┘  └─────────────┘  └────────────────┘
           │                  │                  │
           │                  │                  │
@@ -309,6 +413,8 @@ Currently in development - no auth required for localhost. Production will use A
 
 Find relevant tools for a natural language query.
 
+**⚠️ Requires:** FAISS indices generated (`npm run generate-embeddings`)
+
 **Request:**
 ```json
 {
@@ -325,6 +431,8 @@ Find relevant tools for a natural language query.
 **Response:**
 ```json
 {
+  "success": true,
+  "query": "create a GitHub pull request",
   "tools": {
     "tier1": [
       {
@@ -341,10 +449,10 @@ Find relevant tools for a natural language query.
     "tier3": [...]
   },
   "metadata": {
+    "totalTools": 5,
     "tokenUsage": 285,
-    "selectionLatency": 1,
-    "categoriesFound": ["code"],
-    "graphEnhanced": true
+    "tokenBudget": 2000,
+    "latency_ms": 1
   }
 }
 ```
@@ -352,6 +460,10 @@ Find relevant tools for a natural language query.
 #### `POST /tools/invoke` - Execute Tool
 
 Call a specific tool with parameters (OAuth auto-injected).
+
+**⚠️ Requires:**
+- MCP servers running (`docker compose --profile mcp-servers up`)
+- OAuth credentials configured for tenant
 
 **Request:**
 ```json
@@ -374,6 +486,7 @@ Call a specific tool with parameters (OAuth auto-injected).
 ```json
 {
   "success": true,
+  "toolId": "github.createPullRequest",
   "result": {
     "number": 12345,
     "url": "https://github.com/facebook/react/pull/12345",
@@ -381,8 +494,7 @@ Call a specific tool with parameters (OAuth auto-injected).
     "title": "Fix bug in useEffect"
   },
   "metadata": {
-    "latency": 450,
-    "serverUsed": "github-v3-rest-api---pulls-42"
+    "latency_ms": 450
   }
 }
 ```
@@ -406,11 +518,11 @@ GET /tools/list?category=code&integration=github&limit=50&offset=0
       "description": "Create a pull request",
       "category": "code",
       "integration": "github",
-      "server": "github-v3-rest-api---pulls-42",
+      "server": "github-unified",
       "tokenCost": 150
     }
   ],
-  "total": 1111,
+  "total": 29,
   "page": 1,
   "limit": 50
 }
@@ -431,14 +543,17 @@ Get all available integration categories.
 
 Get platform usage statistics.
 
+**⚠️ Note:** Currently returns placeholder data. Full metrics tracking will be implemented in Phase 2.
+
 **Response:**
 ```json
 {
-  "totalQueries": 1234,
-  "avgTokenReduction": 99.02,
-  "avgLatency": 45,
-  "toolCallCount": 5678,
-  "cacheHitRate": 0.85
+  "success": true,
+  "metrics": {
+    "requests": {"total": 0, "success": 0, "failed": 0},
+    "latency": {"p50": 0, "p95": 0, "p99": 0},
+    "tokenUsage": {"total": 0, "average": 0, "reduction": 0}
+  }
 }
 ```
 
@@ -774,7 +889,7 @@ See [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 - [x] GraphRAG with Neo4j
 - [x] OAuth with Vault
 - [x] OpenAPI MCP generator
-- [x] 44 GitHub MCP servers
+- [x] GitHub unified MCP server (29 tools)
 - [x] 99.02% token reduction validated
 
 ### 🚧 Phase 2: Core Integrations MVP (Weeks 3-6)
@@ -790,18 +905,19 @@ See [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 - [ ] 100 integrations operational
 - [ ] ML-powered tool suggestions
 
-### 📋 Phase 4: Enterprise (Weeks 11-14)
-- [ ] Multi-tenant auth (OAuth 2.1 + OIDC)
-- [ ] Role-based access control
-- [ ] Audit logging
-- [ ] SLA monitoring
+### 📋 Phase 4: Enterprise Enhancements (Weeks 11-14)
+- [x] Multi-tenant OAuth (Phase 1 complete - Vault, auto-refresh, per-tenant encryption)
+- [ ] OAuth 2.1 + OIDC upgrades
+- [ ] Role-based access control (RBAC)
+- [ ] Enhanced audit logging with retention policies
+- [ ] SLA monitoring and alerting
 - [ ] Enterprise support portal
 
 ### 📋 Phase 5: Scale (Weeks 15-18)
-- [ ] 500+ integrations via auto-generation
+- [ ] 100+ integrations via auto-generation (Slack, Jira, Stripe, AWS, GCP, Azure, etc.)
 - [ ] Community contribution system
 - [ ] Marketplace for custom integrations
-- [ ] Advanced analytics
+- [ ] Advanced analytics and usage dashboards
 
 ### 📋 Phase 6: Launch (Weeks 19-24)
 - [ ] Performance optimization (<50ms P95)
@@ -911,10 +1027,11 @@ See [LICENSE](LICENSE) for full text.
 - **Total: <100ms**
 
 **Scale:**
-- 44 MCP servers operational
-- 1,111 GitHub operations available
-- 500+ integrations (target)
-- 10K+ developers (target)
+- **4 integrations fully operational** (GitHub, Notion, LinkedIn, Reddit)
+- **4 MCP servers** (1 GitHub unified + 1 Notion + 1 LinkedIn + 1 Reddit)
+- **~85 tools available** across all integrations (GitHub 29 tools: repos/issues/PRs/actions, Notion pages/databases, LinkedIn profiles/posts, Reddit browsing/posting)
+- **100+ integrations target** via auto-generation pipeline
+- **10K+ developers target**
 
 **Quality:**
 - Test coverage: 89% (critical paths)
