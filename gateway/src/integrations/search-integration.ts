@@ -98,20 +98,45 @@ export class SearchIntegration {
   private readonly _semanticRouter: SemanticRouter;
   private readonly _rateLimiter: SearchRateLimiter;
   private readonly _serverUrl: string;
-  private readonly _enabled: boolean;
+  private _isHealthy: boolean = false;
 
   constructor(oauthProxy: OAuthProxy, semanticRouter: SemanticRouter) {
     this._oauthProxy = oauthProxy;
     this._semanticRouter = semanticRouter;
     this._rateLimiter = new SearchRateLimiter();
     this._serverUrl = SEARCH_SERVER_URL;
-    this._enabled = SEARCH_ENABLED;
 
-    logger.info('Search integration initialized', {
+    logger.info('SearchIntegration constructed', {
       serverUrl: this._serverUrl,
-      enabled: this._enabled,
+      enabled: SEARCH_ENABLED,
       rateLimit: `${SEARCH_RATE_LIMIT} req/s`,
       timeout: `${SEARCH_TIMEOUT_MS}ms`
+    });
+  }
+
+  /**
+   * Initialize Search integration
+   * - Register OAuth config
+   * - Perform health check
+   */
+  async initialize(): Promise<void> {
+    if (!SEARCH_ENABLED) {
+      logger.info('Search integration disabled');
+      return;
+    }
+
+    logger.info('Initializing Search integration');
+
+    // Register OAuth configuration
+    this._oauthProxy.registerOAuthConfig('search', SEARCH_OAUTH_CONFIG);
+
+    // Perform initial health check
+    const healthResult = await this.healthCheck();
+    this._isHealthy = healthResult.healthy;
+
+    logger.info('Search integration initialized successfully', {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
     });
   }
 
@@ -119,7 +144,7 @@ export class SearchIntegration {
    * Check if Search integration is enabled
    */
   isEnabled(): boolean {
-    return this._enabled;
+    return SEARCH_ENABLED;
   }
 
   /**
@@ -130,37 +155,32 @@ export class SearchIntegration {
   }
 
   /**
-   * Call Search MCP tool with OAuth and rate limiting
+   * Get integration status
    */
-  async callTool(
-    toolName: string,
-    args: Record<string, unknown>,
-    tenantId: string
-  ): Promise<MCPResponse> {
+  getStatus(): { healthy: boolean; serverUrl: string } {
+    return {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
+    };
+  }
+
+  /**
+   * Proxy request to Search MCP server with OAuth and rate limiting
+   */
+  async proxyRequest(req: MCPRequest): Promise<MCPResponse> {
     // Check if enabled
-    if (!this._enabled) {
+    if (!SEARCH_ENABLED) {
       throw new MCPError('Search integration is disabled', {
-        integration: 'search',
-        toolName
+        integration: 'search'
       });
     }
 
     // Rate limiting (more conservative for search quota)
     await this._rateLimiter.acquire();
 
-    // Build MCP request
-    const request: MCPRequest = {
-      method: 'tools/call',
-      params: {
-        name: toolName,
-        arguments: { ...args, tenantId }
-      }
-    };
-
-    logger.debug('Calling Search tool', {
+    logger.debug('Proxying Search request', {
       integration: 'search',
-      toolName,
-      tenantId,
+      method: req.method,
       availableTokens: this._rateLimiter.getAvailableTokens().toFixed(2)
     });
 
@@ -168,31 +188,29 @@ export class SearchIntegration {
       // Proxy request through OAuth handler
       const response = await this._oauthProxy.proxyRequest({
         integration: 'search',
-        tenantId,
+        tenantId: req.params?.tenantId || 'default',
         method: 'POST',
         path: '/mcp',
-        body: request,
+        body: req,
         headers: {
           'Content-Type': 'application/json'
         },
         timeout: SEARCH_TIMEOUT_MS
       });
 
-      logger.info('Search tool executed successfully', {
+      logger.info('Search request executed successfully', {
         integration: 'search',
-        toolName,
-        tenantId,
+        method: req.method,
         status: response.status
       });
 
       return response;
     } catch (error: any) {
       // Map Search-specific errors
-      const mappedError = this._mapSearchError(error, toolName);
-      logger.error('Search tool execution failed', {
+      const mappedError = this._mapSearchError(error, req.method);
+      logger.error('Search request failed', {
         integration: 'search',
-        toolName,
-        tenantId,
+        method: req.method,
         error: mappedError.message,
         errorType: mappedError.constructor.name
       });
@@ -203,14 +221,14 @@ export class SearchIntegration {
   /**
    * Map Search API errors to our error types
    */
-  private _mapSearchError(error: any, toolName: string): Error {
+  private _mapSearchError(error: any, method: string): Error {
     // Rate limit / quota errors
     if (error.status === 429 || error.status === 403) {
       return new RateLimitError(
         SEARCH_ERROR_MAP[error.status] || 'Search quota exceeded',
         {
           integration: 'search',
-          toolName,
+          method,
           resetTime: error.resetTime || Date.now() + 86400000 // Daily quota
         }
       );
@@ -220,7 +238,7 @@ export class SearchIntegration {
     if (error.status && SEARCH_ERROR_MAP[error.status]) {
       return new MCPError(SEARCH_ERROR_MAP[error.status], {
         integration: 'search',
-        toolName,
+        method,
         status: error.status,
         originalError: error.message
       });
@@ -231,7 +249,7 @@ export class SearchIntegration {
       `Search API error: ${error.message || 'Unknown error'}`,
       {
         integration: 'search',
-        toolName,
+        method,
         originalError: error
       }
     );
@@ -245,7 +263,7 @@ export class SearchIntegration {
     latency?: number;
     error?: string;
   }> {
-    if (!this._enabled) {
+    if (!SEARCH_ENABLED) {
       return { healthy: false, error: 'Integration disabled' };
     }
 

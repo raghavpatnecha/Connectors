@@ -98,20 +98,45 @@ export class SlidesIntegration {
   private readonly _semanticRouter: SemanticRouter;
   private readonly _rateLimiter: SlidesRateLimiter;
   private readonly _serverUrl: string;
-  private readonly _enabled: boolean;
+  private _isHealthy: boolean = false;
 
   constructor(oauthProxy: OAuthProxy, semanticRouter: SemanticRouter) {
     this._oauthProxy = oauthProxy;
     this._semanticRouter = semanticRouter;
     this._rateLimiter = new SlidesRateLimiter();
     this._serverUrl = SLIDES_SERVER_URL;
-    this._enabled = SLIDES_ENABLED;
 
-    logger.info('Slides integration initialized', {
+    logger.info('SlidesIntegration constructed', {
       serverUrl: this._serverUrl,
-      enabled: this._enabled,
+      enabled: SLIDES_ENABLED,
       rateLimit: `${SLIDES_RATE_LIMIT} req/s`,
       timeout: `${SLIDES_TIMEOUT_MS}ms`
+    });
+  }
+
+  /**
+   * Initialize Slides integration
+   * - Register OAuth config
+   * - Perform health check
+   */
+  async initialize(): Promise<void> {
+    if (!SLIDES_ENABLED) {
+      logger.info('Slides integration disabled');
+      return;
+    }
+
+    logger.info('Initializing Slides integration');
+
+    // Register OAuth configuration
+    this._oauthProxy.registerOAuthConfig('slides', SLIDES_OAUTH_CONFIG);
+
+    // Perform initial health check
+    const healthResult = await this.healthCheck();
+    this._isHealthy = healthResult.healthy;
+
+    logger.info('Slides integration initialized successfully', {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
     });
   }
 
@@ -119,7 +144,7 @@ export class SlidesIntegration {
    * Check if Slides integration is enabled
    */
   isEnabled(): boolean {
-    return this._enabled;
+    return SLIDES_ENABLED;
   }
 
   /**
@@ -130,37 +155,32 @@ export class SlidesIntegration {
   }
 
   /**
-   * Call Slides MCP tool with OAuth and rate limiting
+   * Get integration status
    */
-  async callTool(
-    toolName: string,
-    args: Record<string, unknown>,
-    tenantId: string
-  ): Promise<MCPResponse> {
+  getStatus(): { healthy: boolean; serverUrl: string } {
+    return {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
+    };
+  }
+
+  /**
+   * Proxy request to Slides MCP server with OAuth and rate limiting
+   */
+  async proxyRequest(req: MCPRequest): Promise<MCPResponse> {
     // Check if enabled
-    if (!this._enabled) {
+    if (!SLIDES_ENABLED) {
       throw new MCPError('Slides integration is disabled', {
-        integration: 'slides',
-        toolName
+        integration: 'slides'
       });
     }
 
     // Rate limiting
     await this._rateLimiter.acquire();
 
-    // Build MCP request
-    const request: MCPRequest = {
-      method: 'tools/call',
-      params: {
-        name: toolName,
-        arguments: { ...args, tenantId }
-      }
-    };
-
-    logger.debug('Calling Slides tool', {
+    logger.debug('Proxying Slides request', {
       integration: 'slides',
-      toolName,
-      tenantId,
+      method: req.method,
       availableTokens: this._rateLimiter.getAvailableTokens().toFixed(2)
     });
 
@@ -168,31 +188,29 @@ export class SlidesIntegration {
       // Proxy request through OAuth handler
       const response = await this._oauthProxy.proxyRequest({
         integration: 'slides',
-        tenantId,
+        tenantId: req.params?.tenantId || 'default',
         method: 'POST',
         path: '/mcp',
-        body: request,
+        body: req,
         headers: {
           'Content-Type': 'application/json'
         },
         timeout: SLIDES_TIMEOUT_MS
       });
 
-      logger.info('Slides tool executed successfully', {
+      logger.info('Slides request executed successfully', {
         integration: 'slides',
-        toolName,
-        tenantId,
+        method: req.method,
         status: response.status
       });
 
       return response;
     } catch (error: any) {
       // Map Slides-specific errors
-      const mappedError = this._mapSlidesError(error, toolName);
-      logger.error('Slides tool execution failed', {
+      const mappedError = this._mapSlidesError(error, req.method);
+      logger.error('Slides request failed', {
         integration: 'slides',
-        toolName,
-        tenantId,
+        method: req.method,
         error: mappedError.message,
         errorType: mappedError.constructor.name
       });
@@ -203,14 +221,14 @@ export class SlidesIntegration {
   /**
    * Map Slides API errors to our error types
    */
-  private _mapSlidesError(error: any, toolName: string): Error {
+  private _mapSlidesError(error: any, method: string): Error {
     // Rate limit errors
     if (error.status === 429 || error.code === 429) {
       return new RateLimitError(
         SLIDES_ERROR_MAP[429] || 'Rate limit exceeded',
         {
           integration: 'slides',
-          toolName,
+          method,
           resetTime: error.resetTime || Date.now() + 60000
         }
       );
@@ -220,7 +238,7 @@ export class SlidesIntegration {
     if (error.status && SLIDES_ERROR_MAP[error.status]) {
       return new MCPError(SLIDES_ERROR_MAP[error.status], {
         integration: 'slides',
-        toolName,
+        method,
         status: error.status,
         originalError: error.message
       });
@@ -231,7 +249,7 @@ export class SlidesIntegration {
       `Slides API error: ${error.message || 'Unknown error'}`,
       {
         integration: 'slides',
-        toolName,
+        method,
         originalError: error
       }
     );
@@ -245,7 +263,7 @@ export class SlidesIntegration {
     latency?: number;
     error?: string;
   }> {
-    if (!this._enabled) {
+    if (!SLIDES_ENABLED) {
       return { healthy: false, error: 'Integration disabled' };
     }
 

@@ -98,20 +98,45 @@ export class FormsIntegration {
   private readonly _semanticRouter: SemanticRouter;
   private readonly _rateLimiter: FormsRateLimiter;
   private readonly _serverUrl: string;
-  private readonly _enabled: boolean;
+  private _isHealthy: boolean = false;
 
   constructor(oauthProxy: OAuthProxy, semanticRouter: SemanticRouter) {
     this._oauthProxy = oauthProxy;
     this._semanticRouter = semanticRouter;
     this._rateLimiter = new FormsRateLimiter();
     this._serverUrl = FORMS_SERVER_URL;
-    this._enabled = FORMS_ENABLED;
 
-    logger.info('Forms integration initialized', {
+    logger.info('FormsIntegration constructed', {
       serverUrl: this._serverUrl,
-      enabled: this._enabled,
+      enabled: FORMS_ENABLED,
       rateLimit: `${FORMS_RATE_LIMIT} req/s`,
       timeout: `${FORMS_TIMEOUT_MS}ms`
+    });
+  }
+
+  /**
+   * Initialize Forms integration
+   * - Register OAuth config
+   * - Perform health check
+   */
+  async initialize(): Promise<void> {
+    if (!FORMS_ENABLED) {
+      logger.info('Forms integration disabled');
+      return;
+    }
+
+    logger.info('Initializing Forms integration');
+
+    // Register OAuth configuration
+    this._oauthProxy.registerOAuthConfig('forms', FORMS_OAUTH_CONFIG);
+
+    // Perform initial health check
+    const healthResult = await this.healthCheck();
+    this._isHealthy = healthResult.healthy;
+
+    logger.info('Forms integration initialized successfully', {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
     });
   }
 
@@ -119,7 +144,7 @@ export class FormsIntegration {
    * Check if Forms integration is enabled
    */
   isEnabled(): boolean {
-    return this._enabled;
+    return FORMS_ENABLED;
   }
 
   /**
@@ -130,37 +155,32 @@ export class FormsIntegration {
   }
 
   /**
-   * Call Forms MCP tool with OAuth and rate limiting
+   * Get integration status
    */
-  async callTool(
-    toolName: string,
-    args: Record<string, unknown>,
-    tenantId: string
-  ): Promise<MCPResponse> {
+  getStatus(): { healthy: boolean; serverUrl: string } {
+    return {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
+    };
+  }
+
+  /**
+   * Proxy request to Forms MCP server with OAuth and rate limiting
+   */
+  async proxyRequest(req: MCPRequest): Promise<MCPResponse> {
     // Check if enabled
-    if (!this._enabled) {
+    if (!FORMS_ENABLED) {
       throw new MCPError('Forms integration is disabled', {
-        integration: 'forms',
-        toolName
+        integration: 'forms'
       });
     }
 
     // Rate limiting
     await this._rateLimiter.acquire();
 
-    // Build MCP request
-    const request: MCPRequest = {
-      method: 'tools/call',
-      params: {
-        name: toolName,
-        arguments: { ...args, tenantId }
-      }
-    };
-
-    logger.debug('Calling Forms tool', {
+    logger.debug('Proxying Forms request', {
       integration: 'forms',
-      toolName,
-      tenantId,
+      method: req.method,
       availableTokens: this._rateLimiter.getAvailableTokens().toFixed(2)
     });
 
@@ -168,31 +188,29 @@ export class FormsIntegration {
       // Proxy request through OAuth handler
       const response = await this._oauthProxy.proxyRequest({
         integration: 'forms',
-        tenantId,
+        tenantId: req.params?.tenantId || 'default',
         method: 'POST',
         path: '/mcp',
-        body: request,
+        body: req,
         headers: {
           'Content-Type': 'application/json'
         },
         timeout: FORMS_TIMEOUT_MS
       });
 
-      logger.info('Forms tool executed successfully', {
+      logger.info('Forms request executed successfully', {
         integration: 'forms',
-        toolName,
-        tenantId,
+        method: req.method,
         status: response.status
       });
 
       return response;
     } catch (error: any) {
       // Map Forms-specific errors
-      const mappedError = this._mapFormsError(error, toolName);
-      logger.error('Forms tool execution failed', {
+      const mappedError = this._mapFormsError(error, req.method);
+      logger.error('Forms request failed', {
         integration: 'forms',
-        toolName,
-        tenantId,
+        method: req.method,
         error: mappedError.message,
         errorType: mappedError.constructor.name
       });
@@ -203,14 +221,14 @@ export class FormsIntegration {
   /**
    * Map Forms API errors to our error types
    */
-  private _mapFormsError(error: any, toolName: string): Error {
+  private _mapFormsError(error: any, method: string): Error {
     // Rate limit errors
     if (error.status === 429 || error.code === 429) {
       return new RateLimitError(
         FORMS_ERROR_MAP[429] || 'Rate limit exceeded',
         {
           integration: 'forms',
-          toolName,
+          method,
           resetTime: error.resetTime || Date.now() + 60000
         }
       );
@@ -220,7 +238,7 @@ export class FormsIntegration {
     if (error.status && FORMS_ERROR_MAP[error.status]) {
       return new MCPError(FORMS_ERROR_MAP[error.status], {
         integration: 'forms',
-        toolName,
+        method,
         status: error.status,
         originalError: error.message
       });
@@ -231,7 +249,7 @@ export class FormsIntegration {
       `Forms API error: ${error.message || 'Unknown error'}`,
       {
         integration: 'forms',
-        toolName,
+        method,
         originalError: error
       }
     );
@@ -245,7 +263,7 @@ export class FormsIntegration {
     latency?: number;
     error?: string;
   }> {
-    if (!this._enabled) {
+    if (!FORMS_ENABLED) {
       return { healthy: false, error: 'Integration disabled' };
     }
 

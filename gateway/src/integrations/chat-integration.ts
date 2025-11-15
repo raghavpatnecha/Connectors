@@ -98,20 +98,45 @@ export class ChatIntegration {
   private readonly _semanticRouter: SemanticRouter;
   private readonly _rateLimiter: ChatRateLimiter;
   private readonly _serverUrl: string;
-  private readonly _enabled: boolean;
+  private _isHealthy: boolean = false;
 
   constructor(oauthProxy: OAuthProxy, semanticRouter: SemanticRouter) {
     this._oauthProxy = oauthProxy;
     this._semanticRouter = semanticRouter;
     this._rateLimiter = new ChatRateLimiter();
     this._serverUrl = CHAT_SERVER_URL;
-    this._enabled = CHAT_ENABLED;
 
-    logger.info('Chat integration initialized', {
+    logger.info('ChatIntegration constructed', {
       serverUrl: this._serverUrl,
-      enabled: this._enabled,
+      enabled: CHAT_ENABLED,
       rateLimit: `${CHAT_RATE_LIMIT} req/s`,
       timeout: `${CHAT_TIMEOUT_MS}ms`
+    });
+  }
+
+  /**
+   * Initialize Chat integration
+   * - Register OAuth config
+   * - Perform health check
+   */
+  async initialize(): Promise<void> {
+    if (!CHAT_ENABLED) {
+      logger.info('Chat integration disabled');
+      return;
+    }
+
+    logger.info('Initializing Chat integration');
+
+    // Register OAuth configuration
+    this._oauthProxy.registerOAuthConfig('chat', CHAT_OAUTH_CONFIG);
+
+    // Perform initial health check
+    const healthResult = await this.healthCheck();
+    this._isHealthy = healthResult.healthy;
+
+    logger.info('Chat integration initialized successfully', {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
     });
   }
 
@@ -119,7 +144,7 @@ export class ChatIntegration {
    * Check if Chat integration is enabled
    */
   isEnabled(): boolean {
-    return this._enabled;
+    return CHAT_ENABLED;
   }
 
   /**
@@ -130,37 +155,32 @@ export class ChatIntegration {
   }
 
   /**
-   * Call Chat MCP tool with OAuth and rate limiting
+   * Get integration status
    */
-  async callTool(
-    toolName: string,
-    args: Record<string, unknown>,
-    tenantId: string
-  ): Promise<MCPResponse> {
+  getStatus(): { healthy: boolean; serverUrl: string } {
+    return {
+      healthy: this._isHealthy,
+      serverUrl: this._serverUrl
+    };
+  }
+
+  /**
+   * Proxy request to Chat MCP server with OAuth and rate limiting
+   */
+  async proxyRequest(req: MCPRequest): Promise<MCPResponse> {
     // Check if enabled
-    if (!this._enabled) {
+    if (!CHAT_ENABLED) {
       throw new MCPError('Chat integration is disabled', {
-        integration: 'chat',
-        toolName
+        integration: 'chat'
       });
     }
 
     // Rate limiting
     await this._rateLimiter.acquire();
 
-    // Build MCP request
-    const request: MCPRequest = {
-      method: 'tools/call',
-      params: {
-        name: toolName,
-        arguments: { ...args, tenantId }
-      }
-    };
-
-    logger.debug('Calling Chat tool', {
+    logger.debug('Proxying Chat request', {
       integration: 'chat',
-      toolName,
-      tenantId,
+      method: req.method,
       availableTokens: this._rateLimiter.getAvailableTokens().toFixed(2)
     });
 
@@ -168,31 +188,29 @@ export class ChatIntegration {
       // Proxy request through OAuth handler
       const response = await this._oauthProxy.proxyRequest({
         integration: 'chat',
-        tenantId,
+        tenantId: req.params?.tenantId || 'default',
         method: 'POST',
         path: '/mcp',
-        body: request,
+        body: req,
         headers: {
           'Content-Type': 'application/json'
         },
         timeout: CHAT_TIMEOUT_MS
       });
 
-      logger.info('Chat tool executed successfully', {
+      logger.info('Chat request executed successfully', {
         integration: 'chat',
-        toolName,
-        tenantId,
+        method: req.method,
         status: response.status
       });
 
       return response;
     } catch (error: any) {
       // Map Chat-specific errors
-      const mappedError = this._mapChatError(error, toolName);
-      logger.error('Chat tool execution failed', {
+      const mappedError = this._mapChatError(error, req.method);
+      logger.error('Chat request failed', {
         integration: 'chat',
-        toolName,
-        tenantId,
+        method: req.method,
         error: mappedError.message,
         errorType: mappedError.constructor.name
       });
@@ -203,14 +221,14 @@ export class ChatIntegration {
   /**
    * Map Chat API errors to our error types
    */
-  private _mapChatError(error: any, toolName: string): Error {
+  private _mapChatError(error: any, method: string): Error {
     // Rate limit errors
     if (error.status === 429 || error.code === 429) {
       return new RateLimitError(
         CHAT_ERROR_MAP[429] || 'Rate limit exceeded',
         {
           integration: 'chat',
-          toolName,
+          method,
           resetTime: error.resetTime || Date.now() + 60000
         }
       );
@@ -220,7 +238,7 @@ export class ChatIntegration {
     if (error.status && CHAT_ERROR_MAP[error.status]) {
       return new MCPError(CHAT_ERROR_MAP[error.status], {
         integration: 'chat',
-        toolName,
+        method,
         status: error.status,
         originalError: error.message
       });
@@ -231,7 +249,7 @@ export class ChatIntegration {
       `Chat API error: ${error.message || 'Unknown error'}`,
       {
         integration: 'chat',
-        toolName,
+        method,
         originalError: error
       }
     );
@@ -245,7 +263,7 @@ export class ChatIntegration {
     latency?: number;
     error?: string;
   }> {
-    if (!this._enabled) {
+    if (!CHAT_ENABLED) {
       return { healthy: false, error: 'Integration disabled' };
     }
 
