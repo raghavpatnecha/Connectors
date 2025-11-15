@@ -19,10 +19,10 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
-import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
-import { VaultClient } from '../../shared/google-auth/vault-client';
-import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
-import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager.js';
+import { VaultClient } from '../../shared/google-auth/vault-client.js';
+import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory.js';
+import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config.js';
 import {
   registerPresentationTools,
   registerPageTools,

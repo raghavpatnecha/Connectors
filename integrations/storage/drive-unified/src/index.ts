@@ -25,9 +25,9 @@ import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper.js';
 import { GoogleClientFactory } from './clients/drive-client.js';
 import { registerAllDriveTools } from './tools/index.js';
-import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
-import { VaultClient } from '../../shared/google-auth/vault-client';
-import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager.js';
+import { VaultClient } from '../../shared/google-auth/vault-client.js';
+import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config.js';
 
 // Configuration
 const PORT = parseInt(process.env.PORT || '3132', 10);

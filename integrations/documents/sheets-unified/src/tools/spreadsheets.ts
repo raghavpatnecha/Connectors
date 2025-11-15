@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { sheets_v4, drive_v3 } from 'googleapis';
 import { ToolRegistry } from '../utils/tool-registry-helper';
-import { GoogleClientFactory } from '../../../shared/google-auth/google-client-factory';
+import { GoogleClientFactory } from '../../../shared/google-auth/google-client-factory.js';
 import { mapGoogleAPIError } from '../../../shared/google-utils/error-mapper';
 import { logger } from '../utils/logger';
 

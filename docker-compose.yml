@@ -345,7 +345,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - GMAIL_REDIRECT_URI=http://localhost:3130/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -390,7 +389,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - CALENDAR_REDIRECT_URI=http://localhost:3131/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -435,7 +433,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - DRIVE_REDIRECT_URI=http://localhost:3132/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -480,7 +477,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - TASKS_REDIRECT_URI=http://localhost:3137/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -525,7 +521,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - DOCS_REDIRECT_URI=http://localhost:3133/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -570,7 +565,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - SHEETS_REDIRECT_URI=http://localhost:3134/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -615,7 +609,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - SLIDES_REDIRECT_URI=http://localhost:3135/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -660,7 +653,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - FORMS_REDIRECT_URI=http://localhost:3136/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -705,7 +697,6 @@ services:
       - VAULT_TOKEN=dev-root-token
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - CHAT_REDIRECT_URI=http://localhost:3138/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
@@ -752,7 +743,6 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_PSE_API_KEY=${GOOGLE_PSE_API_KEY:-}
       - GOOGLE_PSE_ENGINE_ID=${GOOGLE_PSE_ENGINE_ID:-}
-      - SEARCH_REDIRECT_URI=http://localhost:3139/oauth/callback
       - PORT=3000
     volumes:
       # Source code hot-reload
