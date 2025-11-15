@@ -15,6 +15,10 @@ import { CalendarIntegration, createCalendarIntegration } from '../integrations/
 import { TasksIntegration, createTasksIntegration } from '../integrations/tasks-integration';
 import { DocsIntegration, createDocsIntegration } from '../integrations/docs-integration';
 import { SheetsIntegration, createSheetsIntegration } from '../integrations/sheets-integration';
+import { SlidesIntegration, createSlidesIntegration } from '../integrations/slides-integration';
+import { FormsIntegration, createFormsIntegration } from '../integrations/forms-integration';
+import { ChatIntegration, createChatIntegration } from '../integrations/chat-integration';
+import { SearchIntegration, createSearchIntegration } from '../integrations/search-integration';
 import { logger } from '../logging/logger';
 
 /**
@@ -84,6 +88,10 @@ export class IntegrationRegistry {
     this._registerTasks();
     this._registerDocs();
     this._registerSheets();
+    this._registerSlides();
+    this._registerForms();
+    this._registerChat();
+    this._registerSearch();
 
     // Initialize all enabled integrations
     await this._initializeAll();
@@ -456,6 +464,114 @@ export class IntegrationRegistry {
     }
 
     logger.info('Registered Sheets integration', metadata);
+  }
+
+  /**
+   * Register Google Slides integration
+   */
+  private _registerSlides(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'slides',
+      name: 'Google Slides',
+      category: 'documents',
+      description: 'Google Slides unified integration for presentations, pages, and elements (25 tools)',
+      enabled: process.env.SLIDES_ENABLED !== 'false',
+      serverUrl: process.env.SLIDES_SERVER_URL || 'http://localhost:3135',
+      rateLimit: parseInt(process.env.SLIDES_RATE_LIMIT || '10', 10),
+      requiresOAuth: true,
+      oauthProvider: 'slides',
+      docsUrl: 'https://developers.google.com/slides/api/reference/rest'
+    };
+
+    this._integrations.set('slides', metadata);
+
+    if (metadata.enabled) {
+      const instance = createSlidesIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('slides', instance);
+    }
+
+    logger.info('Registered Slides integration', metadata);
+  }
+
+  /**
+   * Register Google Forms integration
+   */
+  private _registerForms(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'forms',
+      name: 'Google Forms',
+      category: 'productivity',
+      description: 'Google Forms unified integration for forms, responses, and watches (15 tools)',
+      enabled: process.env.FORMS_ENABLED !== 'false',
+      serverUrl: process.env.FORMS_SERVER_URL || 'http://localhost:3136',
+      rateLimit: parseInt(process.env.FORMS_RATE_LIMIT || '10', 10),
+      requiresOAuth: true,
+      oauthProvider: 'forms',
+      docsUrl: 'https://developers.google.com/forms/api/reference/rest'
+    };
+
+    this._integrations.set('forms', metadata);
+
+    if (metadata.enabled) {
+      const instance = createFormsIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('forms', instance);
+    }
+
+    logger.info('Registered Forms integration', metadata);
+  }
+
+  /**
+   * Register Google Chat integration
+   */
+  private _registerChat(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'chat',
+      name: 'Google Chat',
+      category: 'communication',
+      description: 'Google Chat unified integration for spaces, messages, members, and reactions (23 tools)',
+      enabled: process.env.CHAT_ENABLED !== 'false',
+      serverUrl: process.env.CHAT_SERVER_URL || 'http://localhost:3138',
+      rateLimit: parseInt(process.env.CHAT_RATE_LIMIT || '20', 10),
+      requiresOAuth: true,
+      oauthProvider: 'chat',
+      docsUrl: 'https://developers.google.com/chat/api'
+    };
+
+    this._integrations.set('chat', metadata);
+
+    if (metadata.enabled) {
+      const instance = createChatIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('chat', instance);
+    }
+
+    logger.info('Registered Chat integration', metadata);
+  }
+
+  /**
+   * Register Google Custom Search integration
+   */
+  private _registerSearch(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'search',
+      name: 'Google Custom Search',
+      category: 'search',
+      description: 'Google Custom Search unified integration for web search and CSE management (6 tools)',
+      enabled: process.env.SEARCH_ENABLED !== 'false',
+      serverUrl: process.env.SEARCH_SERVER_URL || 'http://localhost:3139',
+      rateLimit: parseInt(process.env.SEARCH_RATE_LIMIT || '5', 10),
+      requiresOAuth: true,
+      oauthProvider: 'search',
+      docsUrl: 'https://developers.google.com/custom-search/v1/overview'
+    };
+
+    this._integrations.set('search', metadata);
+
+    if (metadata.enabled) {
+      const instance = createSearchIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('search', instance);
+    }
+
+    logger.info('Registered Search integration', metadata);
   }
 
   /**
