@@ -23,9 +23,10 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
-import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
-import { SCOPE_SETS } from '../../shared/google-auth/oauth-config';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager.js';
+import { VaultClient } from '../../shared/google-auth/vault-client.js';
+import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory.js';
+import { SCOPE_SETS, GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config.js';
 import { registerSpreadsheetTools } from './tools/spreadsheets';
 import { registerValuesTools } from './tools/values';
 import { registerFormattingTools } from './tools/formatting';
@@ -34,16 +35,14 @@ import { logger } from './utils/logger';
 
 // Configuration
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || '3134', 10);
-const SHEETS_SCOPES = SCOPE_SETS.SHEETS;
+const SHEETS_SCOPES = [GOOGLE_SCOPES.SPREADSHEETS];
 
 /**
  * Initialize Sheets MCP Server
  */
-async function initializeSheetsServer(): Promise<void> {
+async function initializeSheetsServer(oauthManager: OAuthManager): Promise<void> {
   logger.info('Initializing Google Sheets MCP Server');
 
-  // Initialize OAuth manager
-  const oauthManager = new OAuthManager(SHEETS_SCOPES);
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
@@ -291,7 +290,31 @@ async function initializeSheetsServer(): Promise<void> {
 }
 
 // Start the server
-initializeSheetsServer().catch((error) => {
-  logger.error('Failed to start Sheets MCP Server', { error: error.message });
-  process.exit(1);
-});
+async function main() {
+  try {
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${HTTP_PORT}/oauth/callback`,
+      scopes: SHEETS_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Start the server
+    await initializeSheetsServer(oauthManager);
+  } catch (error: any) {
+    logger.error('Failed to start Sheets MCP Server', { error: error.message });
+    process.exit(1);
+  }
+}
+
+main();

@@ -1,10 +1,24 @@
 #!/usr/bin/env node
 
+/**
+ * Gmail MCP Server
+ * Unified MCP server for Gmail API with OAuth 2.0 authentication
+ *
+ * Features:
+ * - 48 tools for comprehensive Gmail management
+ * - Multi-tenant OAuth via shared Google auth
+ * - Dual server: stdio (MCP) + HTTP (OAuth callbacks)
+ */
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper.js';
 import { logger } from './utils/logger.js';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager.js';
+import { VaultClient } from '../../shared/google-auth/vault-client.js';
+import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory.js';
+import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config.js';
 import {
   registerUserTools,
   registerMessageTools,
@@ -18,24 +32,39 @@ import {
 const PORT = parseInt(process.env.PORT || '3130', 10);
 const OAUTH_CALLBACK_PATH = process.env.OAUTH_CALLBACK_PATH || '/oauth/callback';
 
-// Mock OAuth token retrieval (to be replaced with actual Vault integration)
-// This will be integrated with ../../shared/google-auth/vault-client.ts
-async function getAccessTokenForTenant(tenantId: string): Promise<string> {
-  // TODO: Integrate with VaultClient from shared/google-auth
-  // For now, this is a placeholder that should be replaced with:
-  // const vaultClient = new VaultClient();
-  // const credentials = await vaultClient.getCredentials(tenantId, 'gmail');
-  // return credentials.accessToken;
+// Gmail API scopes
+const GMAIL_SCOPES = [
+  GOOGLE_SCOPES.GMAIL_MODIFY,
+  GOOGLE_SCOPES.GMAIL_COMPOSE,
+  GOOGLE_SCOPES.GMAIL_SEND,
+  GOOGLE_SCOPES.GMAIL_LABELS,
+  GOOGLE_SCOPES.GMAIL_SETTINGS_BASIC
+];
 
-  const token = process.env[`GMAIL_ACCESS_TOKEN_${tenantId}`];
-  if (!token) {
-    throw new Error(`No access token found for tenant: ${tenantId}`);
+/**
+ * Initialize Gmail MCP Server with OAuth
+ */
+async function initializeGmailServer(oauthManager: OAuthManager): Promise<Server> {
+  logger.info('Initializing Gmail MCP Server');
+
+  const clientFactory = new GoogleClientFactory(oauthManager);
+
+  // Adapter function to get access token for tenant
+  async function getAccessTokenForTenant(tenantId: string): Promise<string> {
+    try {
+      const auth = await oauthManager.getAuthenticatedClient(tenantId);
+      const credentials = await auth.getAccessToken();
+      if (!credentials.token) {
+        throw new Error(`No access token available for tenant: ${tenantId}`);
+      }
+      return credentials.token;
+    } catch (error: any) {
+      logger.error('Failed to get access token', { tenantId, error: error.message });
+      throw new Error(`Authentication failed for tenant ${tenantId}: ${error.message}`);
+    }
   }
-  return token;
-}
 
-// Create MCP server
-function createMCPServer(): Server {
+  // Create MCP server
   const server = new Server(
     {
       name: 'gmail-unified',
@@ -51,6 +80,7 @@ function createMCPServer(): Server {
   const registry = new ToolRegistry(server);
 
   // Register all tool categories
+  logger.info('Registering Gmail tools...');
   registerUserTools(registry, getAccessTokenForTenant);
   registerMessageTools(registry, getAccessTokenForTenant);
   registerLabelTools(registry, getAccessTokenForTenant);
@@ -59,7 +89,10 @@ function createMCPServer(): Server {
   registerSettingsTools(registry, getAccessTokenForTenant);
 
   const toolCount = registry.getToolCount();
-  logger.info(`Gmail Unified MCP Server initialized with ${toolCount} tools`);
+  logger.info(`Gmail MCP Server initialized`, {
+    totalTools: toolCount,
+    scopes: GMAIL_SCOPES
+  });
 
   // List tools handler
   server.setRequestHandler({ method: 'tools/list' } as any, async () => {
@@ -167,74 +200,161 @@ function createMCPServer(): Server {
   return server;
 }
 
-// Create HTTP server for OAuth callbacks
-function createOAuthServer(): express.Application {
+/**
+ * Create HTTP server for OAuth callbacks
+ */
+function createOAuthServer(oauthManager: OAuthManager): express.Application {
   const app = express();
 
   app.use(express.json());
 
+  /**
+   * Health check endpoint
+   */
   app.get('/health', (req, res) => {
     res.json({ status: 'healthy', service: 'gmail-unified-mcp' });
   });
 
-  app.get(OAUTH_CALLBACK_PATH, (req, res) => {
-    // OAuth callback handler
-    // TODO: Integrate with GoogleOAuthManager from shared/google-auth
-    const { code, state } = req.query;
+  /**
+   * OAuth authorization endpoint
+   */
+  app.get('/oauth/authorize', (req, res) => {
+    const { tenantId } = req.query;
 
-    logger.info('OAuth callback received', { code: !!code, state });
+    if (!tenantId || typeof tenantId !== 'string') {
+      return res.status(400).json({
+        error: 'Missing or invalid tenantId parameter'
+      });
+    }
 
-    res.send(`
-      <html>
-        <body>
-          <h1>Gmail MCP OAuth</h1>
-          <p>Authorization ${code ? 'successful' : 'failed'}!</p>
-          <p>You can close this window.</p>
-        </body>
-      </html>
-    `);
+    try {
+      const authUrl = oauthManager.generateAuthUrl(tenantId);
+
+      logger.info('Generated OAuth URL', { tenantId });
+
+      res.json({
+        authUrl,
+        message: 'Please visit the URL to authorize Gmail access'
+      });
+    } catch (error: any) {
+      logger.error('Failed to generate auth URL', {
+        tenantId,
+        error: error.message
+      });
+      res.status(500).json({ error: error.message });
+    }
   });
 
-  app.post('/oauth/token', async (req, res) => {
-    // Token exchange endpoint
-    // TODO: Integrate with VaultClient
+  /**
+   * OAuth callback endpoint
+   */
+  app.get(OAUTH_CALLBACK_PATH, async (req, res) => {
+    const { code, state: tenantId, error } = req.query;
+
+    if (error) {
+      logger.error('OAuth authorization failed', { error });
+      return res.status(400).send(`
+        <html>
+          <body>
+            <h1>Gmail MCP OAuth</h1>
+            <p>Authorization failed: ${error}</p>
+            <p>You can close this window.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    if (!code || !tenantId || typeof code !== 'string' || typeof tenantId !== 'string') {
+      return res.status(400).send(`
+        <html>
+          <body>
+            <h1>Gmail MCP OAuth</h1>
+            <p>Invalid callback parameters</p>
+            <p>You can close this window.</p>
+          </body>
+        </html>
+      `);
+    }
+
     try {
-      const { tenantId, code } = req.body;
+      await oauthManager.handleCallback(code, tenantId);
 
-      if (!tenantId || !code) {
-        return res.status(400).json({ error: 'Missing tenantId or code' });
-      }
+      logger.info('OAuth callback successful', { tenantId });
 
-      // Placeholder: Exchange code for token and store in Vault
-      logger.info('Token exchange requested', { tenantId });
-
-      res.json({ success: true, message: 'Token stored successfully' });
+      res.send(`
+        <html>
+          <body>
+            <h1>Gmail MCP OAuth</h1>
+            <p>Authorization successful!</p>
+            <p>You can close this window and return to your application.</p>
+          </body>
+        </html>
+      `);
     } catch (error: any) {
-      logger.error('Token exchange failed', { error: error.message });
-      res.status(500).json({ error: error.message });
+      logger.error('OAuth callback failed', {
+        tenantId,
+        error: error.message
+      });
+      res.status(500).send(`
+        <html>
+          <body>
+            <h1>Gmail MCP OAuth</h1>
+            <p>Authorization failed: ${error.message}</p>
+            <p>Please try again.</p>
+          </body>
+        </html>
+      `);
     }
   });
 
   return app;
 }
 
-// Main entry point
+/**
+ * Main entry point
+ */
 async function main() {
   try {
-    // Start stdio MCP server
-    const mcpServer = createMCPServer();
+    logger.info('Starting Gmail Unified MCP Server');
+
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/oauth/callback`,
+      scopes: GMAIL_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Initialize and start stdio MCP server
+    const mcpServer = await initializeGmailServer(oauthManager);
     const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
-    logger.info('Gmail Unified MCP Server started (stdio mode)');
+    logger.info('Gmail MCP Server connected via stdio');
 
     // Start HTTP OAuth server
-    const oauthApp = createOAuthServer();
+    const oauthApp = createOAuthServer(oauthManager);
     oauthApp.listen(PORT, () => {
-      logger.info(`OAuth HTTP server listening on port ${PORT}`);
+      logger.info(`Gmail OAuth HTTP server listening on port ${PORT}`);
+      logger.info('OAuth flow:', {
+        authorize: `http://localhost:${PORT}/oauth/authorize?tenantId=<TENANT_ID>`,
+        callback: `http://localhost:${PORT}${OAUTH_CALLBACK_PATH}`
+      });
     });
 
   } catch (error: any) {
-    logger.error('Failed to start Gmail Unified MCP Server', { error: error.message, stack: error.stack });
+    logger.error('Failed to start Gmail Unified MCP Server', {
+      error: error.message,
+      stack: error.stack
+    });
     process.exit(1);
   }
 }

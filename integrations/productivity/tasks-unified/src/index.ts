@@ -17,25 +17,24 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
-import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
-import { SCOPE_SETS } from '../../shared/google-auth/oauth-config';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager.js';
+import { VaultClient } from '../../shared/google-auth/vault-client.js';
+import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory.js';
+import { SCOPE_SETS, GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config.js';
 import { registerTaskListTools } from './tools/tasklists';
 import { registerTaskTools } from './tools/tasks';
 import { logger } from './utils/logger';
 
 // Configuration
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || '3137', 10);
-const TASKS_SCOPES = SCOPE_SETS.TASKS;
+const TASKS_SCOPES = [GOOGLE_SCOPES.TASKS];
 
 /**
  * Initialize Tasks MCP Server
  */
-async function initializeTasksServer(): Promise<void> {
+async function initializeTasksServer(oauthManager: OAuthManager): Promise<void> {
   logger.info('Initializing Google Tasks MCP Server');
 
-  // Initialize OAuth manager
-  const oauthManager = new OAuthManager(TASKS_SCOPES);
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
@@ -283,7 +282,31 @@ async function initializeTasksServer(): Promise<void> {
 }
 
 // Start the server
-initializeTasksServer().catch((error) => {
-  logger.error('Failed to start Tasks MCP Server', { error: error.message });
-  process.exit(1);
-});
+async function main() {
+  try {
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${HTTP_PORT}/oauth/callback`,
+      scopes: TASKS_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Start the server
+    await initializeTasksServer(oauthManager);
+  } catch (error: any) {
+    logger.error('Failed to start Tasks MCP Server', { error: error.message });
+    process.exit(1);
+  }
+}
+
+main();
