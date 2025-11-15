@@ -15,7 +15,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper.js';
 import { logger } from './utils/logger.js';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
+import { VaultClient } from '../../shared/google-auth/vault-client';
 import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
 import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
 import {
@@ -42,11 +43,9 @@ const CHAT_SCOPES = [
 /**
  * Initialize Chat MCP Server with OAuth
  */
-async function initializeChatServer(): Promise<Server> {
+async function initializeChatServer(oauthManager: OAuthManager): Promise<Server> {
   logger.info('Initializing Google Chat MCP Server');
 
-  // Initialize OAuth manager
-  const oauthManager = new OAuthManager(CHAT_SCOPES);
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   // Adapter function to get access token for tenant
@@ -258,11 +257,25 @@ async function main() {
   try {
     logger.info('Starting Google Chat Unified MCP Server');
 
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
     // Initialize OAuth manager
-    const oauthManager = new OAuthManager(CHAT_SCOPES);
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/oauth/callback`,
+      scopes: CHAT_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
 
     // Initialize and start stdio MCP server
-    const mcpServer = await initializeChatServer();
+    const mcpServer = await initializeChatServer(oauthManager);
     const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
     logger.info('Chat MCP Server connected via stdio');

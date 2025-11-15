@@ -24,7 +24,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import express from 'express';
 import { calendarClientFactory } from './clients/calendar-client.js';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
+import { VaultClient } from '../../shared/google-auth/vault-client';
 import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
 import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
 
@@ -81,11 +82,11 @@ let oauthManager: OAuthManager;
 /**
  * Initialize Calendar MCP Server with OAuth
  */
-async function initializeCalendarServer(): Promise<Server> {
+async function initializeCalendarServer(oauthMgr: OAuthManager): Promise<Server> {
   console.error('Initializing Google Calendar MCP Server');
 
-  // Initialize OAuth manager
-  oauthManager = new OAuthManager(CALENDAR_SCOPES);
+  // Store OAuth manager globally for HTTP endpoints
+  oauthManager = oauthMgr;
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   const server = new Server(
@@ -334,8 +335,25 @@ async function main() {
   try {
     console.error('Starting Google Calendar Unified MCP Server');
 
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/oauth/callback`,
+      scopes: CALENDAR_SCOPES
+    };
+
+    const oauthMgr = new OAuthManager(oauthConfig, vaultClient);
+
     // Initialize and start stdio MCP server
-    const mcpServer = await initializeCalendarServer();
+    const mcpServer = await initializeCalendarServer(oauthMgr);
     const transport = new StdioServerTransport();
     await mcpServer.connect(transport);
     console.error('Calendar MCP Server connected via stdio');

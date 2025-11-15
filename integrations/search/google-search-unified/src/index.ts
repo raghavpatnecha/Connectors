@@ -18,7 +18,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
 import { SearchClient, SearchClientFactory } from './clients/search-client';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
+import { VaultClient } from '../../shared/google-auth/vault-client';
 import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
 import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
 import { registerSearchTools } from './tools/search';
@@ -43,15 +44,14 @@ const SEARCH_SCOPES = [
 /**
  * Initialize Search MCP Server
  */
-async function initializeSearchServer(): Promise<void> {
+async function initializeSearchServer(oauthManager: OAuthManager): Promise<void> {
   logger.info('Initializing Google Custom Search MCP Server');
 
   // Initialize search client
   const searchClient = new SearchClient();
   const searchClientFactory = new SearchClientFactory(searchClient);
 
-  // Initialize OAuth manager with proper Google auth
-  const oauthManager = new OAuthManager(SEARCH_SCOPES);
+  // Initialize client factory with OAuth manager
   const googleClientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
@@ -303,7 +303,31 @@ async function initializeSearchServer(): Promise<void> {
 }
 
 // Start the server
-initializeSearchServer().catch((error) => {
-  logger.error('Failed to start Search MCP Server', { error: error.message });
-  process.exit(1);
-});
+async function main() {
+  try {
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${HTTP_PORT}/oauth/callback`,
+      scopes: SEARCH_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Start the server
+    await initializeSearchServer(oauthManager);
+  } catch (error: any) {
+    logger.error('Failed to start Search MCP Server', { error: error.message });
+    process.exit(1);
+  }
+}
+
+main();

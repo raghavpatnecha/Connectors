@@ -18,7 +18,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
+import { VaultClient } from '../../shared/google-auth/vault-client';
 import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
 import { registerFormTools } from './tools/forms';
 import { registerResponseTools } from './tools/responses';
@@ -38,11 +39,9 @@ const FORMS_SCOPES = [
 /**
  * Initialize Forms MCP Server
  */
-async function initializeFormsServer(): Promise<void> {
+async function initializeFormsServer(oauthManager: OAuthManager): Promise<void> {
   logger.info('Initializing Google Forms MCP Server');
 
-  // Initialize OAuth manager
-  const oauthManager = new OAuthManager(FORMS_SCOPES);
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
@@ -291,7 +290,31 @@ async function initializeFormsServer(): Promise<void> {
 }
 
 // Start the server
-initializeFormsServer().catch((error) => {
-  logger.error('Failed to start Forms MCP Server', { error: error.message });
-  process.exit(1);
-});
+async function main() {
+  try {
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${HTTP_PORT}/oauth/callback`,
+      scopes: FORMS_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Start the server
+    await initializeFormsServer(oauthManager);
+  } catch (error: any) {
+    logger.error('Failed to start Forms MCP Server', { error: error.message });
+    process.exit(1);
+  }
+}
+
+main();

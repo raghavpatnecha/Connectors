@@ -20,9 +20,10 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
+import { VaultClient } from '../../shared/google-auth/vault-client';
 import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
-import { SCOPE_SETS } from '../../shared/google-auth/oauth-config';
+import { SCOPE_SETS, GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
 import { registerDocumentTools } from './tools/documents';
 import { registerContentTools } from './tools/content';
 import { registerFeatureTools } from './tools/features';
@@ -30,16 +31,14 @@ import { logger } from './utils/logger';
 
 // Configuration
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || '3133', 10);
-const DOCS_SCOPES = SCOPE_SETS.DOCS;
+const DOCS_SCOPES = [GOOGLE_SCOPES.DOCUMENTS, GOOGLE_SCOPES.DRIVE];
 
 /**
  * Initialize Docs MCP Server
  */
-async function initializeDocsServer(): Promise<void> {
+async function initializeDocsServer(oauthManager: OAuthManager): Promise<void> {
   logger.info('Initializing Google Docs MCP Server');
 
-  // Initialize OAuth manager
-  const oauthManager = new OAuthManager(DOCS_SCOPES);
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
@@ -286,7 +285,31 @@ async function initializeDocsServer(): Promise<void> {
 }
 
 // Start the server
-initializeDocsServer().catch((error) => {
-  logger.error('Failed to start Docs MCP Server', { error: error.message });
-  process.exit(1);
-});
+async function main() {
+  try {
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${HTTP_PORT}/oauth/callback`,
+      scopes: DOCS_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Start the server
+    await initializeDocsServer(oauthManager);
+  } catch (error: any) {
+    logger.error('Failed to start Docs MCP Server', { error: error.message });
+    process.exit(1);
+  }
+}
+
+main();

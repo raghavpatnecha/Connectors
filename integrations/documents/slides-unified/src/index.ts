@@ -19,7 +19,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
-import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { OAuthManager, OAuthConfig } from '../../shared/google-auth/oauth-manager';
+import { VaultClient } from '../../shared/google-auth/vault-client';
 import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
 import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
 import {
@@ -40,11 +41,9 @@ const SLIDES_SCOPES = [
 /**
  * Initialize Slides MCP Server
  */
-async function initializeSlidesServer(): Promise<void> {
+async function initializeSlidesServer(oauthManager: OAuthManager): Promise<void> {
   logger.info('Initializing Google Slides MCP Server');
 
-  // Initialize OAuth manager
-  const oauthManager = new OAuthManager(SLIDES_SCOPES);
   const clientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
@@ -292,7 +291,31 @@ async function initializeSlidesServer(): Promise<void> {
 }
 
 // Start the server
-initializeSlidesServer().catch((error) => {
-  logger.error('Failed to start Slides MCP Server', { error: error.message });
-  process.exit(1);
-});
+async function main() {
+  try {
+    // Initialize Vault client
+    const vaultClient = new VaultClient(
+      process.env.VAULT_ADDR || 'http://localhost:8200',
+      process.env.VAULT_TOKEN || 'dev-token',
+      'google-workspace-mcp'
+    );
+
+    // Initialize OAuth manager
+    const oauthConfig: OAuthConfig = {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${HTTP_PORT}/oauth/callback`,
+      scopes: SLIDES_SCOPES
+    };
+
+    const oauthManager = new OAuthManager(oauthConfig, vaultClient);
+
+    // Start the server
+    await initializeSlidesServer(oauthManager);
+  } catch (error: any) {
+    logger.error('Failed to start Slides MCP Server', { error: error.message });
+    process.exit(1);
+  }
+}
+
+main();
