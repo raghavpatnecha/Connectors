@@ -6,7 +6,7 @@
  *
  * Features:
  * - 6 tools for web search and custom search engine management
- * - Multi-tenant OAuth via HashiCorp Vault
+ * - Multi-tenant OAuth via shared Google auth
  * - Dual server: stdio (MCP) + HTTP (OAuth callbacks)
  * - Search operations (web, image, news)
  * - CSE operations (list, get, update)
@@ -18,49 +18,27 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import express from 'express';
 import { ToolRegistry } from './utils/tool-registry-helper';
 import { SearchClient, SearchClientFactory } from './clients/search-client';
+import { OAuthManager } from '../../shared/google-auth/oauth-manager';
+import { GoogleClientFactory } from '../../shared/google-auth/google-client-factory';
+import { GOOGLE_SCOPES } from '../../shared/google-auth/oauth-config';
 import { registerSearchTools } from './tools/search';
 import { registerCSETools } from './tools/cse';
 import { logger } from './utils/logger';
 
-// OAuth integration (simplified interface)
-interface OAuthManager {
-  generateAuthUrl(tenantId: string, additionalScopes?: string[]): string;
-  handleCallback(code: string, tenantId: string): Promise<void>;
-  getAuthenticatedClient(tenantId: string): Promise<any>;
-  validateCredentials(tenantId: string): Promise<boolean>;
-  revokeCredentials(tenantId: string): Promise<void>;
-}
-
-// Mock OAuth manager for development (replace with actual implementation)
-class MockOAuthManager implements OAuthManager {
-  generateAuthUrl(tenantId: string): string {
-    return `https://accounts.google.com/o/oauth2/v2/auth?client_id=mock&redirect_uri=http://localhost:3139/oauth/callback&response_type=code&scope=https://www.googleapis.com/auth/cse&state=${tenantId}`;
-  }
-
-  async handleCallback(code: string, tenantId: string): Promise<void> {
-    logger.info('Mock OAuth callback', { code, tenantId });
-  }
-
-  async getAuthenticatedClient(tenantId: string): Promise<any> {
-    // Return a mock OAuth2Client
-    return {
-      credentials: {
-        access_token: process.env.GOOGLE_PSE_API_KEY,
-      },
-    };
-  }
-
-  async validateCredentials(tenantId: string): Promise<boolean> {
-    return true;
-  }
-
-  async revokeCredentials(tenantId: string): Promise<void> {
-    logger.info('Mock OAuth revoke', { tenantId });
-  }
-}
-
 // Configuration
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || '3139', 10);
+
+// Google Custom Search API scopes
+// Note: Custom Search API primarily uses API key for authentication,
+// but OAuth is needed for Custom Search Engine (CSE) management
+const SEARCH_SCOPES = [
+  GOOGLE_SCOPES.USERINFO_EMAIL,
+  GOOGLE_SCOPES.USERINFO_PROFILE
+];
+
+// Note: CSE scope doesn't exist in standard Google APIs
+// Custom Search API v1 uses API key, not OAuth
+// We keep OAuth for potential future CSE management features
 
 /**
  * Initialize Search MCP Server
@@ -72,8 +50,9 @@ async function initializeSearchServer(): Promise<void> {
   const searchClient = new SearchClient();
   const searchClientFactory = new SearchClientFactory(searchClient);
 
-  // Initialize OAuth manager (use mock for now, replace with actual implementation)
-  const oauthManager: OAuthManager = new MockOAuthManager();
+  // Initialize OAuth manager with proper Google auth
+  const oauthManager = new OAuthManager(SEARCH_SCOPES);
+  const googleClientFactory = new GoogleClientFactory(oauthManager);
 
   // Create MCP server
   const mcpServer = new Server(
@@ -101,6 +80,7 @@ async function initializeSearchServer(): Promise<void> {
   logger.info('Search MCP Server initialized', {
     totalTools: registry.getAllTools().length,
     port: HTTP_PORT,
+    scopes: SEARCH_SCOPES
   });
 
   // Start stdio transport for MCP
