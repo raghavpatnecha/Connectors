@@ -25,7 +25,12 @@ export const FORMS_OAUTH_CONFIG: OAuthClientConfig = {
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
   authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-  redirectUri: process.env.FORMS_REDIRECT_URI || 'http://localhost:3136/oauth/callback'
+  redirectUri: process.env.FORMS_REDIRECT_URI || 'http://localhost:3136/oauth/callback',
+  scopes: [
+    'https://www.googleapis.com/auth/forms.body',
+    'https://www.googleapis.com/auth/forms.body.readonly',
+    'https://www.googleapis.com/auth/forms.responses.readonly'
+  ]
 };
 
 /**

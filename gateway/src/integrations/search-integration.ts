@@ -26,7 +26,10 @@ export const SEARCH_OAUTH_CONFIG: OAuthClientConfig = {
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
   authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-  redirectUri: process.env.SEARCH_REDIRECT_URI || 'http://localhost:3139/oauth/callback'
+  redirectUri: process.env.SEARCH_REDIRECT_URI || 'http://localhost:3139/oauth/callback',
+  scopes: [
+    'https://www.googleapis.com/auth/cse' // Custom Search Engine management
+  ]
 };
 
 /**

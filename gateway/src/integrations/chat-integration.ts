@@ -25,7 +25,13 @@ export const CHAT_OAUTH_CONFIG: OAuthClientConfig = {
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
   authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-  redirectUri: process.env.CHAT_REDIRECT_URI || 'http://localhost:3138/oauth/callback'
+  redirectUri: process.env.CHAT_REDIRECT_URI || 'http://localhost:3138/oauth/callback',
+  scopes: [
+    'https://www.googleapis.com/auth/chat.messages',
+    'https://www.googleapis.com/auth/chat.messages.create',
+    'https://www.googleapis.com/auth/chat.spaces',
+    'https://www.googleapis.com/auth/chat.spaces.readonly'
+  ]
 };
 
 /**
