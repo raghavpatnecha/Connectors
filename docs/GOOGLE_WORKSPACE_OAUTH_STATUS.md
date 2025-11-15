@@ -3,7 +3,7 @@
 **Last Updated**: November 15, 2025
 **Status**: ✅ **PRODUCTION-READY**
 **Services**: 10/10 Complete
-**Commits**: db4b798, 0125d16, 5e9b398, d172f5d, **24697d3** (critical fix)
+**Commits**: db4b798, 0125d16, 5e9b398, d172f5d, 24697d3 (critical fix), 4ad20c4 (minor fixes)
 
 ---
 
@@ -346,15 +346,17 @@ HTTP_PORT=313X  # For Docs (3133), Sheets (3134), Slides (3135), Forms (3136), T
 
 ### Minor Issues (Non-Blocking)
 
-1. **Import Paths Missing .js Extensions**
-   - Impact: None (TypeScript compiles correctly)
-   - Status: Cosmetic inconsistency only
-   - Fix: Optional - add `.js` to google-auth imports for ESM consistency
+- **NONE** ✅
 
-2. **Unused Environment Variables in Docker Compose**
-   - SERVICE_REDIRECT_URI variables defined but unused
-   - Services use GOOGLE_REDIRECT_URI fallback (correct behavior)
-   - Status: Cosmetic only, no functional impact
+### Previously Fixed Issues
+
+1. **Import Paths Missing .js Extensions** - Fixed in commit 4ad20c4
+   - Added `.js` extensions to all google-auth imports (27 files)
+   - Now fully ESM-consistent
+
+2. **Unused Environment Variables in Docker Compose** - Fixed in commit 4ad20c4
+   - Removed all 10 unused SERVICE_REDIRECT_URI variables
+   - Services correctly use GOOGLE_REDIRECT_URI with fallback values
 
 ### Critical Issues
 
