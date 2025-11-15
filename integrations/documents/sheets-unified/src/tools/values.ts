@@ -714,4 +714,93 @@ export function registerValuesTools(registry: ToolRegistry, clientFactory: Googl
       }
     }
   );
+
+  // Copy to (copy sheet data to another location)
+  registry.registerTool(
+    'sheets_copy_to',
+    'Copy data from one sheet to another location (within same or different spreadsheet)',
+    z.object({
+      tenantId: z.string().describe('Tenant identifier for multi-tenant auth'),
+      sourceSpreadsheetId: z.string().describe('Source spreadsheet ID'),
+      sourceSheetId: z.number().int().describe('Source sheet ID'),
+      sourceStartRowIndex: z.number().int().describe('Source start row (0-based)'),
+      sourceEndRowIndex: z.number().int().describe('Source end row (exclusive)'),
+      sourceStartColumnIndex: z.number().int().describe('Source start column (0-based)'),
+      sourceEndColumnIndex: z.number().int().describe('Source end column (exclusive)'),
+      destinationSpreadsheetId: z.string().describe('Destination spreadsheet ID (can be same as source)'),
+      destinationSheetId: z.number().int().optional().describe('Destination sheet ID (if copying to different sheet)')
+    }),
+    async (args) => {
+      try {
+        const client = await clientFactory.getSheetsClient(args.tenantId);
+
+        // If copying within same spreadsheet, use copyPaste
+        if (args.sourceSpreadsheetId === args.destinationSpreadsheetId) {
+          await client.spreadsheets.batchUpdate({
+            spreadsheetId: args.sourceSpreadsheetId,
+            requestBody: {
+              requests: [{
+                copyPaste: {
+                  source: {
+                    sheetId: args.sourceSheetId,
+                    startRowIndex: args.sourceStartRowIndex,
+                    endRowIndex: args.sourceEndRowIndex,
+                    startColumnIndex: args.sourceStartColumnIndex,
+                    endColumnIndex: args.sourceEndColumnIndex
+                  },
+                  destination: {
+                    sheetId: args.destinationSheetId || args.sourceSheetId,
+                    startRowIndex: args.sourceStartRowIndex,
+                    endRowIndex: args.sourceEndRowIndex,
+                    startColumnIndex: args.sourceStartColumnIndex,
+                    endColumnIndex: args.sourceEndColumnIndex
+                  },
+                  pasteType: 'PASTE_NORMAL'
+                }
+              }]
+            }
+          });
+        } else {
+          // Cross-spreadsheet copy: read from source, write to destination
+          const sourceRange = `${String.fromCharCode(65 + args.sourceStartColumnIndex)}${args.sourceStartRowIndex + 1}:${String.fromCharCode(65 + args.sourceEndColumnIndex - 1)}${args.sourceEndRowIndex}`;
+
+          const sourceData = await client.spreadsheets.values.get({
+            spreadsheetId: args.sourceSpreadsheetId,
+            range: sourceRange
+          });
+
+          if (sourceData.data.values) {
+            const destRange = `${String.fromCharCode(65 + args.sourceStartColumnIndex)}${args.sourceStartRowIndex + 1}`;
+            await client.spreadsheets.values.update({
+              spreadsheetId: args.destinationSpreadsheetId,
+              range: destRange,
+              valueInputOption: 'USER_ENTERED',
+              requestBody: {
+                values: sourceData.data.values
+              }
+            });
+          }
+        }
+
+        logger.info('Copied sheet data', {
+          tenantId: args.tenantId,
+          sourceSpreadsheetId: args.sourceSpreadsheetId,
+          destinationSpreadsheetId: args.destinationSpreadsheetId
+        });
+
+        return {
+          success: true,
+          sourceSpreadsheetId: args.sourceSpreadsheetId,
+          destinationSpreadsheetId: args.destinationSpreadsheetId
+        };
+      } catch (error: any) {
+        logger.error('Failed to copy sheet data', {
+          tenantId: args.tenantId,
+          sourceSpreadsheetId: args.sourceSpreadsheetId,
+          error: error.message
+        });
+        throw mapGoogleAPIError(error, 'sheets');
+      }
+    }
+  );
 }

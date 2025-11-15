@@ -242,7 +242,7 @@ export class SheetsIntegration {
 
   /**
    * Index Sheets tools in semantic router
-   * Sheets provides 40 tools across spreadsheets, values, and formatting
+   * Sheets provides 40 tools across spreadsheets, values, formatting, and comments
    */
   private async _indexSheetsTools(): Promise<void> {
     const sheetsTools: ToolEmbedding[] = [
@@ -318,7 +318,7 @@ export class SheetsIntegration {
         }
       },
 
-      // Values (15 tools)
+      // Values (14 tools)
       {
         toolId: 'sheets.getValues',
         embedding: [],
@@ -449,8 +449,18 @@ export class SheetsIntegration {
           usageCount: 0
         }
       },
+      {
+        toolId: 'sheets.copyTo',
+        embedding: [],
+        category: 'productivity',
+        metadata: {
+          name: 'Copy To',
+          description: 'Copy data from one sheet to another location',
+          usageCount: 0
+        }
+      },
 
-      // Formatting (18 tools)
+      // Formatting (15 tools)
       {
         toolId: 'sheets.mergeCells',
         embedding: [],
@@ -598,6 +608,48 @@ export class SheetsIntegration {
         metadata: {
           name: 'Delete Protected Range',
           description: 'Remove protection from a range',
+          usageCount: 0
+        }
+      },
+
+      // Comments (4 tools)
+      {
+        toolId: 'sheets.readComments',
+        embedding: [],
+        category: 'productivity',
+        metadata: {
+          name: 'Read Comments',
+          description: 'Read all comments on a Google Sheet',
+          usageCount: 0
+        }
+      },
+      {
+        toolId: 'sheets.createComment',
+        embedding: [],
+        category: 'productivity',
+        metadata: {
+          name: 'Create Comment',
+          description: 'Create a new comment on a Google Sheet',
+          usageCount: 0
+        }
+      },
+      {
+        toolId: 'sheets.replyToComment',
+        embedding: [],
+        category: 'productivity',
+        metadata: {
+          name: 'Reply to Comment',
+          description: 'Reply to an existing comment on a Google Sheet',
+          usageCount: 0
+        }
+      },
+      {
+        toolId: 'sheets.resolveComment',
+        embedding: [],
+        category: 'productivity',
+        metadata: {
+          name: 'Resolve Comment',
+          description: 'Resolve or unresolve a comment on a Google Sheet',
           usageCount: 0
         }
       }

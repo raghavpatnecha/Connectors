@@ -6,6 +6,7 @@
  *
  * Features:
  * - 40 tools for comprehensive spreadsheet management
+ * - Comments operations (read, create, reply, resolve)
  * - Spreadsheet operations (list, create, get info, copy, delete, batch update)
  * - Values operations (get, update, append, clear, batch operations)
  * - Data operations (sort, find/replace, copy/paste, auto-fill, text-to-columns)
@@ -28,6 +29,7 @@ import { SCOPE_SETS } from '../../shared/google-auth/oauth-config';
 import { registerSpreadsheetTools } from './tools/spreadsheets';
 import { registerValuesTools } from './tools/values';
 import { registerFormattingTools } from './tools/formatting';
+import { registerCommentTools } from './tools/comments';
 import { logger } from './utils/logger';
 
 // Configuration
@@ -62,8 +64,9 @@ async function initializeSheetsServer(): Promise<void> {
 
   logger.info('Registering Sheets tools...');
   registerSpreadsheetTools(registry, clientFactory);  // 7 tools
-  registerValuesTools(registry, clientFactory);       // 15 tools
-  registerFormattingTools(registry, clientFactory);   // 18 tools
+  registerValuesTools(registry, clientFactory);       // 14 tools (13 original + copy_to)
+  registerFormattingTools(registry, clientFactory);   // 15 tools
+  registerCommentTools(registry, clientFactory);      // 4 tools (comments)
 
   // Setup MCP server with registered tools
   registry.setupServer(mcpServer);

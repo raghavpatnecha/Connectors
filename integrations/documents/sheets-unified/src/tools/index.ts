@@ -6,3 +6,4 @@
 export { registerSpreadsheetTools } from './spreadsheets';
 export { registerValuesTools } from './values';
 export { registerFormattingTools } from './formatting';
+export { registerCommentTools } from './comments';
