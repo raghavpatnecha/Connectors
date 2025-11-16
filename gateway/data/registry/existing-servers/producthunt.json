@@ -1,0 +1,58 @@
+{
+  "id": "producthunt-unified",
+  "name": "Product Hunt",
+  "description": "Product Hunt integration for discovering and tracking products",
+  "category": "productivity",
+  "version": "1.0.0",
+  "status": "active",
+  "authType": "api_token",
+  "baseUrl": "http://mcp-producthunt:3000",
+  "capabilities": {
+    "posts": true,
+    "comments": false,
+    "collections": false,
+    "topics": false,
+    "users": false,
+    "search": true
+  },
+  "tools": [
+    {
+      "name": "producthunt_get_post_details",
+      "description": "Get detailed information about a specific Product Hunt post",
+      "category": "posts",
+      "complexity": 50,
+      "keywords": ["product hunt", "post", "details", "product", "launch"]
+    },
+    {
+      "name": "producthunt_get_posts",
+      "description": "Get a list of Product Hunt posts with filters",
+      "category": "posts",
+      "complexity": 100,
+      "keywords": ["product hunt", "posts", "search", "filter", "trending", "featured"]
+    },
+    {
+      "name": "producthunt_check_status",
+      "description": "Check Product Hunt MCP server status and API connectivity",
+      "category": "server",
+      "complexity": 10,
+      "keywords": ["status", "health", "check", "api", "connectivity"]
+    }
+  ],
+  "rateLimits": {
+    "perHour": 6250,
+    "type": "complexity"
+  },
+  "metadata": {
+    "icon": "🚀",
+    "color": "#DA552F",
+    "website": "https://www.producthunt.com",
+    "apiDocs": "https://www.producthunt.com/v2/docs",
+    "tenantBased": true,
+    "requiresVault": true
+  },
+  "deployment": {
+    "dockerCompose": true,
+    "kubernetes": false,
+    "standalone": true
+  }
+}
