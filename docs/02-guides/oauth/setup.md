@@ -73,11 +73,11 @@ NOTION_REDIRECT_URI=http://localhost:3000/oauth/callback/notion
 
 ```bash
 # Notion
-curl -X POST http://localhost:3000/tenants/tenant-123/integrations/notion/credentials \
+curl -X POST http://localhost:3000/api/v1/tenants/tenant-123/integrations/notion/oauth-config \
   -d '{"accessToken": "secret_...", "tokenType": "bearer", "expiresIn": 0}'
 
 # GitHub (with refresh)
-curl -X POST http://localhost:3000/tenants/tenant-123/integrations/github/credentials \
+curl -X POST http://localhost:3000/api/v1/tenants/tenant-123/integrations/github/oauth-config \
   -d '{"accessToken": "ghp_...", "refreshToken": "ghr_...", "expiresIn": 3600}'
 ```
 
@@ -85,7 +85,7 @@ curl -X POST http://localhost:3000/tenants/tenant-123/integrations/github/creden
 
 ```bash
 # 1. Initiate
-curl -X POST "http://localhost:3000/oauth/authorize/github?tenant_id=tenant-123"
+curl -X POST "http://localhost:3000/api/v1/oauth/authorize/github?tenant_id=tenant-123"
 # Returns: {"authorizationUrl": "https://github.com/...", "state": "csrf_xyz"}
 
 # 2. Redirect user → User grants → GitHub redirects to callback
@@ -98,18 +98,18 @@ curl -X POST "http://localhost:3000/oauth/authorize/github?tenant_id=tenant-123"
 
 ```bash
 # OAuth Flow
-POST /oauth/authorize/:integration?tenant_id={tenantId}
-GET /oauth/callback/:integration?code={code}&state={state}
+POST /api/v1/oauth/authorize/:integration?tenant_id={tenantId}
+GET /api/v1/oauth/callback/:integration?code={code}&state={state}
 
 # Credentials
-POST /tenants/:tenantId/integrations/:integration/credentials
-GET /tenants/:tenantId/integrations/:integration
-DELETE /tenants/:tenantId/integrations/:integration/credentials
-POST /tenants/:tenantId/integrations/:integration/refresh
+POST /api/v1/tenants/:tenantId/integrations/:integration/oauth-config
+GET /api/v1/tenants/:tenantId/integrations/:integration
+DELETE /api/v1/tenants/:tenantId/integrations/:integration/oauth-config
+POST /api/v1/tenants/:tenantId/integrations/:integration/refresh
 
 # Tenant
-GET /tenants/:tenantId/integrations
-GET /tenants/:tenantId/status
+GET /api/v1/tenants/:tenantId/integrations
+GET /api/v1/tenants/:tenantId/status
 ```
 
 See [API_TENANT_OAUTH.md](../../API_TENANT_OAUTH.md) for details.
@@ -122,11 +122,11 @@ See [API_TENANT_OAUTH.md](../../API_TENANT_OAUTH.md) for details.
 
 ```bash
 # Store
-curl -X POST http://localhost:3000/tenants/test/integrations/notion/credentials \
+curl -X POST http://localhost:3000/api/v1/tenants/test/integrations/notion/oauth-config \
   -d '{"accessToken": "secret_test", "tokenType": "bearer", "expiresIn": 0}'
 
 # Verify
-curl http://localhost:3000/tenants/test/integrations/notion
+curl http://localhost:3000/api/v1/tenants/test/integrations/notion
 
 # Use
 curl -X POST http://localhost:3000/api/v1/tools/invoke \
@@ -137,14 +137,14 @@ curl -X POST http://localhost:3000/api/v1/tools/invoke \
 
 ```bash
 # Store (5-min expiry)
-curl -X POST http://localhost:3000/tenants/test/integrations/github/credentials \
+curl -X POST http://localhost:3000/api/v1/tenants/test/integrations/github/oauth-config \
   -d '{"accessToken": "ghp_test", "refreshToken": "ghr_test", "expiresIn": 300}'
 
 # Check (shows nextRefresh 5 min before expiry)
-curl http://localhost:3000/tenants/test/integrations/github
+curl http://localhost:3000/api/v1/tenants/test/integrations/github
 
 # Manual refresh
-curl -X POST http://localhost:3000/tenants/test/integrations/github/refresh
+curl -X POST http://localhost:3000/api/v1/tenants/test/integrations/github/refresh
 ```
 
 ---
@@ -188,7 +188,7 @@ curl -X POST https://github.com/login/oauth/access_token \
   -d "grant_type=refresh_token&refresh_token=${REFRESH_TOKEN}"
 
 # Re-run OAuth flow if needed
-curl -X POST "http://localhost:3000/oauth/authorize/github?tenant_id=tenant-123"
+curl -X POST "http://localhost:3000/api/v1/oauth/authorize/github?tenant_id=tenant-123"
 ```
 
 ### Encryption Errors

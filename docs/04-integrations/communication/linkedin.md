@@ -74,7 +74,7 @@ Server starts on http://localhost:3001
 
 ---
 
-## Available Tools (13)
+## Available Tools (18)
 
 ### OAuth API Tools (3)
 - `get-my-profile` - Get YOUR lite profile (limited fields)

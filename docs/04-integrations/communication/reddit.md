@@ -6,10 +6,10 @@
 
 ## Overview
 
-Reddit Unified MCP Server provides comprehensive Reddit access through 25 tools covering browsing, searching, posting, commenting, and user analysis. Built with multi-tenant OAuth, HashiCorp Vault security, and intelligent rate limiting.
+Reddit Unified MCP Server provides comprehensive Reddit access through 27 tools covering browsing, searching, posting, commenting, and user analysis. Built with multi-tenant OAuth, HashiCorp Vault security, and intelligent rate limiting.
 
 ### Key Features
-- ✅ **25 Tools** across 8 categories
+- ✅ **27 Tools** across 8 categories
 - ✅ **100% Coverage** of 5 source Reddit MCP repositories (31 tools verified)
 - ✅ **Multi-Tenant OAuth** with per-tenant credential encryption
 - ✅ **Smart Rate Limiting** (60 req/min, 600 req/10min compliance)
@@ -65,7 +65,7 @@ Server starts on http://localhost:3001
 
 ---
 
-## Available Tools (25)
+## Available Tools (27)
 
 **Browse & Discovery (8):** `browse_frontpage`, `browse_subreddit`, `browse_subreddit_new`, `browse_subreddit_top`, `browse_subreddit_rising`, `browse_subreddit_controversial`, `get_trending_subreddits`, `browse_popular`
 

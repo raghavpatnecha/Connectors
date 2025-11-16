@@ -7,7 +7,7 @@ The MCP Gateway is the central orchestration layer that sits between AI agents a
 ## Core Responsibilities
 
 1. **Semantic Routing:** Select relevant tools from 500+ options using FAISS vector search
-2. **GraphRAG Enhancement:** Discover related tools via Neo4j relationship graph
+2. **GraphRAG Enhancement:** ⚠️ **Planned Feature** - Discover related tools via Neo4j relationship graph (not yet implemented)
 3. **Token Optimization:** Enforce token budgets and progressive schema loading
 4. **OAuth Proxy:** Inject per-tenant credentials transparently
 5. **Caching:** Cache embeddings, tool selections, and credentials
@@ -26,7 +26,7 @@ The MCP Gateway is the central orchestration layer that sits between AI agents a
 ┌──────────────────────▼──────────────────────────────────────┐
 │                 Routing & Selection Layer                   │
 │  ┌──────────────────┐  ┌──────────────────────────────┐    │
-│  │ SemanticRouter   │  │  GraphRAGService            │    │
+│  │ SemanticRouter   │  │  GraphRAGService [PLANNED]  │    │
 │  │ - FAISS search   │  │  - Neo4j relationships      │    │
 │  │ - 2-level retrieval  │  - 2-hop traversal         │    │
 │  │ - Embedding cache│  │  - Confidence scoring       │    │
@@ -84,7 +84,7 @@ Gateway Processing:
    a. Generate query embedding (OpenAI)
    b. FAISS category selection (top 3)
    c. FAISS tool selection within categories (top 5)
-   d. GraphRAG enhancement (add 2-3 related)
+   d. GraphRAG enhancement (add 2-3 related) [PLANNED - not yet implemented]
    e. Token optimization (enforce budget)
    f. Progressive loading (assign tiers)
    g. Cache result (1 hour TTL)
@@ -107,7 +107,7 @@ Response:
   "metrics": {
     "selectionLatencyMs": 67,
     "faissLatencyMs": 42,
-    "graphragLatencyMs": 18,
+    "graphragLatencyMs": 0,
     "cacheHit": false
   }
 }
@@ -268,4 +268,4 @@ Purpose: Reduce Vault round-trips for frequent tool calls
 - **Semantic Routing Details:** [semantic-routing.md](./semantic-routing.md)
 - **GraphRAG Implementation:** [graphrag.md](./graphrag.md)
 - **Token Optimization:** [token-optimization.md](./token-optimization.md)
-- **OAuth Setup Guide:** [../02-guides/oauth-setup.md](../02-guides/oauth-setup.md)
+- **OAuth Setup Guide:** [../02-guides/oauth/setup.md](../02-guides/oauth/setup.md)

@@ -241,7 +241,7 @@ Agent Request → Gateway (validate tenant)
 5. **Token Optimization:** [token-optimization.md](./token-optimization.md)
 
 ### Development Guides
-- [Multi-Tenant OAuth Setup](../02-guides/oauth-setup.md)
+- [Multi-Tenant OAuth Setup](../02-guides/oauth/setup.md)
 - [Adding New Integrations](../04-integrations/)
 - [Deployment Runbook](../DEPLOYMENT_RUNBOOK.md)
 
