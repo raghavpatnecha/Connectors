@@ -10,12 +10,12 @@
 
 - [Communication](#communication) - 2 integrations
 - [Code](#code) - 1 integration
-- [Productivity](#productivity) - 11 integrations (Notion + 10 Google Workspace)
+- [Productivity](#productivity) - 12 integrations (Notion, Product Hunt + 10 Google Workspace)
 - [Storage](#storage) - Coming soon
 
 ### By Status
 
-- ✅ **Production Ready:** LinkedIn, Reddit, GitHub, Notion, Google Workspace (10 services)
+- ✅ **Production Ready:** LinkedIn, Reddit, GitHub, Notion, Product Hunt, Google Workspace (10 services)
 - 🚧 **In Development:** Slack
 - 📋 **Planned:** Dropbox, OneDrive, Salesforce
 
@@ -104,6 +104,26 @@ Official Notion integration using @notionhq/client SDK. Provides comprehensive a
 
 ---
 
+### Product Hunt
+**Status:** ✅ Complete | **Tools:** 3 | **Auth:** API Token
+
+Production-ready Product Hunt integration with API token authentication (simpler than OAuth). Provides access to posts, products, and discovery features via GraphQL API v2.
+
+**Key Features:**
+- API token authentication (no OAuth complexity)
+- 3 core tools (11 planned)
+- Multi-tenant token isolation
+- GraphQL API v2 client
+- Complexity-based rate limiting (6250/hour)
+
+**Tool Categories:**
+- Posts (2 tools)
+- Server Status (1 tool)
+
+📄 [Read Full Documentation](./productivity/producthunt.md)
+
+---
+
 ## Google Workspace
 
 **Status:** ✅ Complete | **Total Tools:** 271 | **Services:** 10 | **OAuth:** Required
@@ -133,6 +153,7 @@ Production-ready suite with unified OAuth 2.0, Vault storage, multi-tenant isola
 | **Reddit** | ✅ Complete | 27 | Yes | Snoowrap | ~150MB | Official API |
 | **GitHub** | ✅ Complete | 29 | Yes | @octokit/rest | ~200MB | Official API |
 | **Notion** | ✅ Complete | 19 | Yes | @notionhq/client | ~180MB | Official API |
+| **Product Hunt** | ✅ Complete | 3 | No (API Token) | axios | ~120MB | GraphQL API |
 | **Google Gmail** | ✅ Complete | 48 | Yes | googleapis | ~180MB | Official API |
 | **Google Calendar** | ✅ Complete | 29 | Yes | googleapis | ~150MB | Official API |
 | **Google Drive** | ✅ Complete | 35 | Yes | googleapis | ~200MB | Official API |
@@ -167,6 +188,7 @@ Production-ready suite with unified OAuth 2.0, Vault storage, multi-tenant isola
 | Reddit | 3,875 tokens | ~760 tokens | 80% |
 | GitHub | 4,495 tokens | ~900 tokens | 80% |
 | Notion | 2,945 tokens | ~760 tokens | 74% |
+| Product Hunt | 465 tokens | ~120 tokens | 74% |
 | Google Workspace (271 tools) | 42,000 tokens | ~2,400 tokens | 94% |
 | **Platform Total** | **250,000+ tokens** | **1,000-3,000 tokens** | **95%+** |
 
@@ -276,4 +298,4 @@ See [Development Guidelines](/CLAUDE.md) for details.
 
 **Last Updated:** 2025-11-16
 **Platform Version:** 1.0.0
-**Total Integrations:** 14 complete (LinkedIn, Reddit, GitHub, Notion + 10 Google Workspace services) | 357 total tools
+**Total Integrations:** 15 complete (LinkedIn, Reddit, GitHub, Notion, Product Hunt + 10 Google Workspace services) | 360 total tools
