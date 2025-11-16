@@ -16,10 +16,11 @@ Product Hunt Unified MCP Server provides production-ready Product Hunt integrati
 
 ### Key Features
 ✅ **API Token Authentication** - Simple, no OAuth complexity
-✅ **3 Core Tools** - Posts, search, server status
+✅ **11 Complete Tools** - Posts, topics, users, comments, collections, server
 ✅ **Production Ready** - Rate limiting, error handling, logging
 ✅ **Multi-Tenant** - HashiCorp Vault credential storage
 ✅ **GraphQL Client** - Product Hunt API v2 integration
+✅ **Full Feature Parity** - 100% compatibility with Python implementation
 
 ---
 
@@ -70,16 +71,30 @@ curl -X POST http://localhost:3140/tools/producthunt_check_status \
 
 ---
 
-## Available Tools (3)
+## Available Tools (11)
 
 **Posts (2):**
-- `producthunt_get_post_details` - Get detailed post information by ID or slug
+- `producthunt_get_post_details` - Get detailed post information by ID or slug (with optional comments)
 - `producthunt_get_posts` - Search/filter posts with topic, featured, date range
+
+**Topics (2):**
+- `producthunt_get_topic` - Get topic details by ID or slug
+- `producthunt_search_topics` - Search topics with filters and sorting
+
+**Users (2):**
+- `producthunt_get_user` - Get user profile and optionally their posts (made/voted)
+- `producthunt_get_viewer` - Get authenticated user information
+
+**Comments (2):**
+- `producthunt_get_comment` - Get comment details by ID
+- `producthunt_get_post_comments` - Get comments for a post with pagination
+
+**Collections (2):**
+- `producthunt_get_collection` - Get collection details by ID or slug
+- `producthunt_get_collections` - Search collections with filters
 
 **Server (1):**
 - `producthunt_check_status` - Check server status, API connectivity, rate limits
-
-**Planned (8):** Comments, Collections, Topics, Users
 
 ---
 

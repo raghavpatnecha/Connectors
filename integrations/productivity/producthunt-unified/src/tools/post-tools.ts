@@ -13,7 +13,7 @@ export function getPostTools(client: ProductHuntClient): ToolDefinition[] {
     {
       name: 'producthunt_get_post_details',
       description:
-        'Retrieve detailed information about a specific Product Hunt post by ID or slug. Returns post details including name, description, votes, makers, topics, and media.',
+        'Retrieve detailed information about a specific Product Hunt post by ID or slug. Returns post details including name, description, votes, makers, topics, media, and optionally paginated comments.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -29,6 +29,17 @@ export function getPostTools(client: ProductHuntClient): ToolDefinition[] {
             type: 'string',
             description: 'The post\'s slug (e.g., "claude-desktop")',
           },
+          commentsCount: {
+            type: 'number',
+            description:
+              'Number of comments to return (default: 10, max: 20). Set to 0 to exclude comments.',
+            minimum: 0,
+            maximum: 20,
+          },
+          commentsAfter: {
+            type: 'string',
+            description: 'Pagination cursor for fetching the next page of comments',
+          },
         },
         required: ['tenantId'],
       },
@@ -36,8 +47,10 @@ export function getPostTools(client: ProductHuntClient): ToolDefinition[] {
         tenantId: string;
         id?: string;
         slug?: string;
+        commentsCount?: number;
+        commentsAfter?: string;
       }) => {
-        const { tenantId, id, slug } = args;
+        const { tenantId, id, slug, commentsCount = 10, commentsAfter } = args;
 
         // Validate that at least one of id or slug is provided
         if (!id && !slug) {
@@ -50,11 +63,20 @@ export function getPostTools(client: ProductHuntClient): ToolDefinition[] {
           };
         }
 
-        logger.info('producthunt_get_post_details called', { tenantId, id, slug });
+        logger.info('producthunt_get_post_details called', {
+          tenantId,
+          id,
+          slug,
+          commentsCount,
+        });
 
         const variables: any = {};
         if (id) variables.id = id;
         if (slug) variables.slug = slug;
+        if (commentsCount !== undefined) {
+          variables.commentsCount = Math.min(commentsCount, 20);
+        }
+        if (commentsAfter) variables.commentsAfter = commentsAfter;
 
         const result = await client.query(POST_QUERY, variables, tenantId);
 

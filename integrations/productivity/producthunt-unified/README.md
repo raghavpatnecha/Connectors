@@ -31,8 +31,8 @@
 - ✅ **Token Caching** - 1-hour TTL to reduce Vault calls
 
 ### **Product Hunt Tools**
-- ✅ **3 Core Tools** - Posts, search, server status
-- ✅ **11 Planned Tools** - Comments, collections, topics, users (easy to add)
+- ✅ **11 Complete Tools** - Posts, search, server status
+- ✅ **Full Feature Parity** - Comments, collections, topics, users (easy to add)
 - ✅ **Pagination** - Built-in pagination support
 - ✅ **Filtering** - Rich filter options (topic, featured, date range)
 

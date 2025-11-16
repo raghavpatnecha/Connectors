@@ -28,7 +28,14 @@ import { ToolRegistry } from './utils/tool-registry-helper.js';
 import { formatErrorResponse } from './utils/error-handler.js';
 
 // Import tool registration functions
-import { getPostTools, getServerTools } from './tools/index.js';
+import {
+  getPostTools,
+  getTopicTools,
+  getUserTools,
+  getCommentTools,
+  getCollectionTools,
+  getServerTools,
+} from './tools/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -95,9 +102,20 @@ function registerTools(
 
   // Register all tools
   const postTools = getPostTools(productHuntClient);
+  const topicTools = getTopicTools(productHuntClient);
+  const userTools = getUserTools(productHuntClient);
+  const commentTools = getCommentTools(productHuntClient);
+  const collectionTools = getCollectionTools(productHuntClient);
   const serverTools = getServerTools(productHuntClient);
 
-  registry.registerTools([...postTools, ...serverTools]);
+  registry.registerTools([
+    ...postTools,
+    ...topicTools,
+    ...userTools,
+    ...commentTools,
+    ...collectionTools,
+    ...serverTools,
+  ]);
 
   logger.info('Registered all tools', {
     count: registry.getToolCount(),
@@ -256,7 +274,7 @@ async function main() {
       transport: 'stdio',
       toolCount: registry.getToolCount(),
       capabilities:
-        'API Token Auth, Multi-tenant, GraphQL, 2 tools (posts, server status)',
+        'API Token Auth, Multi-tenant, GraphQL, 11 tools (posts, topics, users, comments, collections, server)',
     });
 
     // 11. Graceful shutdown handler

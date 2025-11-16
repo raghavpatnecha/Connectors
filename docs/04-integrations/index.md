@@ -111,13 +111,17 @@ Production-ready Product Hunt integration with API token authentication (simpler
 
 **Key Features:**
 - API token authentication (no OAuth complexity)
-- 3 core tools (11 planned)
+- 11 complete tools (full feature parity)
 - Multi-tenant token isolation
 - GraphQL API v2 client
 - Complexity-based rate limiting (6250/hour)
 
 **Tool Categories:**
 - Posts (2 tools)
+- Topics (2 tools)
+- Users (2 tools)
+- Comments (2 tools)
+- Collections (2 tools)
 - Server Status (1 tool)
 
 📄 [Read Full Documentation](./productivity/producthunt.md)
@@ -298,4 +302,4 @@ See [Development Guidelines](/CLAUDE.md) for details.
 
 **Last Updated:** 2025-11-16
 **Platform Version:** 1.0.0
-**Total Integrations:** 15 complete (LinkedIn, Reddit, GitHub, Notion, Product Hunt + 10 Google Workspace services) | 360 total tools
+**Total Integrations:** 15 complete (LinkedIn, Reddit, GitHub, Notion, Product Hunt + 10 Google Workspace services) | 368 total tools

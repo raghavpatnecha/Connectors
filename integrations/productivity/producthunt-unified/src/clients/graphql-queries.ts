@@ -9,7 +9,7 @@
 // ============================================
 
 export const POST_QUERY = `
-query Post($id: ID, $slug: String) {
+query Post($id: ID, $slug: String, $commentsCount: Int, $commentsAfter: String) {
   post(id: $id, slug: $slug) {
     id
     name
@@ -55,6 +55,27 @@ query Post($id: ID, $slug: String) {
       username
       profileImage
       url
+    }
+    comments(first: $commentsCount, after: $commentsAfter) {
+      edges {
+        node {
+          id
+          body
+          createdAt
+          votesCount
+          user {
+            id
+            name
+            username
+            headline
+            profileImage
+          }
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
     }
   }
 }
@@ -326,6 +347,66 @@ query User($id: ID, $username: String) {
     isMaker
     isFollowing
     url
+  }
+}
+`;
+
+export const USER_POSTS_QUERY = `
+query UserPosts($id: ID, $username: String, $first: Int, $after: String) {
+  user(id: $id, username: $username) {
+    id
+    name
+    username
+    headline
+    profileImage
+    madePosts(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          name
+          slug
+          tagline
+          votesCount
+          commentsCount
+          createdAt
+          featuredAt
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}
+`;
+
+export const USER_VOTED_POSTS_QUERY = `
+query UserVotedPosts($id: ID, $username: String, $first: Int, $after: String) {
+  user(id: $id, username: $username) {
+    id
+    name
+    username
+    headline
+    profileImage
+    votedPosts(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          name
+          slug
+          tagline
+          votesCount
+          commentsCount
+          createdAt
+          featuredAt
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
   }
 }
 `;

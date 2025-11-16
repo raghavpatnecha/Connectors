@@ -9,10 +9,10 @@
   "baseUrl": "http://mcp-producthunt:3000",
   "capabilities": {
     "posts": true,
-    "comments": false,
-    "collections": false,
-    "topics": false,
-    "users": false,
+    "comments": true,
+    "collections": true,
+    "topics": true,
+    "users": true,
     "search": true
   },
   "tools": [
@@ -29,6 +29,62 @@
       "category": "posts",
       "complexity": 100,
       "keywords": ["product hunt", "posts", "search", "filter", "trending", "featured"]
+    },
+    {
+      "name": "producthunt_get_topic",
+      "description": "Get detailed information about a specific Product Hunt topic",
+      "category": "topics",
+      "complexity": 40,
+      "keywords": ["product hunt", "topic", "category", "details"]
+    },
+    {
+      "name": "producthunt_search_topics",
+      "description": "Search for Product Hunt topics with filters",
+      "category": "topics",
+      "complexity": 80,
+      "keywords": ["product hunt", "topics", "search", "filter", "categories"]
+    },
+    {
+      "name": "producthunt_get_user",
+      "description": "Get user information by ID or username with optional posts",
+      "category": "users",
+      "complexity": 60,
+      "keywords": ["product hunt", "user", "profile", "maker", "details"]
+    },
+    {
+      "name": "producthunt_get_viewer",
+      "description": "Get authenticated user information",
+      "category": "users",
+      "complexity": 30,
+      "keywords": ["product hunt", "viewer", "authenticated", "current user", "me"]
+    },
+    {
+      "name": "producthunt_get_comment",
+      "description": "Get detailed information about a specific comment",
+      "category": "comments",
+      "complexity": 40,
+      "keywords": ["product hunt", "comment", "discussion", "feedback"]
+    },
+    {
+      "name": "producthunt_get_post_comments",
+      "description": "Get comments for a specific post with pagination",
+      "category": "comments",
+      "complexity": 70,
+      "keywords": ["product hunt", "comments", "discussion", "post", "feedback"]
+    },
+    {
+      "name": "producthunt_get_collection",
+      "description": "Get detailed information about a specific collection",
+      "category": "collections",
+      "complexity": 50,
+      "keywords": ["product hunt", "collection", "curated", "list"]
+    },
+    {
+      "name": "producthunt_get_collections",
+      "description": "Get a list of collections with filters",
+      "category": "collections",
+      "complexity": 90,
+      "keywords": ["product hunt", "collections", "curated", "lists", "filter"]
     },
     {
       "name": "producthunt_check_status",
