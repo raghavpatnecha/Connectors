@@ -27,9 +27,30 @@
 - `/generator` - OpenAPI → MCP generation scripts
 - `/vault` - HashiCorp Vault configurations
 - `/k8s` - Kubernetes manifests
-- `/docs` - Documentation and research findings
+- `/docs` - **User-facing documentation** (installation, guides, API reference)
+- `/.claude/docs` - **Helper docs for Claude** (deployment status, integration reports, planning)
 - `/tests` - Test suites
 - `/examples` - Example agent configurations
+
+### 📚 Claude Helper Documentation
+
+Context files for Claude to understand project state and implementation details:
+
+**Location:** `/.claude/docs/`
+
+**Contents:**
+- `deployment-status.md` - Current deployment state and environment configuration
+- `integration-reports/` - Detailed implementation reports for each integration
+  - `linkedin/` - LinkedIn integration implementation details, test reports
+- `planning/` - Project planning documents (if needed)
+
+**Purpose:** These files provide Claude with additional context about:
+- How specific features were implemented
+- Current deployment and configuration status
+- Test results and coverage
+- Historical architectural decisions
+
+**⚠️ Important:** Files in `.claude/docs/` are **NOT user-facing documentation**. User documentation belongs in `/docs/`.
 
 ---
 
