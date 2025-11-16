@@ -8,13 +8,7 @@ import axios, { AxiosError } from 'axios';
 import { TokenManager } from '../auth/token-manager.js';
 import { logger } from '../utils/logger.js';
 import { RateLimiter, RateLimitInfo } from '../utils/rate-limiter.js';
-import {
-  ProductHuntError,
-  TokenError,
-  RateLimitError,
-  GraphQLError,
-  mapHttpError,
-} from '../utils/error-handler.js';
+import { TokenError, mapHttpError } from '../utils/error-handler.js';
 
 const API_BASE_URL = 'https://api.producthunt.com/v2';
 const GRAPHQL_ENDPOINT = `${API_BASE_URL}/api/graphql`;
