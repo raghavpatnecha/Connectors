@@ -387,6 +387,52 @@ export class VaultClient {
   }
 
   /**
+   * Encrypt data using tenant-specific Transit key
+   * Public wrapper for external use (e.g., TenantOAuthStorage)
+   *
+   * @param tenantId - Tenant identifier
+   * @param plaintext - Data to encrypt
+   * @returns Encrypted ciphertext
+   */
+  async encryptForTenant(tenantId: string, plaintext: string): Promise<string> {
+    await this._ensureEncryptionKey(tenantId);
+    return this._encrypt(tenantId, plaintext);
+  }
+
+  /**
+   * Decrypt data using tenant-specific Transit key
+   * Public wrapper for external use (e.g., TenantOAuthStorage)
+   *
+   * @param tenantId - Tenant identifier
+   * @param ciphertext - Encrypted data
+   * @returns Decrypted plaintext
+   */
+  async decryptForTenant(tenantId: string, ciphertext: string): Promise<string> {
+    return this._decrypt(tenantId, ciphertext);
+  }
+
+  /**
+   * Execute Vault operation with retry logic
+   * Public wrapper for external use (e.g., TenantOAuthStorage)
+   *
+   * @param operation - Async operation to retry
+   * @returns Operation result
+   */
+  async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
+    return this._retryOperation(operation);
+  }
+
+  /**
+   * Get Vault HTTP client
+   * Public getter for external use (e.g., TenantOAuthStorage)
+   *
+   * @returns AxiosInstance configured for Vault
+   */
+  get httpClient(): AxiosInstance {
+    return this._client;
+  }
+
+  /**
    * Ensure encryption key exists for tenant
    * Creates key if it doesn't exist
    */

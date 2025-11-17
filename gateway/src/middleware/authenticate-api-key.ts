@@ -69,6 +69,9 @@ declare global {
 
 /**
  * In-memory cache for API keys (5-minute TTL)
+ *
+ * NOTE: This in-memory cache works for single-instance deployments.
+ * For multi-instance deployments, use a distributed cache (Redis) instead.
  */
 interface CacheEntry {
   authContext: AuthContext;
@@ -76,28 +79,46 @@ interface CacheEntry {
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const apiKeyCache = new Map<string, CacheEntry>();
-
-/**
- * Clean expired cache entries periodically
- */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of apiKeyCache.entries()) {
-    if (entry.expiresAt < now) {
-      apiKeyCache.delete(key);
-    }
-  }
-}, 60 * 1000); // Clean every minute
+const CACHE_CLEANUP_INTERVAL_MS = 60 * 1000; // 1 minute
 
 /**
  * APIKeyAuthenticator handles API key validation and caching
  */
 export class APIKeyAuthenticator {
   private readonly _vault: VaultClient;
+  private readonly _cache: Map<string, CacheEntry>;
+  private _cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(vaultClient: VaultClient) {
     this._vault = vaultClient;
+    this._cache = new Map<string, CacheEntry>();
+    this._startCleanupInterval();
+  }
+
+  /**
+   * Start periodic cache cleanup
+   * @private
+   */
+  private _startCleanupInterval(): void {
+    // Clean expired cache entries every minute
+    this._cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      let cleanedCount = 0;
+
+      for (const [key, entry] of this._cache.entries()) {
+        if (entry.expiresAt < now) {
+          this._cache.delete(key);
+          cleanedCount++;
+        }
+      }
+
+      if (cleanedCount > 0) {
+        logger.debug('Cleaned expired API key cache entries', { count: cleanedCount });
+      }
+    }, CACHE_CLEANUP_INTERVAL_MS);
+
+    // Prevent the interval from keeping the process alive
+    this._cleanupInterval.unref();
   }
 
   /**
@@ -261,7 +282,7 @@ export class APIKeyAuthenticator {
    * Get API key from cache
    */
   private _getFromCache(apiKey: string): AuthContext | null {
-    const entry = apiKeyCache.get(apiKey);
+    const entry = this._cache.get(apiKey);
 
     if (!entry) {
       return null;
@@ -269,7 +290,7 @@ export class APIKeyAuthenticator {
 
     // Check if expired
     if (entry.expiresAt < Date.now()) {
-      apiKeyCache.delete(apiKey);
+      this._cache.delete(apiKey);
       return null;
     }
 
@@ -280,7 +301,7 @@ export class APIKeyAuthenticator {
    * Add API key to cache
    */
   private _addToCache(apiKey: string, authContext: AuthContext): void {
-    apiKeyCache.set(apiKey, {
+    this._cache.set(apiKey, {
       authContext,
       expiresAt: Date.now() + CACHE_TTL_MS,
     });
@@ -290,7 +311,7 @@ export class APIKeyAuthenticator {
    * Clear cache (for testing or manual refresh)
    */
   clearCache(): void {
-    apiKeyCache.clear();
+    this._cache.clear();
     logger.info('API key cache cleared');
   }
 
@@ -299,9 +320,24 @@ export class APIKeyAuthenticator {
    */
   getCacheStats(): { size: number; ttl: number } {
     return {
-      size: apiKeyCache.size,
+      size: this._cache.size,
       ttl: CACHE_TTL_MS,
     };
+  }
+
+  /**
+   * Dispose of resources and stop background cleanup
+   * Call this when shutting down the authenticator
+   */
+  dispose(): void {
+    if (this._cleanupInterval) {
+      clearInterval(this._cleanupInterval);
+      this._cleanupInterval = null;
+      logger.debug('API key cache cleanup interval stopped');
+    }
+
+    this.clearCache();
+    logger.info('APIKeyAuthenticator disposed');
   }
 }
 
