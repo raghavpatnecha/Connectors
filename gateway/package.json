@@ -4,6 +4,9 @@
   "description": "AI Agent Integration Platform Gateway with Semantic Routing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "ts-node-dev --respawn src/server.ts",
@@ -18,7 +21,11 @@
     "benchmark": "ts-node scripts/benchmark-token-reduction.ts",
     "benchmark:verbose": "NODE_ENV=development ts-node scripts/benchmark-token-reduction.ts",
     "generate-embeddings": "ts-node scripts/generate-embeddings-demo.ts",
-    "generate-embeddings:production": "ts-node scripts/generate-embeddings-standalone.ts"
+    "generate-embeddings:production": "ts-node scripts/generate-embeddings-standalone.ts",
+    "sdk:build": "npm run build --workspace=@connectors/sdk",
+    "sdk:test": "npm run test --workspace=@connectors/sdk",
+    "sdk:test:coverage": "npm run test:coverage --workspace=@connectors/sdk",
+    "sdk:publish": "npm publish --workspace=@connectors/sdk"
   },
   "keywords": [
     "mcp",
