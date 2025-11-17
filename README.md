@@ -20,16 +20,21 @@
 
 ## ✨ Key Features
 
-- **99% Token Reduction** - Semantic routing: 759 tokens vs 77,698 (FAISS vector search)
+- **99% Token Reduction** - Semantic routing: 759 tokens vs 77,698 (FAISS vector search + Progressive loading) - [Architecture →](docs/03-architecture/progressive-loading.md)
+- **Simple SDK** - 3-line setup, semantic tool selection, TypeScript + Python with 100% feature parity - [SDK docs →](docs/sdk/)
 - **15 MCP Servers** - Production-ready connectors across code, communication, productivity, documents, search, and storage - [All integrations →](docs/04-integrations/)
 - **368 Tools** - Comprehensive coverage of GitHub, Google Workspace, LinkedIn, Reddit, Notion, and Product Hunt APIs
-- **Enterprise OAuth** - Per-tenant Vault encryption, auto-refresh, multi-tenant isolation
+- **Bring Your Own MCP** - Deploy custom servers from GitHub, Docker, STDIO, HTTP - [Deployment →](docs/deployment/mcp-add-overview.md)
+- **Framework Support** - OpenAI Agents + LangChain integrations - [Integrations →](docs/integrations/)
+- **Enterprise OAuth** - Per-tenant Vault encryption, auto-refresh, multi-tenant isolation - [Multi-tenant →](docs/02-guides/multi-tenant-setup.md)
 - **GraphRAG Discovery** - Neo4j-powered tool suggestions, <1ms selection
 - **Production Ready** - Docker + K8s, API authentication, rate limiting, comprehensive security
 
 ---
 
 ## 🚀 Quick Start
+
+### Gateway Setup
 
 ```bash
 # 1. Start services
@@ -44,7 +49,53 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
   -d '{"query": "create a GitHub pull request", "context": {"maxTools": 5}}'
 ```
 
-**Prerequisites**: Node.js 18+, Docker 20+ | [Full setup guide →](docs/USING_CONNECTORS_PLATFORM.md) • [API docs →](docs/API_REFERENCE.md) • [Examples →](examples/)
+### SDK Quick Start
+
+**TypeScript:**
+```typescript
+import { Connectors } from '@connectors/sdk';
+
+const connectors = new Connectors({
+  baseURL: 'http://localhost:3000',
+  tenantId: 'my-company'
+});
+
+// Select tools semantically
+const tools = await connectors.tools.select('create a GitHub pull request');
+
+// Call tools
+const github = connectors.mcp.get('github');
+const pr = await github.call('createPullRequest', {
+  repo: 'owner/repo',
+  title: 'New feature',
+  head: 'feature',
+  base: 'main'
+});
+```
+
+**Python:**
+```python
+from connectors import Connectors
+
+connectors = Connectors(
+    base_url="http://localhost:3000",
+    tenant_id="my-company"
+)
+
+# Select tools semantically
+tools = await connectors.tools.select("create a GitHub pull request")
+
+# Call tools
+github = connectors.mcp.get("github")
+pr = await github.call("createPullRequest", {
+    "repo": "owner/repo",
+    "title": "New feature",
+    "head": "feature",
+    "base": "main"
+})
+```
+
+**Prerequisites**: Node.js 18+, Docker 20+, Python 3.10+ | [Full setup guide →](docs/01-getting-started/installation.md) • [SDK docs →](docs/sdk/) • [Examples →](examples/)
 
 ---
 
@@ -92,10 +143,21 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
 
 ## 📚 Documentation
 
+**📖 [Complete Documentation →](docs/)**
+
 **Getting Started**: [Quick Start](docs/01-getting-started/quick-start.md) • [Installation](docs/01-getting-started/installation.md) • [First Integration](docs/01-getting-started/your-first-integration.md)
-**Architecture**: [Overview](docs/03-architecture/) • [Gateway](docs/03-architecture/gateway.md) • [Semantic Routing](docs/03-architecture/semantic-routing.md) • [GraphRAG](docs/03-architecture/graphrag.md)
-**Integrations**: [All Integrations](docs/04-integrations/) • [GitHub](docs/04-integrations/code/github.md) • [Google Workspace](docs/04-integrations/productivity/) • [LinkedIn](docs/04-integrations/communication/linkedin.md)
-**Guides**: [OAuth Setup](docs/02-guides/oauth/setup.md) • [Adding Integrations](docs/02-guides/adding-integrations/) • [Deployment](docs/02-guides/deployment/)
+
+**SDK**: [TypeScript SDK](docs/sdk/typescript/) • [Python SDK](docs/sdk/python/) • [Examples](docs/sdk/examples.md)
+
+**Framework Integrations**: [OpenAI Agents](docs/integrations/openai-agents.md) • [LangChain](docs/integrations/langchain.md)
+
+**Deployment**: [mcp.add() Overview](docs/deployment/mcp-add-overview.md) • [GitHub Source](docs/deployment/github-source.md) • [Docker Source](docs/deployment/docker-source.md) • [Kubernetes](docs/deployment/kubernetes.md)
+
+**Architecture**: [Overview](docs/03-architecture/) • [Semantic Routing](docs/03-architecture/semantic-routing.md) • [GraphRAG](docs/03-architecture/graphrag.md) • [Progressive Loading](docs/03-architecture/progressive-loading.md)
+
+**Guides**: [Multi-Tenant Setup](docs/02-guides/multi-tenant-setup.md) • [Migration from Composio](docs/02-guides/migration-from-composio.md) • [OAuth Setup](docs/02-guides/oauth/setup.md)
+
+**Integrations**: [All Integrations](docs/04-integrations/) • [GitHub](docs/04-integrations/code/github.md) • [Google Workspace](docs/04-integrations/productivity/)
 
 ---
 
@@ -122,10 +184,11 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 ## 📈 Roadmap
 
 ✅ **Phase 1** (Complete): Gateway, OAuth, 15 MCP servers, 99% token reduction, production security
-🚧 **Phase 2**: Additional integrations (Slack, Dropbox, Salesforce), enhanced monitoring
-📋 **Phase 3+**: Enterprise features, public marketplace, community contributions
+✅ **Phase 2** (Complete): TypeScript + Python SDKs, OpenAI Agents + LangChain integrations, mcp.add() deployment
+🚧 **Phase 3**: Additional integrations (Slack, Dropbox, Salesforce), enhanced monitoring
+📋 **Phase 4+**: Enterprise features, public marketplace, community contributions
 
-[Detailed documentation →](docs/)
+[Complete documentation →](docs/) • [SDK documentation →](docs/sdk/)
 
 ---
 
@@ -137,15 +200,20 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## 🌟 Why Connectors?
 
-**AI Agents**: 99% token reduction • Semantic discovery • GraphRAG suggestions
-**MCP Standard**: 15 production servers • 368 tools • Custom-built + official remote servers
+**AI Agents**: 99% token reduction • Semantic discovery • GraphRAG suggestions • Framework support (OpenAI + LangChain)
+**Simple SDK**: 3-line setup • TypeScript + Python • Semantic tool selection • Deploy custom MCP servers
+**MCP Standard**: 15 production servers • 368 tools • Bring Your Own MCP (GitHub/Docker/STDIO/HTTP)
 **Enterprise Ready**: Self-hosted • Multi-tenant OAuth • Kubernetes-native • Production security
+
+**Migrate from Composio?** See our [migration guide →](docs/02-guides/migration-from-composio.md)
 
 ---
 
 <div align="center">
 
-**[Documentation](docs/) • [Examples](examples/) • [API Reference](docs/API_REFERENCE.md) • [Contributing](CONTRIBUTING.md)**
+**[Documentation](docs/) • [SDK](docs/sdk/) • [Examples](examples/) • [API Reference](docs/05-api-reference/) • [Contributing](CONTRIBUTING.md)**
+
+**[OpenAI Agents](docs/integrations/openai-agents.md) • [LangChain](docs/integrations/langchain.md) • [Multi-Tenant](docs/02-guides/multi-tenant-setup.md) • [Migration Guide](docs/02-guides/migration-from-composio.md)**
 
 **⭐ Star us on GitHub — it helps!**
 

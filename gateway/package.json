@@ -33,7 +33,12 @@
     "openai:build": "npm run build --workspace=@connectors/openai-agents",
     "openai:test": "npm run test --workspace=@connectors/openai-agents",
     "openai:test:coverage": "npm run test:coverage --workspace=@connectors/openai-agents",
-    "openai:publish": "npm publish --workspace=@connectors/openai-agents"
+    "openai:publish": "npm publish --workspace=@connectors/openai-agents",
+    "cli:build": "npm run build --workspace=@connectors/cli",
+    "cli:test": "npm run test --workspace=@connectors/cli",
+    "cli:test:coverage": "npm run test:coverage --workspace=@connectors/cli",
+    "cli:link": "npm link --workspace=@connectors/cli",
+    "cli:publish": "npm publish --workspace=@connectors/cli"
   },
   "keywords": [
     "mcp",
