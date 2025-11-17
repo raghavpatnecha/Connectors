@@ -307,6 +307,132 @@ export class VaultClient {
   }
 
   /**
+   * Retrieve API key data from Vault
+   *
+   * API keys are stored in Vault at: secret/data/api-keys/<hashed-key>
+   * The hash is SHA-256 to prevent storing plain API keys.
+   *
+   * @param apiKey - API key to validate
+   * @returns API key data if valid, null if not found
+   */
+  async getAPIKey(apiKey: string): Promise<{
+    id: string;
+    tenantId: string;
+    scopes: string[];
+    rateLimit: {
+      requestsPerSecond: number;
+      requestsPerMinute: number;
+    };
+    metadata?: {
+      name?: string;
+      createdAt?: Date;
+      lastUsedAt?: Date;
+    };
+  } | null> {
+    const startTime = Date.now();
+
+    try {
+      // Hash the API key for lookup (SHA-256)
+      const crypto = await import('crypto');
+      const hashedKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+
+      // Retrieve from KV v2
+      const path = `${this._kvEngine}/data/api-keys/${hashedKey}`;
+      const response = await this._retryOperation(async () => {
+        return await this._client.get(`/v1/${path}`);
+      });
+
+      if (!response.data?.data?.data) {
+        logger.debug('API key not found', { hashedKey });
+        return null;
+      }
+
+      const apiKeyData = response.data.data.data;
+
+      const duration = Date.now() - startTime;
+      logger.debug('API key retrieved successfully', {
+        apiKeyId: apiKeyData.id,
+        tenantId: apiKeyData.tenantId,
+        duration,
+      });
+
+      return {
+        id: apiKeyData.id,
+        tenantId: apiKeyData.tenantId,
+        scopes: apiKeyData.scopes || [],
+        rateLimit: apiKeyData.rateLimit || {
+          requestsPerSecond: 10,
+          requestsPerMinute: 100,
+        },
+        metadata: apiKeyData.metadata ? {
+          name: apiKeyData.metadata.name,
+          createdAt: apiKeyData.metadata.createdAt ? new Date(apiKeyData.metadata.createdAt) : undefined,
+          lastUsedAt: apiKeyData.metadata.lastUsedAt ? new Date(apiKeyData.metadata.lastUsedAt) : undefined,
+        } : undefined,
+      };
+    } catch (error) {
+      // If not found (404), return null instead of throwing
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        logger.debug('API key not found in Vault');
+        return null;
+      }
+
+      logger.error('Failed to retrieve API key', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      // For other errors, return null to avoid exposing internal details
+      return null;
+    }
+  }
+
+  /**
+   * Encrypt data using tenant-specific Transit key
+   * Public wrapper for external use (e.g., TenantOAuthStorage)
+   *
+   * @param tenantId - Tenant identifier
+   * @param plaintext - Data to encrypt
+   * @returns Encrypted ciphertext
+   */
+  async encryptForTenant(tenantId: string, plaintext: string): Promise<string> {
+    await this._ensureEncryptionKey(tenantId);
+    return this._encrypt(tenantId, plaintext);
+  }
+
+  /**
+   * Decrypt data using tenant-specific Transit key
+   * Public wrapper for external use (e.g., TenantOAuthStorage)
+   *
+   * @param tenantId - Tenant identifier
+   * @param ciphertext - Encrypted data
+   * @returns Decrypted plaintext
+   */
+  async decryptForTenant(tenantId: string, ciphertext: string): Promise<string> {
+    return this._decrypt(tenantId, ciphertext);
+  }
+
+  /**
+   * Execute Vault operation with retry logic
+   * Public wrapper for external use (e.g., TenantOAuthStorage)
+   *
+   * @param operation - Async operation to retry
+   * @returns Operation result
+   */
+  async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
+    return this._retryOperation(operation);
+  }
+
+  /**
+   * Get Vault HTTP client
+   * Public getter for external use (e.g., TenantOAuthStorage)
+   *
+   * @returns AxiosInstance configured for Vault
+   */
+  get httpClient(): AxiosInstance {
+    return this._client;
+  }
+
+  /**
    * Ensure encryption key exists for tenant
    * Creates key if it doesn't exist
    */

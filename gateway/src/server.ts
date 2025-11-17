@@ -24,6 +24,17 @@ import { logger } from './logging/logger';
 import { ToolSelectionError, OAuthError } from './errors/gateway-errors';
 import type { QueryContext } from './types/routing.types';
 import { createTenantOAuthRouter } from './routes/tenant-oauth';
+import {
+  initializeRateLimitRedis,
+  closeRateLimitRedis,
+  createGlobalRateLimiter,
+  createTenantRateLimiter,
+  createEndpointLimiters,
+  getRateLimitConfig,
+} from './middleware/rate-limiter';
+import { createAPIKeyMiddleware } from './middleware/authenticate-api-key';
+import { authorizeTenant } from './middleware/authorize-tenant';
+import { responseFormatterMiddleware } from './middleware/response-formatter';
 
 // Server configuration
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -60,6 +71,7 @@ export class MCPGatewayServer {
   private readonly progressiveLoader: ProgressiveLoader;
   private readonly oauthProxy: OAuthProxy;
   private readonly integrationRegistry: IntegrationRegistry;
+  private readonly vaultClient: VaultClient;
 
   constructor() {
     this.app = express();
@@ -81,8 +93,8 @@ export class MCPGatewayServer {
     this.tokenOptimizer = new TokenOptimizer();
     this.progressiveLoader = new ProgressiveLoader(this.tokenOptimizer);
 
-    // Initialize Vault client
-    const vaultClient = new VaultClient({
+    // Initialize Vault client (single instance for all services)
+    this.vaultClient = new VaultClient({
       address: process.env.VAULT_ADDR || 'http://localhost:8200',
       token: process.env.VAULT_TOKEN || 'dev-token',
       transitEngine: 'transit',
@@ -91,7 +103,7 @@ export class MCPGatewayServer {
 
     // Initialize OAuth proxy
     this.oauthProxy = new OAuthProxy(
-      vaultClient,
+      this.vaultClient,
       process.env.MCP_BASE_URL || 'http://localhost:4000',
       new Map()
     );
@@ -127,8 +139,29 @@ export class MCPGatewayServer {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+    // Response formatting (adds sendSuccess/sendError helpers)
+    this.app.use(responseFormatterMiddleware);
+
     // Compression
     this.app.use(compression());
+
+    // Rate limiting middleware (multi-layer)
+    const rateLimitConfig = getRateLimitConfig();
+
+    if (rateLimitConfig.globalEnabled) {
+      this.app.use(createGlobalRateLimiter());
+      logger.info('Global rate limiting enabled', {
+        rps: rateLimitConfig.globalRps,
+        exemptPaths: rateLimitConfig.exemptPaths
+      });
+    }
+
+    if (rateLimitConfig.tenantEnabled) {
+      this.app.use(createTenantRateLimiter());
+      logger.info('Tenant rate limiting enabled', {
+        rps: rateLimitConfig.tenantRps
+      });
+    }
 
     // Request logging
     this.app.use((req: Request, res: Response, next: NextFunction) => {
@@ -153,34 +186,49 @@ export class MCPGatewayServer {
    * Setup API routes
    */
   private setupRoutes(): void {
-    // Health check endpoints
+    // Health check endpoints (no authentication required)
     this.app.get('/health', this.handleHealth.bind(this));
     this.app.get('/ready', this.handleReadiness.bind(this));
 
     // API v1 routes
     const apiV1 = express.Router();
 
-    apiV1.post('/tools/select', this.handleSelectTools.bind(this));
-    apiV1.post('/tools/invoke', this.handleInvokeTool.bind(this));
-    apiV1.get('/tools/list', this.handleListTools.bind(this));
+    // Apply API key authentication to ALL /api/v1 routes
+    const apiKeyMiddleware = createAPIKeyMiddleware(this.vaultClient);
+    apiV1.use(apiKeyMiddleware);
+    logger.info('API key authentication middleware enabled for /api/v1 routes');
+
+    // Create endpoint-specific rate limiters
+    const rateLimitConfig = getRateLimitConfig();
+    const endpointLimiters = rateLimitConfig.endpointLimitsEnabled
+      ? createEndpointLimiters()
+      : {
+          toolsSelect: (_req: Request, _res: Response, next: NextFunction) => next(),
+          toolsInvoke: (_req: Request, _res: Response, next: NextFunction) => next(),
+          toolsList: (_req: Request, _res: Response, next: NextFunction) => next(),
+          oauthConfigPost: (_req: Request, _res: Response, next: NextFunction) => next(),
+          oauthConfigGet: (_req: Request, _res: Response, next: NextFunction) => next(),
+          oauthConfigDelete: (_req: Request, _res: Response, next: NextFunction) => next(),
+          integrationsList: (_req: Request, _res: Response, next: NextFunction) => next(),
+        };
+
+    // Apply endpoint-specific rate limiters to routes
+    // Tool endpoints (require authentication + tenant authorization for invoke)
+    apiV1.post('/tools/select', endpointLimiters.toolsSelect, this.handleSelectTools.bind(this));
+    apiV1.post('/tools/invoke', endpointLimiters.toolsInvoke, authorizeTenant, this.handleInvokeTool.bind(this));
+    apiV1.get('/tools/list', endpointLimiters.toolsList, this.handleListTools.bind(this));
     apiV1.get('/categories', this.handleListCategories.bind(this));
     apiV1.get('/metrics', this.handleMetrics.bind(this));
 
-    // Mount tenant OAuth configuration routes
-    const vaultClient = new VaultClient({
-      address: process.env.VAULT_ADDR || 'http://localhost:8200',
-      token: process.env.VAULT_TOKEN || 'dev-token',
-      transitEngine: 'transit',
-      kvEngine: 'secret',
-    });
-    const tenantOAuthRouter = createTenantOAuthRouter(vaultClient);
+    // Mount tenant OAuth configuration routes (use single VaultClient instance)
+    const tenantOAuthRouter = createTenantOAuthRouter(this.vaultClient);
     apiV1.use('/', tenantOAuthRouter);
 
     this.app.use('/api/v1', apiV1);
 
     // Root endpoint
     this.app.get('/', (_req: Request, res: Response) => {
-      res.json({
+      res.sendSuccess({
         name: 'MCP Gateway',
         version: '1.0.0',
         status: 'operational',
@@ -195,10 +243,12 @@ export class MCPGatewayServer {
 
     // 404 handler
     this.app.use((req: Request, res: Response) => {
-      res.status(404).json({
-        error: 'Not Found',
-        message: `Route ${req.method} ${req.path} not found`,
-      });
+      res.sendError(
+        'ROUTE_NOT_FOUND',
+        `Route ${req.method} ${req.path} not found`,
+        undefined,
+        404
+      );
     });
   }
 
@@ -206,9 +256,8 @@ export class MCPGatewayServer {
    * Health check endpoint
    */
   private async handleHealth(_req: Request, res: Response): Promise<void> {
-    res.status(200).json({
+    res.sendSuccess({
       status: 'healthy',
-      timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
     });
@@ -230,7 +279,7 @@ export class MCPGatewayServer {
       );
 
       if (allHealthy) {
-        res.status(200).json({
+        res.sendSuccess({
           status: 'ready',
           checks: {
             semanticRouter: 'ok',
@@ -238,21 +287,27 @@ export class MCPGatewayServer {
           },
         });
       } else {
-        res.status(503).json({
-          status: 'not_ready',
-          checks: checks.map((check, idx) => ({
-            service: ['semanticRouter', 'oauthProxy'][idx],
-            status: check.status === 'fulfilled' ? 'ok' : 'failed',
-            error: check.status === 'rejected' ? (check.reason as Error).message : undefined,
-          })),
-        });
+        res.sendError(
+          'SERVICE_NOT_READY',
+          'One or more services are not ready',
+          {
+            checks: checks.map((check, idx) => ({
+              service: ['semanticRouter', 'oauthProxy'][idx],
+              status: check.status === 'fulfilled' ? 'ok' : 'failed',
+              error: check.status === 'rejected' ? (check.reason as Error).message : undefined,
+            })),
+          },
+          503
+        );
       }
     } catch (error) {
       logger.error('Readiness check failed', { error });
-      res.status(503).json({
-        status: 'not_ready',
-        error: (error as Error).message,
-      });
+      res.sendError(
+        'READINESS_CHECK_FAILED',
+        (error as Error).message,
+        undefined,
+        503
+      );
     }
   }
 
@@ -265,10 +320,10 @@ export class MCPGatewayServer {
       const { query, context }: SelectToolsRequest = req.body;
 
       if (!query || typeof query !== 'string') {
-        res.status(400).json({
-          error: 'Bad Request',
-          message: 'Query parameter is required and must be a string',
-        });
+        res.sendError(
+          'INVALID_QUERY',
+          'Query parameter is required and must be a string'
+        );
         return;
       }
 
@@ -300,15 +355,14 @@ export class MCPGatewayServer {
         token_reduction_pct: ((tokenBudget - tiered.totalTokens) / tokenBudget) * 100,
       });
 
-      res.status(200).json({
-        success: true,
+      res.sendSuccess({
         query,
         tools: {
           tier1: tiered.tier1,
           tier2: tiered.tier2,
           tier3: tiered.tier3,
         },
-        metadata: {
+        performance: {
           totalTools: selectedTools.length,
           tokenUsage: tiered.totalTokens,
           tokenBudget: queryContext.tokenBudget,
@@ -321,11 +375,12 @@ export class MCPGatewayServer {
           query: error.query,
           error: error.message,
         });
-        res.status(500).json({
-          error: 'Tool Selection Failed',
-          message: error.message,
-          query: error.query,
-        });
+        res.sendError(
+          'TOOL_SELECTION_FAILED',
+          error.message,
+          { query: error.query },
+          500
+        );
       } else {
         throw error; // Pass to error handler
       }
@@ -341,10 +396,10 @@ export class MCPGatewayServer {
       const { toolId, integration, parameters, tenantId }: InvokeToolRequest = req.body;
 
       if (!toolId || !integration || !tenantId) {
-        res.status(400).json({
-          error: 'Bad Request',
-          message: 'toolId, integration, and tenantId are required',
-        });
+        res.sendError(
+          'MISSING_REQUIRED_FIELDS',
+          'toolId, integration, and tenantId are required'
+        );
         return;
       }
 
@@ -368,11 +423,10 @@ export class MCPGatewayServer {
         success: true,
       });
 
-      res.status(200).json({
-        success: true,
+      res.sendSuccess({
         toolId,
         result: result.data,
-        metadata: {
+        performance: {
           latency_ms: invocationLatency,
         },
       });
@@ -383,11 +437,12 @@ export class MCPGatewayServer {
           tenantId: error.tenantId,
           error: error.message,
         });
-        res.status(401).json({
-          error: 'Authentication Failed',
-          message: error.message,
-          integration: error.integration,
-        });
+        res.sendError(
+          'OAUTH_AUTHENTICATION_FAILED',
+          error.message,
+          { integration: error.integration },
+          401
+        );
       } else {
         throw error; // Pass to error handler
       }
@@ -410,10 +465,9 @@ export class MCPGatewayServer {
         offset,
       });
 
-      res.status(200).json({
-        success: true,
+      res.sendSuccess({
         tools,
-        metadata: {
+        pagination: {
           total: tools.length,
           limit,
           offset,
@@ -432,10 +486,7 @@ export class MCPGatewayServer {
     try {
       const categories = await this.semanticRouter.listCategories();
 
-      res.status(200).json({
-        success: true,
-        categories,
-      });
+      res.sendSuccess({ categories });
     } catch (error) {
       throw error; // Pass to error handler
     }
@@ -465,10 +516,7 @@ export class MCPGatewayServer {
         },
       };
 
-      res.status(200).json({
-        success: true,
-        metrics,
-      });
+      res.sendSuccess({ metrics });
     } catch (error) {
       throw error; // Pass to error handler
     }
@@ -486,11 +534,12 @@ export class MCPGatewayServer {
         method: req.method,
       });
 
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
-        ...(NODE_ENV === 'development' && { stack: err.stack }),
-      });
+      res.sendError(
+        'INTERNAL_SERVER_ERROR',
+        NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
+        NODE_ENV === 'development' ? { stack: err.stack } : undefined,
+        500
+      );
     });
   }
 
@@ -499,6 +548,9 @@ export class MCPGatewayServer {
    */
   public async start(): Promise<void> {
     try {
+      // Initialize Redis for rate limiting
+      await initializeRateLimitRedis();
+
       // Initialize services
       await this.semanticRouter.initialize();
       await this.oauthProxy.initialize();
@@ -508,15 +560,24 @@ export class MCPGatewayServer {
 
       // Start HTTP server
       this.app.listen(PORT, () => {
+        const rateLimitConfig = getRateLimitConfig();
         logger.info('MCP Gateway started', {
           port: PORT,
           environment: NODE_ENV,
           cors_origins: CORS_ORIGINS,
+          authentication: 'API Key (enabled)',
+          rateLimiting: {
+            global: rateLimitConfig.globalEnabled ? `${rateLimitConfig.globalRps} req/s` : 'disabled',
+            tenant: rateLimitConfig.tenantEnabled ? `${rateLimitConfig.tenantRps} req/s` : 'disabled',
+            endpointLimits: rateLimitConfig.endpointLimitsEnabled ? 'enabled' : 'disabled',
+          }
         });
         console.log(`🚀 MCP Gateway running on http://localhost:${PORT}`);
         console.log(`📊 Health: http://localhost:${PORT}/health`);
         console.log(`🔧 API: http://localhost:${PORT}/api/v1`);
         console.log(`🔌 Integrations: 4 registered (GitHub, Notion, LinkedIn, Reddit)`);
+        console.log(`🔐 Authentication: API Key Required`);
+        console.log(`🛡️  Rate Limiting: ${rateLimitConfig.globalEnabled ? 'Enabled' : 'Disabled'}`);
       });
     } catch (error) {
       logger.error('Failed to start server', { error });
@@ -534,6 +595,9 @@ export class MCPGatewayServer {
     await this.integrationRegistry.close();
     await this.semanticRouter.close();
     await this.oauthProxy.close();
+
+    // Close rate limiting Redis connection
+    await closeRateLimitRedis();
 
     logger.info('MCP Gateway shutdown complete');
     process.exit(0);

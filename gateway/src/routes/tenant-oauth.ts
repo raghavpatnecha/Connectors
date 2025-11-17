@@ -23,6 +23,7 @@ import {
   OAuthConfigResponse
 } from '../auth/types';
 import { CredentialNotFoundError, VaultError } from '../errors/oauth-errors';
+import { authorizeTenant } from '../middleware/authorize-tenant';
 
 /**
  * Create and configure OAuth configuration router
@@ -40,6 +41,7 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
    */
   router.post(
     '/tenants/:tenantId/integrations/:integration/oauth-config',
+    authorizeTenant,
     validateTenantAndIntegration,
     validateOAuthConfig,
     async (req: Request, res: Response): Promise<void> => {
@@ -57,14 +59,14 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
           createdBy
         });
 
-        const response: OAuthConfigResponse = {
-          success: true,
-          tenantId,
-          integration,
-          message: 'OAuth configuration stored successfully'
-        };
-
-        res.status(201).json(response);
+        res.sendSuccess(
+          {
+            tenantId,
+            integration,
+            message: 'OAuth configuration stored successfully'
+          },
+          201
+        );
       } catch (error) {
         logger.error('Failed to create OAuth config', {
           tenantId,
@@ -73,21 +75,19 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
         });
 
         if (error instanceof VaultError) {
-          const response: OAuthConfigResponse = {
-            success: false,
-            tenantId,
-            integration,
-            error: 'Failed to store OAuth configuration in Vault'
-          };
-          res.status(500).json(response);
+          res.sendError(
+            'VAULT_STORAGE_ERROR',
+            'Failed to store OAuth configuration in Vault',
+            { tenantId, integration },
+            500
+          );
         } else {
-          const response: OAuthConfigResponse = {
-            success: false,
-            tenantId,
-            integration,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          };
-          res.status(500).json(response);
+          res.sendError(
+            'OAUTH_CONFIG_STORAGE_ERROR',
+            error instanceof Error ? error.message : 'Unknown error',
+            { tenantId, integration },
+            500
+          );
         }
       }
     }
@@ -101,6 +101,7 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
    */
   router.get(
     '/tenants/:tenantId/integrations/:integration/oauth-config',
+    authorizeTenant,
     validateTenantAndIntegration,
     async (req: Request, res: Response): Promise<void> => {
       const { tenantId, integration } = req.params;
@@ -117,14 +118,11 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
         // Remove client secret from response
         const { clientSecret, ...configWithoutSecret } = config;
 
-        const response: OAuthConfigResponse = {
-          success: true,
+        res.sendSuccess({
           tenantId,
           integration,
           config: configWithoutSecret
-        };
-
-        res.status(200).json(response);
+        });
       } catch (error) {
         if (error instanceof CredentialNotFoundError) {
           logger.warn('OAuth config not found', {
@@ -132,13 +130,12 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
             integration
           });
 
-          const response: OAuthConfigResponse = {
-            success: false,
-            tenantId,
-            integration,
-            error: 'OAuth configuration not found'
-          };
-          res.status(404).json(response);
+          res.sendError(
+            'OAUTH_CONFIG_NOT_FOUND',
+            'OAuth configuration not found',
+            { tenantId, integration },
+            404
+          );
         } else {
           logger.error('Failed to retrieve OAuth config', {
             tenantId,
@@ -146,13 +143,12 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
             error: error instanceof Error ? error.message : String(error)
           });
 
-          const response: OAuthConfigResponse = {
-            success: false,
-            tenantId,
-            integration,
-            error: 'Failed to retrieve OAuth configuration'
-          };
-          res.status(500).json(response);
+          res.sendError(
+            'OAUTH_CONFIG_RETRIEVAL_ERROR',
+            'Failed to retrieve OAuth configuration',
+            { tenantId, integration },
+            500
+          );
         }
       }
     }
@@ -164,6 +160,7 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
    */
   router.delete(
     '/tenants/:tenantId/integrations/:integration/oauth-config',
+    authorizeTenant,
     validateTenantAndIntegration,
     async (req: Request, res: Response): Promise<void> => {
       const { tenantId, integration } = req.params;
@@ -177,13 +174,12 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
             integration
           });
 
-          const response: OAuthConfigResponse = {
-            success: false,
-            tenantId,
-            integration,
-            error: 'OAuth configuration not found'
-          };
-          res.status(404).json(response);
+          res.sendError(
+            'OAUTH_CONFIG_NOT_FOUND',
+            'OAuth configuration not found',
+            { tenantId, integration },
+            404
+          );
           return;
         }
 
@@ -195,14 +191,11 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
           integration
         });
 
-        const response: OAuthConfigResponse = {
-          success: true,
+        res.sendSuccess({
           tenantId,
           integration,
           message: 'OAuth configuration deleted successfully'
-        };
-
-        res.status(200).json(response);
+        });
       } catch (error) {
         logger.error('Failed to delete OAuth config', {
           tenantId,
@@ -210,13 +203,12 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
           error: error instanceof Error ? error.message : String(error)
         });
 
-        const response: OAuthConfigResponse = {
-          success: false,
-          tenantId,
-          integration,
-          error: 'Failed to delete OAuth configuration'
-        };
-        res.status(500).json(response);
+        res.sendError(
+          'OAUTH_CONFIG_DELETION_ERROR',
+          'Failed to delete OAuth configuration',
+          { tenantId, integration },
+          500
+        );
       }
     }
   );
@@ -227,6 +219,7 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
    */
   router.get(
     '/tenants/:tenantId/integrations',
+    authorizeTenant,
     validateTenantId,
     async (req: Request, res: Response): Promise<void> => {
       const { tenantId } = req.params;
@@ -240,8 +233,7 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
           count: integrations.length
         });
 
-        res.status(200).json({
-          success: true,
+        res.sendSuccess({
           tenantId,
           integrations,
           count: integrations.length
@@ -252,11 +244,12 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
           error: error instanceof Error ? error.message : String(error)
         });
 
-        res.status(500).json({
-          success: false,
-          tenantId,
-          error: 'Failed to list integrations'
-        });
+        res.sendError(
+          'INTEGRATIONS_LIST_ERROR',
+          'Failed to list integrations',
+          { tenantId },
+          500
+        );
       }
     }
   );
@@ -270,31 +263,30 @@ export function createTenantOAuthRouter(vaultClient: VaultClient): Router {
       const healthy = await vaultClient.healthCheck();
 
       if (healthy) {
-        res.status(200).json({
-          success: true,
+        res.sendSuccess({
           service: 'tenant-oauth-config',
           status: 'healthy',
           vault: 'connected'
         });
       } else {
-        res.status(503).json({
-          success: false,
-          service: 'tenant-oauth-config',
-          status: 'unhealthy',
-          vault: 'disconnected'
-        });
+        res.sendError(
+          'SERVICE_UNHEALTHY',
+          'OAuth config service is unhealthy',
+          { vault: 'disconnected' },
+          503
+        );
       }
     } catch (error) {
       logger.error('OAuth config health check failed', {
         error: error instanceof Error ? error.message : String(error)
       });
 
-      res.status(503).json({
-        success: false,
-        service: 'tenant-oauth-config',
-        status: 'unhealthy',
-        error: 'Health check failed'
-      });
+      res.sendError(
+        'HEALTH_CHECK_FAILED',
+        'Health check failed',
+        { service: 'tenant-oauth-config' },
+        503
+      );
     }
   });
 

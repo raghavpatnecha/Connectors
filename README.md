@@ -1,9 +1,9 @@
 # Connectors - AI Agent Integration Platform
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Phase 1: Complete](https://img.shields.io/badge/Phase%201-Complete-brightgreen.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
-[![Token Reduction: 99.02%](https://img.shields.io/badge/Token%20Reduction-99.02%25-success.svg)](docs/PHASE_1_COMPLETION_REPORT.md)
-[![Integrations: 4 Operational](https://img.shields.io/badge/Integrations-4%20Operational-brightgreen.svg)](integrations/)
+[![MCP Servers: 15 Operational](https://img.shields.io/badge/MCP%20Servers-15%20Operational-brightgreen.svg)](integrations/)
+[![Token Reduction: 99.02%](https://img.shields.io/badge/Token%20Reduction-99.02%25-success.svg)](#-the-problem-we-solve)
+[![Tools: 368 Total](https://img.shields.io/badge/Tools-368%20Total-blue.svg)](docs/04-integrations/)
 
 **Open-source integration platform for AI agents that solves the MCP token bloat problem through semantic routing.**
 
@@ -11,20 +11,21 @@
 
 ## 🚨 The Problem We Solve
 
-**Traditional MCP**: 500 integrations = 77,698 tokens → Context exhausted
+**Traditional MCP**: 368 tools across 15 integrations = 77,698 tokens → Context exhausted
 **Connectors**: Semantic routing = 759 tokens → **99% reduction**, $7.49M saved at 1M queries/month
 
-[Detailed analysis →](docs/ARCHITECTURE.md)
+[Detailed analysis →](docs/03-architecture/)
 
 ---
 
 ## ✨ Key Features
 
 - **99% Token Reduction** - Semantic routing: 759 tokens vs 77,698 (FAISS vector search)
-- **4 Integrations** - GitHub, Notion, LinkedIn, Reddit (85 tools total) - [All integrations →](integrations/)
-- **Enterprise OAuth** - Per-tenant Vault encryption, auto-refresh - [API docs →](docs/API_TENANT_OAUTH.md)
+- **15 MCP Servers** - Production-ready connectors across code, communication, productivity, documents, search, and storage - [All integrations →](docs/04-integrations/)
+- **368 Tools** - Comprehensive coverage of GitHub, Google Workspace, LinkedIn, Reddit, Notion, and Product Hunt APIs
+- **Enterprise OAuth** - Per-tenant Vault encryption, auto-refresh, multi-tenant isolation
 - **GraphRAG Discovery** - Neo4j-powered tool suggestions, <1ms selection
-- **Production Ready** - Docker + K8s, monitoring, 89% test coverage - [Deploy →](docs/DEPLOYMENT_STATUS_2025-11-11.md)
+- **Production Ready** - Docker + K8s, API authentication, rate limiting, comprehensive security
 
 ---
 
@@ -47,28 +48,54 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
 
 ---
 
-## 📊 Current Status
+## 📊 MCP Servers (Connectors)
+
+| Category | Servers | Description |
+|----------|---------|-------------|
+| **Code** | GitHub | Repository management, issues, pull requests, actions |
+| **Communication** | Gmail, LinkedIn, Reddit, Google Chat | Email, social media, messaging |
+| **Documents** | Google Docs, Google Sheets, Google Slides | Document creation and editing |
+| **Productivity** | Google Calendar, Google Tasks, Google Forms, Notion, Product Hunt | Scheduling, task management, workspace collaboration, product discovery |
+| **Search** | Google Search | Web search and information retrieval |
+| **Storage** | Google Drive | File storage and management |
+
+**Total: 15 MCP Servers, 368 Tools** - [Detailed tool breakdown →](docs/04-integrations/)
+
+### Integration Architecture Types
+
+**Custom-Built MCP Servers** (14 servers)
+- Built using TypeScript + FastMCP
+- Auto-generated from OpenAPI specs
+- Source: `integrations/*/` directories
+- Examples: GitHub, Google Workspace (10 services), LinkedIn, Reddit
+
+**Official Remote MCP Server** (1 server)
+- Notion: Using official `notionhq/notion-mcp-server:latest`
+- Maintained by Notion team
+- Connected via Docker container
+
+**Note:** Product Hunt uses direct API integration pattern for lightweight access.
+
+## 📊 Performance & Security
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **Phase 1** | ✅ Complete | [Completion report →](docs/PHASE_1_COMPLETION_REPORT.md) |
-| **Token Reduction** | 99.02% | 759 tokens vs 77,698 (33% better than 95% target) |
+| **Token Reduction** | 99.02% | 759 tokens vs 77,698 (33% better than target) |
 | **Tool Selection** | <1ms avg | 99x faster than 100ms target |
-| **Integrations** | 4 operational | GitHub, Notion, LinkedIn, Reddit - [Full list →](integrations/) |
-| **OAuth System** | Production ready | 2,000+ lines, multi-tenant, auto-refresh |
-| **Test Coverage** | 89% | 92 tests across critical paths |
-| **Deployment** | Docker + K8s | [Deployment guide →](docs/DEPLOYMENT_STATUS_2025-11-11.md) |
-
-**Known Limitations**: FAISS indices require generation, MCP servers need build - [See details →](docs/LIMITATIONS.md)
+| **API Authentication** | ✅ Production | Bearer token auth, API key validation, tenant isolation |
+| **Rate Limiting** | ✅ Production | Multi-layer (global, tenant, endpoint) with Redis |
+| **OAuth System** | ✅ Production | Multi-tenant Vault encryption, auto-refresh |
+| **Security** | ✅ Hardened | Cypher injection prevention, type safety, no credentials in code |
+| **Deployment** | Docker + K8s | [Deployment guide →](docs/02-guides/deployment/) |
 
 ---
 
 ## 📚 Documentation
 
-**Getting Started**: [Usage Guide](docs/USING_CONNECTORS_PLATFORM.md) • [API Reference](docs/API_REFERENCE.md) • [Examples](examples/)
-**Platform**: [Architecture](docs/ARCHITECTURE.md) • [Multi-Tenant Setup](docs/MULTI_TENANT_SETUP.md) • [OAuth API](docs/API_TENANT_OAUTH.md)
-**Integrations**: [GitHub](integrations/code/github/) • [Notion](docs/integrations/NOTION_SETUP.md) • [LinkedIn](integrations/communication/linkedin/) • [Reddit](integrations/communication/reddit/)
-**Operations**: [Deployment](docs/DEPLOYMENT_STATUS_2025-11-11.md) • [Monitoring](docs/MONITORING.md) • [Troubleshooting](docs/TROUBLESHOOTING.md)
+**Getting Started**: [Quick Start](docs/01-getting-started/quick-start.md) • [Installation](docs/01-getting-started/installation.md) • [First Integration](docs/01-getting-started/your-first-integration.md)
+**Architecture**: [Overview](docs/03-architecture/) • [Gateway](docs/03-architecture/gateway.md) • [Semantic Routing](docs/03-architecture/semantic-routing.md) • [GraphRAG](docs/03-architecture/graphrag.md)
+**Integrations**: [All Integrations](docs/04-integrations/) • [GitHub](docs/04-integrations/code/github.md) • [Google Workspace](docs/04-integrations/productivity/) • [LinkedIn](docs/04-integrations/communication/linkedin.md)
+**Guides**: [OAuth Setup](docs/02-guides/oauth/setup.md) • [Adding Integrations](docs/02-guides/adding-integrations/) • [Deployment](docs/02-guides/deployment/)
 
 ---
 
@@ -94,9 +121,11 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## 📈 Roadmap
 
-✅ **Phase 1** (Complete): Gateway, OAuth, 4 integrations, 99% token reduction | 🚧 **Phase 2-6**: 100+ integrations, enterprise features, public launch
+✅ **Phase 1** (Complete): Gateway, OAuth, 15 MCP servers, 99% token reduction, production security
+🚧 **Phase 2**: Additional integrations (Slack, Dropbox, Salesforce), enhanced monitoring
+📋 **Phase 3+**: Enterprise features, public marketplace, community contributions
 
-[Detailed roadmap →](docs/ROADMAP.md) • [Phase 1 report →](docs/PHASE_1_COMPLETION_REPORT.md)
+[Detailed documentation →](docs/)
 
 ---
 
@@ -108,9 +137,9 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## 🌟 Why Connectors?
 
-**AI Agents**: 99% token reduction • Semantic discovery • GraphRAG suggestions | **Integrations**: OpenAPI auto-gen • MCP standard | **Enterprise**: Self-hosted • Multi-tenant • K8s-native
-
-[Executive summary →](EXECUTIVE_SUMMARY.md)
+**AI Agents**: 99% token reduction • Semantic discovery • GraphRAG suggestions
+**MCP Standard**: 15 production servers • 368 tools • Custom-built + official remote servers
+**Enterprise Ready**: Self-hosted • Multi-tenant OAuth • Kubernetes-native • Production security
 
 ---
 

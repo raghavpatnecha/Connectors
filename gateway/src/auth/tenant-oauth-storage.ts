@@ -339,10 +339,8 @@ export class TenantOAuthStorage {
    * @private
    */
   private async _encryptSecret(tenantId: string, plaintext: string): Promise<string> {
-    // Use VaultClient's internal encryption method
-    // Since VaultClient._encrypt is private, we need to use the Transit API directly
-    // For now, we'll use a workaround by accessing Vault's HTTP API
-    return (this._vault as any)._encrypt(tenantId, plaintext);
+    // Use VaultClient's public encryption method
+    return this._vault.encryptForTenant(tenantId, plaintext);
   }
 
   /**
@@ -350,8 +348,8 @@ export class TenantOAuthStorage {
    * @private
    */
   private async _decryptSecret(tenantId: string, ciphertext: string): Promise<string> {
-    // Use VaultClient's internal decryption method
-    return (this._vault as any)._decrypt(tenantId, ciphertext);
+    // Use VaultClient's public decryption method
+    return this._vault.decryptForTenant(tenantId, ciphertext);
   }
 
   /**
@@ -359,9 +357,9 @@ export class TenantOAuthStorage {
    * @private
    */
   private async _writeToVault(path: string, data: unknown): Promise<void> {
-    // Use VaultClient's internal retry mechanism
-    await (this._vault as any)._retryOperation(async () => {
-      await (this._vault as any)._client.post(`/v1/${path}`, { data });
+    // Use VaultClient's public retry mechanism and HTTP client
+    await this._vault.executeWithRetry(async () => {
+      await this._vault.httpClient.post(`/v1/${path}`, { data });
     });
   }
 
@@ -370,8 +368,8 @@ export class TenantOAuthStorage {
    * @private
    */
   private async _readFromVault(path: string): Promise<any> {
-    const response = await (this._vault as any)._retryOperation(async () => {
-      return await (this._vault as any)._client.get(`/v1/${path}`);
+    const response = await this._vault.executeWithRetry(async () => {
+      return await this._vault.httpClient.get(`/v1/${path}`);
     });
 
     return response.data?.data?.data;
@@ -382,8 +380,8 @@ export class TenantOAuthStorage {
    * @private
    */
   private async _deleteFromVault(path: string): Promise<void> {
-    await (this._vault as any)._retryOperation(async () => {
-      await (this._vault as any)._client.delete(`/v1/${path}`);
+    await this._vault.executeWithRetry(async () => {
+      await this._vault.httpClient.delete(`/v1/${path}`);
     });
   }
 }

@@ -514,6 +514,14 @@ export class OAuthProxy {
    */
   async close(): Promise<void> {
     logger.info('Closing OAuth proxy');
+
+    // Remove all event listeners to prevent memory leak
+    this._scheduler.removeAllListeners('refresh-success');
+    this._scheduler.removeAllListeners('refresh-failed');
+    this._scheduler.removeAllListeners('refresh-retry');
+
     await this._scheduler.stop();
+
+    logger.debug('OAuth proxy closed - event listeners removed');
   }
 }

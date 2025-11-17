@@ -4,6 +4,46 @@ Quick start for OAuth credential management with HashiCorp Vault.
 
 ---
 
+## Understanding Tenant IDs
+
+**What is a Tenant ID?**
+A tenant ID is a unique identifier YOU create to isolate credentials and data for different users, organizations, or environments in the Connectors Platform.
+
+**Key Points:**
+- ✅ **Self-assigned** - You choose your own tenant ID (no registration needed)
+- ✅ **Naming rules** - Lowercase letters, numbers, and hyphens only (`^[a-z0-9-]+$`)
+- ✅ **Examples** - `my-company`, `acme-corp`, `dev`, `staging`, `production-001`
+- ✅ **Use case** - Multi-tenant SaaS (one ID per customer) or multi-environment (dev/staging/prod)
+
+**Choosing a Tenant ID:**
+
+```bash
+# For development/testing
+test-tenant
+dev
+local
+
+# For production (single organization)
+my-company
+acme-corp
+production
+
+# For multi-tenant SaaS (per customer)
+customer-123
+client-abc
+acme-corp
+
+# For multi-environment
+acme-dev
+acme-staging
+acme-prod
+```
+
+**Quick Start:**
+For this guide, we'll use `test-tenant` as the tenant ID. Replace it with your chosen ID in all examples below.
+
+---
+
 ## Quick Start (5 Minutes)
 
 ### 1. Start Vault
@@ -95,6 +135,10 @@ curl -X POST "http://localhost:3000/api/v1/oauth/authorize/github?tenant_id=tena
 ---
 
 ## API Endpoints
+
+**Note:** Individual MCP servers handle OAuth authorization flows on their own ports (e.g., GitHub on 3110, Drive on 3132). The gateway provides OAuth credential storage via:
+- `POST /api/v1/tenants/:tenantId/integrations/:integration/oauth-config`
+- `GET /api/v1/tenants/:tenantId/integrations/:integration/oauth-config`
 
 ```bash
 # OAuth Flow

@@ -2,11 +2,11 @@
 
 ## Overview
 
-Semantic routing enables intelligent tool selection from 500+ integrations using **two-level retrieval** with FAISS vector search. This achieves **19.4% better accuracy** than flat retrieval while maintaining **<100ms latency**.
+Semantic routing enables intelligent tool selection from 368 tools across 15 integrations using **two-level retrieval** with FAISS vector search. This achieves **19.4% better accuracy** than flat retrieval while maintaining **<100ms latency**.
 
 ## Two-Level Retrieval Concept
 
-Instead of searching all 500 tools at once (slow and inaccurate), we use coarse-to-fine:
+Instead of searching all 368 tools at once (slow and inaccurate), we use coarse-to-fine:
 
 **Level 1 (Category):** Select 1-3 relevant categories from 10 total
 **Level 2 (Tool):** Search tools only within selected categories
@@ -157,7 +157,7 @@ const cachedEmbeddings = await redis.mget(keys);
 
 ### Two-Level vs Flat Retrieval
 
-**Test Setup:** 500 tools, 10 categories, 100 test queries
+**Test Setup:** 368 tools, 4 categories, 100 test queries
 
 | Approach | Precision@5 | Recall@5 | MRR | Latency |
 |----------|-------------|----------|-----|---------|

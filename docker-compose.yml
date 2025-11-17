@@ -1,7 +1,7 @@
 version: '3.8'
 
 # Connectors Platform - Development Environment
-# AI Agent Integration Platform with 500+ connectors
+# AI Agent Integration Platform with 15 integrations, 368 tools
 
 services:
   # ============================================

@@ -26,6 +26,37 @@ import {
   LINK_TOOL_TO_CATEGORY,
   BATCH_UPSERT_TOOLS
 } from './queries';
+import { InvalidRelationshipTypeError } from '../errors/gateway-errors';
+
+/**
+ * Whitelist of allowed relationship types for Cypher injection prevention
+ */
+const ALLOWED_RELATIONSHIP_TYPES = [
+  'OFTEN_USED_WITH',
+  'DEPENDS_ON',
+  'ALTERNATIVE_TO',
+  'REPLACES',
+  'PRECEDES',
+  'BELONGS_TO'
+];
+
+/**
+ * Validate relationship type against whitelist to prevent Cypher injection
+ * @param type - Relationship type to validate
+ * @throws InvalidRelationshipTypeError if type is not in whitelist
+ */
+function validateRelationshipType(type: string): void {
+  if (ALLOWED_RELATIONSHIP_TYPES.indexOf(type) === -1) {
+    logger.warn('Invalid relationship type attempted', {
+      attemptedType: type,
+      allowed: ALLOWED_RELATIONSHIP_TYPES
+    });
+    throw new InvalidRelationshipTypeError(
+      `Invalid relationship type: ${type}. Allowed: ${ALLOWED_RELATIONSHIP_TYPES.join(', ')}`,
+      type
+    );
+  }
+}
 
 /**
  * GraphRAG Service for intelligent tool selection and relationship discovery
@@ -301,6 +332,9 @@ export class GraphRAGService {
   async createRelationship(payload: CreateRelationshipPayload): Promise<void> {
     const { fromToolId, toToolId, type, confidence } = payload;
 
+    // SECURITY: Validate relationship type to prevent Cypher injection
+    validateRelationshipType(type);
+
     const session = this._connectionPool.getSession();
 
     try {
@@ -314,6 +348,21 @@ export class GraphRAGService {
       `;
 
       await session.run(query, { fromToolId, toToolId, confidence });
+
+      logger.info('Relationship created', {
+        fromToolId,
+        toToolId,
+        type,
+        confidence
+      });
+    } catch (error) {
+      logger.error('Failed to create relationship', {
+        fromToolId,
+        toToolId,
+        type,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
     } finally {
       await session.close();
     }
@@ -340,6 +389,9 @@ export class GraphRAGService {
     relationships: Array<{ from: string; to: string; confidence: number }>,
     type: RelationshipType
   ): Promise<number> {
+    // SECURITY: Validate relationship type to prevent Cypher injection
+    validateRelationshipType(type);
+
     const session = this._connectionPool.getSession();
 
     try {
@@ -354,7 +406,22 @@ export class GraphRAGService {
       `;
 
       const result = await session.run(query, { relationships });
-      return result.records[0]?.get('relationshipsCreated') || 0;
+      const relationshipsCreated = result.records[0]?.get('relationshipsCreated') || 0;
+
+      logger.info('Batch relationships created', {
+        count: relationshipsCreated,
+        type,
+        relationshipCount: relationships.length
+      });
+
+      return relationshipsCreated;
+    } catch (error) {
+      logger.error('Failed to batch create relationships', {
+        type,
+        count: relationships.length,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
     } finally {
       await session.close();
     }

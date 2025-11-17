@@ -2,11 +2,11 @@
 
 ## Overview
 
-The MCP Gateway is the central orchestration layer that sits between AI agents and 500+ integration servers. It implements intelligent tool selection, relationship discovery, token optimization, and transparent OAuth management.
+The MCP Gateway is the central orchestration layer that sits between AI agents and 15 integrations with 368 tools. It implements intelligent tool selection, relationship discovery, token optimization, and transparent OAuth management.
 
 ## Core Responsibilities
 
-1. **Semantic Routing:** Select relevant tools from 500+ options using FAISS vector search
+1. **Semantic Routing:** Select relevant tools from 368 tools using FAISS vector search
 2. **GraphRAG Enhancement:** ⚠️ **Planned Feature** - Discover related tools via Neo4j relationship graph (not yet implemented)
 3. **Token Optimization:** Enforce token budgets and progressive schema loading
 4. **OAuth Proxy:** Inject per-tenant credentials transparently
