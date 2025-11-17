@@ -182,3 +182,82 @@ export interface MCPMetadata {
   license?: string;
   dependencies?: string[];
 }
+
+/**
+ * Docker Builder Types
+ */
+
+/**
+ * Docker build configuration
+ */
+export interface DockerBuildConfig {
+  repoPath: string;
+  serverType: MCPServerType;
+  deploymentId: string;
+  metadata: MCPMetadata;
+  registry?: string; // Optional: push to registry after build
+}
+
+/**
+ * Docker build result
+ */
+export interface BuildResult {
+  imageTag: string;
+  imageId: string;
+  size: number; // bytes
+  buildTime: number; // milliseconds
+  warnings?: string[];
+}
+
+/**
+ * Docker build output (internal)
+ */
+export interface BuildOutput {
+  imageId: string;
+  size: number;
+  warnings: string[];
+}
+
+/**
+ * Kubernetes Deployment Types
+ */
+
+/**
+ * K8s deployment configuration
+ */
+export interface K8sDeploymentConfig {
+  name: string;
+  deploymentId: string;
+  imageTag: string;
+  metadata: MCPMetadata;
+  replicas?: number; // Default: 1
+  resources?: {
+    requests?: { memory: string; cpu: string };
+    limits?: { memory: string; cpu: string };
+  };
+  env?: Record<string, string>;
+}
+
+/**
+ * K8s deployment result
+ */
+export interface DeploymentResult {
+  deploymentName: string;
+  serviceName: string;
+  namespace: string;
+  endpoint: string; // http://mcp-{deploymentId}-svc.mcp-servers.svc.cluster.local
+  podIP?: string;
+}
+
+/**
+ * K8s deployment status
+ */
+export interface K8sDeploymentStatus {
+  status: 'pending' | 'running' | 'failed' | 'terminating';
+  readyReplicas: number;
+  availableReplicas: number;
+  podIP?: string;
+  endpoint?: string;
+  restartCount?: number;
+  lastError?: string;
+}

@@ -10,6 +10,8 @@ import { randomUUID } from 'crypto';
 import { logger } from '../../logging/logger';
 import { DeploymentTracker } from './deployment-tracker';
 import { GitHubService } from './github-service';
+import { DockerBuilder } from './docker-builder';
+import { K8sDeployer } from './k8s-deployer';
 import { STDIOWrapper } from '../../wrappers/stdio-to-http';
 import { STDIOHTTPServer } from '../../wrappers/stdio-http-server';
 import { PortAllocator } from '../../wrappers/port-allocator';
@@ -31,12 +33,16 @@ import {
 export class MCPDeployer {
   private readonly _tracker: DeploymentTracker;
   private readonly _githubService: GitHubService;
+  private readonly _dockerBuilder: DockerBuilder;
+  private readonly _k8sDeployer: K8sDeployer;
   private readonly _portAllocator: PortAllocator;
   private readonly _stdioWrappers = new Map<string, { wrapper: STDIOWrapper; httpServer: STDIOHTTPServer; port: number }>();
 
-  constructor(tracker?: DeploymentTracker, githubService?: GitHubService, portAllocator?: PortAllocator) {
+  constructor(tracker?: DeploymentTracker, githubService?: GitHubService, dockerBuilder?: DockerBuilder, k8sDeployer?: K8sDeployer, portAllocator?: PortAllocator) {
     this._tracker = tracker || new DeploymentTracker();
     this._githubService = githubService || new GitHubService();
+    this._dockerBuilder = dockerBuilder || new DockerBuilder();
+    this._k8sDeployer = k8sDeployer || new K8sDeployer();
     this._portAllocator = portAllocator || PortAllocator.getInstance();
   }
 
@@ -46,6 +52,8 @@ export class MCPDeployer {
   async initialize(): Promise<void> {
     await this._tracker.connect();
     await this._githubService.initialize();
+    await this._dockerBuilder.initialize();
+    await this._k8sDeployer.initialize();
     logger.info('MCPDeployer service initialized');
   }
 
@@ -264,19 +272,54 @@ export class MCPDeployer {
       deployment.toolsDiscovered = 0; // Will be set during discovery phase
       await this._tracker.setDeployment(deployment);
 
-      // Step 3: Build phase (placeholder - will be implemented by Docker Builder agent)
+      // Step 3: Build Docker image
+      await this._tracker.updateStatus(deploymentId, 'deploying', { build: 'in_progress' });
+
+      const buildResult = await this._dockerBuilder.buildImage({
+        repoPath: cloneResult.repoPath,
+        serverType,
+        deploymentId,
+        metadata,
+        // registry: Optional registry URL for pushing images
+      });
+
+      logger.info('Docker image built successfully', {
+        deploymentId,
+        imageTag: buildResult.imageTag,
+        imageId: buildResult.imageId.slice(0, 12),
+        size: Math.round(buildResult.size / 1024 / 1024) + 'MB',
+        buildTime: buildResult.buildTime + 'ms',
+        warnings: buildResult.warnings?.length || 0,
+      });
+
       await this._tracker.updateStatus(deploymentId, 'deploying', { build: 'completed' });
 
-      // Step 4-6: Deploy, discover, embeddings (placeholders - will be implemented by other agents)
+      // Step 4: Deploy to Kubernetes
       await this._tracker.updateStatus(deploymentId, 'deploying', { deploy: 'in_progress' });
-      await this._sleep(500);
+
+      const deploymentResult = await this._k8sDeployer.deployMCPServer({
+        name: deployment.name,
+        deploymentId,
+        imageTag: buildResult.imageTag,
+        metadata,
+      });
+
+      await this._tracker.updateEndpoint(deploymentId, deploymentResult.endpoint);
       await this._tracker.updateStatus(deploymentId, 'deploying', { deploy: 'completed' });
 
+      logger.info('K8s deployment completed', {
+        deploymentId,
+        endpoint: deploymentResult.endpoint,
+        podIP: deploymentResult.podIP,
+      });
+
+      // Step 5: Tool discovery (placeholder - will be implemented by discovery agent)
       await this._tracker.updateStatus(deploymentId, 'deploying', { discovery: 'in_progress' });
       await this._sleep(300);
       await this._tracker.updateStatus(deploymentId, 'deploying', { discovery: 'completed' });
       await this._tracker.updateToolsDiscovered(deploymentId, 12); // Placeholder count
 
+      // Step 6: Generate embeddings (placeholder - will be implemented by embedding agent)
       await this._tracker.updateStatus(deploymentId, 'deploying', { embeddings: 'in_progress' });
       await this._sleep(300);
       await this._tracker.updateStatus(deploymentId, 'deploying', { embeddings: 'completed' });
@@ -285,7 +328,7 @@ export class MCPDeployer {
       const updatedDeployment = await this._tracker.getDeployment(deploymentId);
       if (updatedDeployment) {
         updatedDeployment.status = 'running';
-        updatedDeployment.endpoint = `http://${deployment.name}.mcp.svc.cluster.local:3000`;
+        updatedDeployment.endpoint = deploymentResult.endpoint;
         await this._tracker.setDeployment(updatedDeployment);
 
         // Add to custom servers registry
@@ -690,3 +733,5 @@ export class MCPDeployer {
 export * from './types';
 export { DeploymentTracker } from './deployment-tracker';
 export { GitHubService } from './github-service';
+export { DockerBuilder } from './docker-builder';
+export { K8sDeployer } from './k8s-deployer';

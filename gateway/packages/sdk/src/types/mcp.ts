@@ -249,3 +249,56 @@ export interface MCPIntegration {
     description: string;
   }>;
 }
+
+/**
+ * Options for waiting on deployment completion
+ */
+export interface WaitOptions {
+  /**
+   * Maximum wait time in milliseconds
+   * @default 300000 (5 minutes)
+   */
+  timeout?: number;
+
+  /**
+   * Initial polling interval in milliseconds
+   * @default 2000 (2 seconds)
+   */
+  pollInterval?: number;
+
+  /**
+   * Callback invoked on each status check
+   * @param status - Current deployment status
+   */
+  onProgress?: (status: DeploymentStatus) => void;
+}
+
+/**
+ * Data structure for MCPDeployment class constructor
+ */
+export interface DeploymentData {
+  /**
+   * Unique deployment identifier
+   */
+  deploymentId: string;
+
+  /**
+   * Server name
+   */
+  name: string;
+
+  /**
+   * Current deployment status
+   */
+  status: 'pending' | 'deploying' | 'running' | 'failed';
+
+  /**
+   * Estimated time for deployment completion
+   */
+  estimatedTime?: string;
+
+  /**
+   * Status message
+   */
+  message?: string;
+}

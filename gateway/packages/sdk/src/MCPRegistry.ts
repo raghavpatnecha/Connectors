@@ -8,12 +8,13 @@ import type {
   MCPIntegration,
   MCPDeploymentConfig,
   StandardMCPConfig,
-  MCPDeployment,
   DeploymentStatus,
   GitHubSource,
   STDIOSource,
   HTTPSource,
   DockerSource,
+  WaitOptions,
+  DeploymentData,
 } from './types/mcp';
 import type { Tool, ToolInvocationResponse } from './types/tools';
 
@@ -110,6 +111,113 @@ export class MCPServer {
 }
 
 /**
+ * MCPDeployment - Represents a deployment of a custom MCP server
+ *
+ * Provides methods to wait for deployment completion and check status.
+ *
+ * @example
+ * ```typescript
+ * const deployment = await mcp.add({
+ *   name: 'my-server',
+ *   source: { type: 'github', url: '...' },
+ *   category: 'custom'
+ * });
+ *
+ * // Wait for deployment to complete
+ * await deployment.waitUntilReady({
+ *   timeout: 600000, // 10 minutes
+ *   onProgress: (status) => {
+ *     console.log(`Status: ${status.status}`);
+ *   }
+ * });
+ *
+ * console.log('Deployment complete!');
+ * ```
+ */
+export class MCPDeploymentClass {
+  readonly deploymentId: string;
+  readonly name: string;
+  status: 'pending' | 'deploying' | 'running' | 'failed';
+  estimatedTime?: string;
+  message?: string;
+
+  constructor(
+    data: DeploymentData,
+    private readonly registry: MCPRegistry
+  ) {
+    this.deploymentId = data.deploymentId;
+    this.name = data.name;
+    this.status = data.status;
+    this.estimatedTime = data.estimatedTime;
+    this.message = data.message;
+  }
+
+  /**
+   * Wait until deployment is ready or fails
+   *
+   * This method polls the deployment status until it reaches a terminal state
+   * ('running' or 'failed'). Uses exponential backoff with jitter for polling.
+   *
+   * @param options - Wait options (timeout, polling interval, progress callback)
+   * @throws {DeploymentTimeoutError} If deployment doesn't complete within timeout
+   * @throws {DeploymentFailedError} If deployment fails
+   *
+   * @example
+   * ```typescript
+   * const deployment = await mcp.add(config);
+   *
+   * await deployment.waitUntilReady({
+   *   timeout: 600000, // 10 minutes
+   *   pollInterval: 2000, // 2 seconds
+   *   onProgress: (status) => {
+   *     console.log(`Progress: ${status.progress}%`);
+   *     console.log(`Status: ${status.status}`);
+   *   }
+   * });
+   * ```
+   */
+  async waitUntilReady(options?: WaitOptions): Promise<void> {
+    const finalStatus = await this.registry.waitForDeployment(
+      this.deploymentId,
+      options
+    );
+
+    // Update own status
+    this.status = finalStatus.status as 'pending' | 'deploying' | 'running' | 'failed';
+    this.message = finalStatus.message;
+
+    // If deployment failed, throw error
+    if (finalStatus.status === 'failed') {
+      throw new DeploymentFailedError(
+        `Deployment ${this.deploymentId} failed: ${finalStatus.error?.message || 'Unknown error'}`,
+        this.deploymentId,
+        finalStatus.error?.message
+      );
+    }
+  }
+
+  /**
+   * Refresh deployment status from the server
+   *
+   * Updates the internal status fields with latest data from the server.
+   *
+   * @example
+   * ```typescript
+   * const deployment = await mcp.add(config);
+   *
+   * // Later, refresh status
+   * await deployment.refresh();
+   * console.log(`Current status: ${deployment.status}`);
+   * ```
+   */
+  async refresh(): Promise<void> {
+    const status = await this.registry.getDeploymentStatus(this.deploymentId);
+    this.status = status.status as 'pending' | 'deploying' | 'running' | 'failed';
+    this.message = status.message;
+  }
+}
+
+/**
  * MCPRegistry - Manage MCP servers and integrations
  *
  * @example
@@ -198,7 +306,7 @@ export class MCPRegistry {
    * - docker: Deploy as Docker container
    *
    * @param config - Deployment configuration
-   * @returns Deployment object with deploymentId for tracking
+   * @returns MCPDeploymentClass instance with waitUntilReady() method
    *
    * @example
    * ```typescript
@@ -214,11 +322,14 @@ export class MCPRegistry {
    *   description: 'My custom MCP server'
    * });
    *
-   * // Check deployment status
-   * const status = await mcp.getDeploymentStatus(deployment.deploymentId);
+   * // Wait for deployment to complete
+   * await deployment.waitUntilReady({
+   *   timeout: 600000,
+   *   onProgress: (status) => console.log(status.status)
+   * });
    * ```
    */
-  async add(config: MCPDeploymentConfig): Promise<MCPDeployment> {
+  async add(config: MCPDeploymentConfig): Promise<MCPDeploymentClass> {
     const requestBody = {
       name: config.name,
       source: config.source,
@@ -229,12 +340,25 @@ export class MCPRegistry {
       autoDiscover: config.autoDiscover !== false, // Default true
     };
 
-    const response = await this.httpClient.post<MCPDeployment>(
-      '/api/v1/mcp/add',
-      requestBody
-    );
+    const response = await this.httpClient.post<{
+      deploymentId: string;
+      name: string;
+      status: 'pending' | 'deploying' | 'running' | 'failed';
+      estimatedTime?: string;
+      message?: string;
+    }>('/api/v1/mcp/add', requestBody);
 
-    return response.data;
+    // Return enhanced deployment object with waitUntilReady() method
+    return new MCPDeploymentClass(
+      {
+        deploymentId: response.data.deploymentId,
+        name: response.data.name,
+        status: response.data.status,
+        estimatedTime: response.data.estimatedTime,
+        message: response.data.message,
+      },
+      this
+    );
   }
 
   /**
@@ -244,7 +368,7 @@ export class MCPRegistry {
    * Supports STDIO, SSE, and HTTP transports.
    *
    * @param config - Standard MCP configuration
-   * @returns Deployment object for the first server in config
+   * @returns MCPDeploymentClass instance for the first server in config
    *
    * @example
    * ```typescript
@@ -260,9 +384,10 @@ export class MCPRegistry {
    * };
    *
    * const deployment = await mcp.addFromConfig(config);
+   * await deployment.waitUntilReady();
    * ```
    */
-  async addFromConfig(config: StandardMCPConfig): Promise<MCPDeployment> {
+  async addFromConfig(config: StandardMCPConfig): Promise<MCPDeploymentClass> {
     // Get first server from config
     const serverNames = Object.keys(config.mcpServers);
     if (serverNames.length === 0) {
@@ -320,6 +445,135 @@ export class MCPRegistry {
     );
 
     return response.data;
+  }
+
+  /**
+   * Wait for deployment to complete with polling
+   *
+   * Polls the deployment status endpoint until the deployment reaches a terminal
+   * state ('running' or 'failed'). Uses exponential backoff with jitter to avoid
+   * overwhelming the server.
+   *
+   * @param deploymentId - Deployment ID to wait for
+   * @param options - Wait options (timeout, polling interval, progress callback)
+   * @returns Final deployment status
+   * @throws {DeploymentTimeoutError} If deployment doesn't complete within timeout
+   * @throws {DeploymentFailedError} If deployment fails
+   *
+   * @example
+   * ```typescript
+   * const deployment = await mcp.add(config);
+   * const finalStatus = await mcp.waitForDeployment(
+   *   deployment.deploymentId,
+   *   {
+   *     timeout: 600000, // 10 minutes
+   *     onProgress: (status) => {
+   *       console.log(`Status: ${status.status}, Progress: ${status.progress}%`);
+   *     }
+   *   }
+   * );
+   * ```
+   */
+  async waitForDeployment(
+    deploymentId: string,
+    options?: WaitOptions
+  ): Promise<DeploymentStatus> {
+    const timeout = options?.timeout ?? 300000; // 5 minutes default
+    const pollInterval = options?.pollInterval ?? 2000; // 2 seconds default
+
+    return this._pollDeploymentStatus(
+      deploymentId,
+      timeout,
+      pollInterval,
+      options?.onProgress
+    );
+  }
+
+  /**
+   * Poll deployment status until ready or timeout (internal)
+   *
+   * Implements exponential backoff with jitter:
+   * - Initial interval: pollInterval (default 2s)
+   * - Max interval: 10s
+   * - Formula: min(currentInterval * 1.5 + random(0, 1000), 10000)
+   *
+   * @param deploymentId - Deployment ID to poll
+   * @param timeout - Maximum wait time in milliseconds
+   * @param pollInterval - Initial polling interval in milliseconds
+   * @param onProgress - Optional progress callback
+   * @returns Final deployment status
+   * @throws {DeploymentTimeoutError} If timeout is exceeded
+   * @throws {DeploymentFailedError} If deployment fails
+   * @internal
+   */
+  private async _pollDeploymentStatus(
+    deploymentId: string,
+    timeout: number,
+    pollInterval: number,
+    onProgress?: (status: DeploymentStatus) => void
+  ): Promise<DeploymentStatus> {
+    const startTime = Date.now();
+    let currentInterval = pollInterval;
+    let attempt = 0;
+
+    while (true) {
+      // Get current status
+      const status = await this.getDeploymentStatus(deploymentId);
+
+      // Call progress callback if provided
+      if (onProgress) {
+        onProgress(status);
+      }
+
+      // Check terminal states
+      if (status.status === 'running') {
+        return status;
+      }
+
+      if (status.status === 'failed') {
+        throw new DeploymentFailedError(
+          `Deployment ${deploymentId} failed: ${status.error?.message || 'Unknown error'}`,
+          deploymentId,
+          status.error?.message
+        );
+      }
+
+      // Check timeout
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= timeout) {
+        throw new DeploymentTimeoutError(
+          `Deployment ${deploymentId} timed out after ${timeout}ms (current status: ${status.status})`,
+          deploymentId,
+          timeout
+        );
+      }
+
+      // Calculate time remaining
+      const timeRemaining = timeout - elapsed;
+
+      // Don't sleep longer than remaining time
+      const sleepTime = Math.min(currentInterval, timeRemaining);
+
+      // Wait with exponential backoff + jitter
+      await this._sleep(sleepTime);
+
+      // Update interval with exponential backoff + jitter
+      // Formula: min(currentInterval * 1.5 + random(0, 1000), 10000)
+      currentInterval = Math.min(
+        currentInterval * 1.5 + Math.random() * 1000,
+        10000
+      );
+
+      attempt++;
+    }
+  }
+
+  /**
+   * Sleep utility for polling delays
+   * @internal
+   */
+  private _sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -395,5 +649,33 @@ export class MCPConfigError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'MCPConfigError';
+  }
+}
+
+/**
+ * Error thrown when deployment times out
+ */
+export class DeploymentTimeoutError extends Error {
+  constructor(
+    message: string,
+    public readonly deploymentId: string,
+    public readonly timeout: number
+  ) {
+    super(message);
+    this.name = 'DeploymentTimeoutError';
+  }
+}
+
+/**
+ * Error thrown when deployment fails
+ */
+export class DeploymentFailedError extends Error {
+  constructor(
+    message: string,
+    public readonly deploymentId: string,
+    public readonly reason?: string
+  ) {
+    super(message);
+    this.name = 'DeploymentFailedError';
   }
 }

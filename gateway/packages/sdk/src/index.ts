@@ -15,7 +15,15 @@ export type {
   InvokeOptions,
 } from './ToolsAPI';
 
-export { MCPRegistry, MCPServer, MCPToolError, MCPConfigError } from './MCPRegistry';
+export {
+  MCPRegistry,
+  MCPServer,
+  MCPDeploymentClass,
+  MCPToolError,
+  MCPConfigError,
+  DeploymentTimeoutError,
+  DeploymentFailedError,
+} from './MCPRegistry';
 
 // Type exports
 export type {
@@ -44,6 +52,8 @@ export type {
   StandardMCPConfig,
   MCPDeployment,
   MCPIntegration,
+  WaitOptions,
+  DeploymentData,
 } from './types';
 
 // Error exports

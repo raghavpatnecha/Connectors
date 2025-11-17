@@ -31,4 +31,6 @@ export type {
   StandardMCPConfig,
   MCPDeployment,
   MCPIntegration,
+  WaitOptions,
+  DeploymentData,
 } from './mcp';
