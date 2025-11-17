@@ -25,7 +25,15 @@
     "sdk:build": "npm run build --workspace=@connectors/sdk",
     "sdk:test": "npm run test --workspace=@connectors/sdk",
     "sdk:test:coverage": "npm run test:coverage --workspace=@connectors/sdk",
-    "sdk:publish": "npm publish --workspace=@connectors/sdk"
+    "sdk:publish": "npm publish --workspace=@connectors/sdk",
+    "langchain:build": "npm run build --workspace=@connectors/langchain",
+    "langchain:test": "npm run test --workspace=@connectors/langchain",
+    "langchain:test:coverage": "npm run test:coverage --workspace=@connectors/langchain",
+    "langchain:publish": "npm publish --workspace=@connectors/langchain",
+    "openai:build": "npm run build --workspace=@connectors/openai-agents",
+    "openai:test": "npm run test --workspace=@connectors/openai-agents",
+    "openai:test:coverage": "npm run test:coverage --workspace=@connectors/openai-agents",
+    "openai:publish": "npm publish --workspace=@connectors/openai-agents"
   },
   "keywords": [
     "mcp",
