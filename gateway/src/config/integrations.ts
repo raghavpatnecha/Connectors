@@ -9,6 +9,7 @@ import { NotionIntegration, createNotionIntegration } from '../integrations/noti
 import { GitHubIntegration, createGitHubIntegration } from '../integrations/github-integration';
 import { LinkedInIntegration, createLinkedInIntegration } from '../integrations/linkedin-integration';
 import { RedditIntegration, createRedditIntegration } from '../integrations/reddit-integration';
+import { ProductHuntIntegration, createProductHuntIntegration } from '../integrations/producthunt-integration';
 import { GmailIntegration, createGmailIntegration } from '../integrations/gmail-integration';
 import { DriveIntegration, createDriveIntegration } from '../integrations/drive-integration';
 import { CalendarIntegration, createCalendarIntegration } from '../integrations/calendar-integration';
@@ -82,6 +83,7 @@ export class IntegrationRegistry {
     this._registerGitHub();
     this._registerLinkedIn();
     this._registerReddit();
+    this._registerProductHunt();
     this._registerGmail();
     this._registerDrive();
     this._registerCalendar();
@@ -302,6 +304,33 @@ export class IntegrationRegistry {
     }
 
     logger.info('Registered Reddit integration', metadata);
+  }
+
+  /**
+   * Register Product Hunt integration
+   */
+  private _registerProductHunt(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'producthunt',
+      name: 'Product Hunt',
+      category: 'productivity',
+      description: 'Product Hunt integration for discovering products, makers, and community (11 tools)',
+      enabled: process.env.PRODUCTHUNT_ENABLED !== 'false',
+      serverUrl: process.env.PRODUCTHUNT_SERVER_URL || 'http://localhost:3140',
+      rateLimit: parseInt(process.env.PRODUCTHUNT_RATE_LIMIT || '100', 10),
+      requiresOAuth: false, // Uses API token
+      oauthProvider: undefined,
+      docsUrl: 'https://api.producthunt.com/v2/docs'
+    };
+
+    this._integrations.set('producthunt', metadata);
+
+    if (metadata.enabled) {
+      const instance = createProductHuntIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('producthunt', instance);
+    }
+
+    logger.info('Registered Product Hunt integration', metadata);
   }
 
   /**
