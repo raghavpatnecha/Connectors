@@ -452,3 +452,30 @@ export interface ComponentHealth {
   latency?: number;
   error?: string;
 }
+
+/**
+ * Authentication context attached to authenticated requests
+ */
+export interface AuthContext {
+  /** API key ID (for audit logging) */
+  apiKeyId: string;
+
+  /** Tenant ID associated with this API key */
+  tenantId: string;
+
+  /** Scopes/permissions granted to this API key */
+  scopes: string[];
+
+  /** Rate limit configuration for this tenant */
+  rateLimit: {
+    requestsPerSecond: number;
+    requestsPerMinute: number;
+  };
+
+  /** API key metadata */
+  metadata?: {
+    name?: string;
+    createdAt?: Date;
+    lastUsedAt?: Date;
+  };
+}

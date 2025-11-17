@@ -11,7 +11,7 @@
 
 ## 🚨 The Problem We Solve
 
-**Traditional MCP**: 500 integrations = 77,698 tokens → Context exhausted
+**Traditional MCP**: 368 tools across 15 integrations = 77,698 tokens → Context exhausted
 **Connectors**: Semantic routing = 759 tokens → **99% reduction**, $7.49M saved at 1M queries/month
 
 [Detailed analysis →](docs/ARCHITECTURE.md)

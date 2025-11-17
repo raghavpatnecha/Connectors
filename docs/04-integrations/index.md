@@ -1,6 +1,6 @@
 # Integration Documentation Index
 
-**Connectors Platform** - 500+ tools across multiple categories
+**Connectors Platform** - 368 tools across 15 integrations
 
 ---
 
@@ -105,7 +105,7 @@ Official Notion integration using @notionhq/client SDK. Provides comprehensive a
 ---
 
 ### Product Hunt
-**Status:** ✅ Complete | **Tools:** 3 | **Auth:** API Token
+**Status:** ✅ Complete | **Tools:** 11 | **Auth:** API Token
 
 Production-ready Product Hunt integration with API token authentication (simpler than OAuth). Provides access to posts, products, and discovery features via GraphQL API v2.
 

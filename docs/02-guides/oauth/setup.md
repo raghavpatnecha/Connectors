@@ -96,6 +96,10 @@ curl -X POST "http://localhost:3000/api/v1/oauth/authorize/github?tenant_id=tena
 
 ## API Endpoints
 
+**Note:** Individual MCP servers handle OAuth authorization flows on their own ports (e.g., GitHub on 3110, Drive on 3132). The gateway provides OAuth credential storage via:
+- `POST /api/v1/tenants/:tenantId/integrations/:integration/oauth-config`
+- `GET /api/v1/tenants/:tenantId/integrations/:integration/oauth-config`
+
 ```bash
 # OAuth Flow
 POST /api/v1/oauth/authorize/:integration?tenant_id={tenantId}

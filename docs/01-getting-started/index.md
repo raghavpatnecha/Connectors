@@ -6,7 +6,7 @@ Welcome to the **Connectors Platform** - the open-source integration platform fo
 
 ## What is Connectors Platform?
 
-The Connectors Platform enables AI agents to efficiently access **500+ integrations** (GitHub, Notion, Slack, Jira, AWS, etc.) while achieving **99% token reduction** through intelligent semantic routing.
+The Connectors Platform enables AI agents to efficiently access **368 tools across 15 integrations** (GitHub, Notion, Slack, Jira, AWS, etc.) while achieving **99% token reduction** through intelligent semantic routing.
 
 ### The Problem We Solve
 
@@ -21,7 +21,7 @@ The Connectors Platform enables AI agents to efficiently access **500+ integrati
 ## Key Features
 
 ### 🎯 99% Token Reduction
-- **Semantic routing**: FAISS finds relevant tools from 500+ options
+- **Semantic routing**: FAISS finds relevant tools from 368 tools
 - **Progressive loading**: 3-tier schema (minimal → medium → full)
 - **GraphRAG**: Intelligent suggestions via Neo4j
 - **Result**: 759 tokens vs 77,698 (99.02% reduction)
@@ -83,7 +83,7 @@ AI Agent → Gateway → Semantic Router → GraphRAG → OAuth Proxy → MCP Se
 
 ## Who Should Use This?
 
-**AI Agent Developers:** Access 500+ integrations without token bloat, no credential management
+**AI Agent Developers:** Access 368 tools across 15 integrations without token bloat, no credential management
 
 **Integration Providers:** Auto-generation from OpenAPI, official MCP protocol, <100ms performance
 

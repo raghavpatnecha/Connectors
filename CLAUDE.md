@@ -56,7 +56,7 @@ Context files for Claude to understand project state and implementation details:
 
 ## Project Overview
 
-**AI Agent Integration Platform** providing 500+ connectors with intelligent tool selection, achieving **95% token reduction** (1-3K tokens vs 250K traditional) through semantic routing, GraphRAG, and progressive loading.
+**AI Agent Integration Platform** providing 15 integrations with 368 tools, achieving **95% token reduction** (1-3K tokens vs 250K traditional) through semantic routing, GraphRAG, and progressive loading.
 
 **Core Objective:** Solve the MCP token bloat problem while enabling AI agents to efficiently use hundreds of tools simultaneously.
 
@@ -1021,7 +1021,7 @@ Refs: #123
 **Critical Metrics:**
 - Token Reduction: 95% (1-3K vs 250K)
 - Tool Selection Latency: <100ms
-- Integration Coverage: 500+ tools
+- Integration Coverage: 15 integrations, 368 tools
 - Uptime Target: 99.9%
 
 **Technology Stack:**

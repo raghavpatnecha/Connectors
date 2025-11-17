@@ -2,11 +2,11 @@
 
 ## System Overview
 
-The Connectors Platform is an AI Agent Integration Platform providing 500+ connectors with intelligent tool selection, achieving **95% token reduction** (1-3K tokens vs 250K traditional) through semantic routing, GraphRAG, and progressive loading.
+The Connectors Platform is an AI Agent Integration Platform providing 15 integrations with 368 tools, achieving **95% token reduction** (1-3K tokens vs 250K traditional) through semantic routing, GraphRAG, and progressive loading.
 
 ## Core Problem
 
-**MCP Token Bloat:** Traditional approaches load all 500 tools with full schemas (250K tokens), exhausting AI agent context windows and causing slow response times.
+**MCP Token Bloat:** Traditional approaches load all 368 tools with full schemas (250K tokens), exhausting AI agent context windows and causing slow response times.
 
 **Our Solution:** Intelligent tool selection that loads only relevant tools (5-10) with tiered schemas (1-3K tokens), enabling agents to work efficiently with hundreds of tools simultaneously.
 
@@ -132,8 +132,8 @@ User Query
 - **Details:** [gateway.md](./gateway.md)
 
 ### 6. MCP Servers
-- **Purpose:** Integration with 500+ external APIs
-- **Categories:** Code (50), Communication (30), PM (40), Cloud (80), Data (50)
+- **Purpose:** Integration with 15 integrations, 368 tools
+- **Categories:** Code, Communication, Productivity, Storage
 - **Generation:** Auto-generated from OpenAPI specs
 - **Details:** [../04-integrations/](../04-integrations/)
 
@@ -176,8 +176,8 @@ User Query
 ## Scalability
 
 ### Current Capacity
-- **Tools:** 500 (tested)
-- **Categories:** 10
+- **Tools:** 368 (15 integrations)
+- **Categories:** 4 (Code, Communication, Productivity, Storage)
 - **Concurrent Requests:** 1000 req/s
 - **Tool Relationships:** 500+
 

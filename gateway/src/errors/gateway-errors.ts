@@ -106,3 +106,48 @@ export class MCPError extends GatewayError {
     this.name = 'MCPError';
   }
 }
+
+export class InvalidRelationshipTypeError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly attemptedType: string
+  ) {
+    super(message);
+    this.name = 'InvalidRelationshipTypeError';
+  }
+}
+
+export class RateLimitExceededError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly scope: 'global' | 'tenant' | 'endpoint',
+    public readonly limit: number,
+    public readonly window: number,
+    public readonly resetAt: Date
+  ) {
+    super(message);
+    this.name = 'RateLimitExceededError';
+  }
+}
+
+export class AuthenticationError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly code: string,
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'AuthenticationError';
+  }
+}
+
+export class AuthorizationError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly context?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'AuthorizationError';
+  }
+}
