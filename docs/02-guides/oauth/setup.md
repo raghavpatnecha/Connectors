@@ -4,6 +4,46 @@ Quick start for OAuth credential management with HashiCorp Vault.
 
 ---
 
+## Understanding Tenant IDs
+
+**What is a Tenant ID?**
+A tenant ID is a unique identifier YOU create to isolate credentials and data for different users, organizations, or environments in the Connectors Platform.
+
+**Key Points:**
+- ✅ **Self-assigned** - You choose your own tenant ID (no registration needed)
+- ✅ **Naming rules** - Lowercase letters, numbers, and hyphens only (`^[a-z0-9-]+$`)
+- ✅ **Examples** - `my-company`, `acme-corp`, `dev`, `staging`, `production-001`
+- ✅ **Use case** - Multi-tenant SaaS (one ID per customer) or multi-environment (dev/staging/prod)
+
+**Choosing a Tenant ID:**
+
+```bash
+# For development/testing
+test-tenant
+dev
+local
+
+# For production (single organization)
+my-company
+acme-corp
+production
+
+# For multi-tenant SaaS (per customer)
+customer-123
+client-abc
+acme-corp
+
+# For multi-environment
+acme-dev
+acme-staging
+acme-prod
+```
+
+**Quick Start:**
+For this guide, we'll use `test-tenant` as the tenant ID. Replace it with your chosen ID in all examples below.
+
+---
+
 ## Quick Start (5 Minutes)
 
 ### 1. Start Vault
