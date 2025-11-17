@@ -268,6 +268,98 @@ interface MCPRegistry {
    * Check if integration is available
    */
   has(integration: string): Promise<boolean>;
+
+  /**
+   * Add custom MCP server (GitHub, STDIO, HTTP, Docker)
+   */
+  add(config: AddMCPServerConfig): Promise<MCPDeployment>;
+
+  /**
+   * Add multiple servers from MCP config file
+   */
+  addFromConfig(config: MCPConfigFile): Promise<MCPDeployment[]>;
+
+  /**
+   * Wait for deployment to complete
+   */
+  waitForDeployment(deploymentId: string): Promise<MCPDeployment>;
+
+  /**
+   * Get deployment status
+   */
+  getDeploymentStatus(deploymentId: string): Promise<DeploymentStatus>;
+
+  /**
+   * Remove custom MCP server
+   */
+  remove(name: string): Promise<void>;
+}
+
+interface AddMCPServerConfig {
+  name: string;
+  source: MCPSource;
+  category: string;
+  description?: string;
+  tenantId?: string;  // Optional: tenant-specific deployment
+}
+
+type MCPSource =
+  | GitHubMCPSource
+  | STDIOMCPSource
+  | HTTPMCPSource
+  | DockerMCPSource;
+
+interface GitHubMCPSource {
+  type: 'github';
+  url: string;           // GitHub repo URL
+  branch?: string;       // Default: 'main'
+  auth?: {
+    type: 'token';
+    token: string;
+  };
+}
+
+interface STDIOMCPSource {
+  type: 'stdio';
+  command: string;       // e.g., 'npx'
+  args: string[];        // e.g., ['-y', '@modelcontextprotocol/server-filesystem']
+  env?: Record<string, string>;
+}
+
+interface HTTPMCPSource {
+  type: 'http';
+  url: string;           // Remote MCP server URL
+  headers?: Record<string, string>;
+}
+
+interface DockerMCPSource {
+  type: 'docker';
+  image: string;         // Docker image name
+  env?: Record<string, string>;
+  port?: number;
+}
+
+interface MCPDeployment {
+  deploymentId: string;
+  name: string;
+  status: 'deploying' | 'running' | 'failed';
+  toolsDiscovered?: number;
+  endpoint?: string;
+  waitUntilReady(): Promise<void>;
+}
+
+interface DeploymentStatus {
+  deploymentId: string;
+  status: 'deploying' | 'running' | 'failed';
+  progress: {
+    clone?: 'pending' | 'in_progress' | 'completed' | 'failed';
+    build?: 'pending' | 'in_progress' | 'completed' | 'failed';
+    deploy?: 'pending' | 'in_progress' | 'completed' | 'failed';
+    discovery?: 'pending' | 'in_progress' | 'completed' | 'failed';
+    embeddings?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  };
+  toolsDiscovered?: number;
+  error?: string;
 }
 
 interface MCPServer {
@@ -303,12 +395,13 @@ interface MCPServerInfo {
 **Example Usage:**
 
 ```typescript
-// List all MCP servers
+// List all MCP servers (built-in + custom)
 const servers = await connectors.mcp.list();
 console.log(servers);
 // [
-//   { name: 'github', displayName: 'GitHub', category: 'code', toolCount: 50, ... },
-//   { name: 'notion', displayName: 'Notion', category: 'productivity', toolCount: 40, ... }
+//   { name: 'github', displayName: 'GitHub', category: 'code', toolCount: 50, source: 'built-in' },
+//   { name: 'notion', displayName: 'Notion', category: 'productivity', toolCount: 40, source: 'built-in' },
+//   { name: 'my-server', displayName: 'My Server', category: 'custom', toolCount: 12, source: 'github' }
 // ]
 
 // Get specific server
@@ -325,6 +418,77 @@ const pr = await github.call('createPullRequest', {
 // List server's tools
 const githubTools = await github.tools();
 console.log(`GitHub has ${githubTools.length} tools`);
+
+// ========================================
+// ADD CUSTOM MCP SERVERS
+// ========================================
+
+// 1. Add from GitHub URL
+const deployment = await connectors.mcp.add({
+  name: 'my-custom-server',
+  source: {
+    type: 'github',
+    url: 'https://github.com/username/my-mcp-server'
+  },
+  category: 'productivity',
+  description: 'My custom integration'
+});
+
+// Wait for deployment
+await deployment.waitUntilReady();
+console.log(`Deployed with ${deployment.toolsDiscovered} tools`);
+
+// 2. Add from STDIO (standard MCP config)
+await connectors.mcp.add({
+  name: 'filesystem',
+  source: {
+    type: 'stdio',
+    command: 'npx',
+    args: ['-y', '@modelcontextprotocol/server-filesystem'],
+    env: { ALLOWED_DIRS: '/home/user/projects' }
+  },
+  category: 'storage'
+});
+
+// 3. Add from remote HTTP
+await connectors.mcp.add({
+  name: 'github-remote',
+  source: {
+    type: 'http',
+    url: 'https://api.githubcopilot.com/mcp/',
+    headers: { 'Authorization': 'Bearer YOUR_TOKEN' }
+  },
+  category: 'code'
+});
+
+// 4. Import from MCP config file (bulk)
+const deployments = await connectors.mcp.addFromConfig({
+  mcpServers: {
+    'filesystem': {
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-filesystem'],
+      category: 'storage'
+    },
+    'brave-search': {
+      url: 'https://brave-search-mcp.example.com',
+      category: 'search'
+    }
+  }
+});
+
+console.log(`Deployed ${deployments.length} servers`);
+
+// 5. Use custom servers immediately
+const myServer = connectors.mcp.get('my-custom-server');
+const result = await myServer.call('customTool', { ... });
+
+// 6. Custom servers included in semantic search!
+const tools = await connectors.tools.select('use my custom server', {
+  integrations: ['my-custom-server']
+});
+
+// Remove custom server
+await connectors.mcp.remove('my-custom-server');
 ```
 
 ---
