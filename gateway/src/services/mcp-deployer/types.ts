@@ -134,3 +134,51 @@ export interface AddMCPServerResponse {
   status: DeploymentStatus;
   estimatedTime: string;
 }
+
+/**
+ * GitHub Service Types
+ */
+
+/**
+ * GitHub clone configuration
+ */
+export interface GitHubCloneConfig {
+  url: string;
+  branch?: string;
+  auth?: {
+    type: 'token';
+    token: string;
+  };
+  deploymentId: string;
+}
+
+/**
+ * Clone result
+ */
+export interface CloneResult {
+  repoPath: string;
+  commitHash: string;
+  branch: string;
+  size: number; // bytes
+}
+
+/**
+ * MCP server type detection result
+ */
+export interface MCPServerType {
+  type: 'node' | 'python' | 'docker' | 'unknown';
+  entrypoint?: string;
+  packageManager?: 'npm' | 'yarn' | 'pip' | 'poetry';
+}
+
+/**
+ * MCP server metadata extracted from repository
+ */
+export interface MCPMetadata {
+  name: string;
+  version?: string;
+  description?: string;
+  author?: string;
+  license?: string;
+  dependencies?: string[];
+}

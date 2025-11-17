@@ -7,6 +7,16 @@
 // Main client
 export { Connectors } from './Connectors';
 
+// API classes
+export { ToolsAPI } from './ToolsAPI';
+export type {
+  ToolSelectionOptions,
+  ToolListFilters,
+  InvokeOptions,
+} from './ToolsAPI';
+
+export { MCPRegistry, MCPServer, MCPToolError, MCPConfigError } from './MCPRegistry';
+
 // Type exports
 export type {
   // Config types
@@ -26,6 +36,14 @@ export type {
   MCPDeploymentRequest,
   DeploymentStatus,
   MCPServerListResponse,
+  GitHubSource,
+  STDIOSource,
+  HTTPSource,
+  DockerSource,
+  MCPDeploymentConfig,
+  StandardMCPConfig,
+  MCPDeployment,
+  MCPIntegration,
 } from './types';
 
 // Error exports

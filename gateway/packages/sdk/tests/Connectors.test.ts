@@ -246,20 +246,44 @@ describe('Connectors', () => {
   });
 
   describe('API interfaces', () => {
-    it('should throw error for tools API (not implemented)', () => {
+    it('should return tools API instance', () => {
       const connectors = new Connectors(validConfig);
 
-      expect(() => connectors.tools).toThrow(
-        'ToolsAPI not implemented yet'
-      );
+      const toolsAPI = connectors.tools;
+
+      expect(toolsAPI).toBeDefined();
+      expect(toolsAPI).toHaveProperty('select');
+      expect(toolsAPI).toHaveProperty('list');
+      expect(toolsAPI).toHaveProperty('invoke');
     });
 
-    it('should throw error for mcp API (not implemented)', () => {
+    it('should return same tools API instance on multiple accesses', () => {
       const connectors = new Connectors(validConfig);
 
-      expect(() => connectors.mcp).toThrow(
-        'MCPRegistry not implemented yet'
-      );
+      const toolsAPI1 = connectors.tools;
+      const toolsAPI2 = connectors.tools;
+
+      expect(toolsAPI1).toBe(toolsAPI2);
+    });
+
+    it('should return mcp API instance', () => {
+      const connectors = new Connectors(validConfig);
+
+      const mcpAPI = connectors.mcp;
+
+      expect(mcpAPI).toBeDefined();
+      expect(mcpAPI).toHaveProperty('get');
+      expect(mcpAPI).toHaveProperty('list');
+      expect(mcpAPI).toHaveProperty('add');
+    });
+
+    it('should return same mcp API instance on multiple accesses', () => {
+      const connectors = new Connectors(validConfig);
+
+      const mcpAPI1 = connectors.mcp;
+      const mcpAPI2 = connectors.mcp;
+
+      expect(mcpAPI1).toBe(mcpAPI2);
     });
 
     it('should throw error for oauth API (not implemented)', () => {

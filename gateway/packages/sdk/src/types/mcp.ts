@@ -159,3 +159,93 @@ export interface MCPServerListResponse {
   custom: number;
   builtin: number;
 }
+
+/**
+ * GitHub source configuration
+ */
+export interface GitHubSource {
+  type: 'github';
+  url: string;
+  ref?: string;
+  branch?: string;
+}
+
+/**
+ * STDIO source configuration
+ */
+export interface STDIOSource {
+  type: 'stdio';
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
+/**
+ * HTTP source configuration
+ */
+export interface HTTPSource {
+  type: 'http';
+  url: string;
+}
+
+/**
+ * Docker source configuration
+ */
+export interface DockerSource {
+  type: 'docker';
+  image: string;
+  tag?: string;
+}
+
+/**
+ * MCP deployment configuration
+ */
+export interface MCPDeploymentConfig {
+  name: string;
+  source: GitHubSource | STDIOSource | HTTPSource | DockerSource;
+  category: string;
+  description?: string;
+  tenantId?: string;
+  env?: Record<string, string>;
+  autoDiscover?: boolean;
+}
+
+/**
+ * Standard MCP server configuration (from mcp.json format)
+ */
+export interface StandardMCPConfig {
+  mcpServers: {
+    [name: string]: {
+      command?: string;
+      args?: string[];
+      env?: Record<string, string>;
+      url?: string;
+      transport?: 'stdio' | 'sse' | 'http';
+    };
+  };
+}
+
+/**
+ * MCP deployment response
+ */
+export interface MCPDeployment {
+  deploymentId: string;
+  name: string;
+  status: 'pending' | 'deploying' | 'running' | 'failed';
+  estimatedTime?: string;
+  message?: string;
+}
+
+/**
+ * MCP integration summary
+ */
+export interface MCPIntegration {
+  name: string;
+  category: string;
+  toolCount: number;
+  tools: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
+}

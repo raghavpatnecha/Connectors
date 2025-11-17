@@ -23,4 +23,12 @@ export type {
   MCPDeploymentRequest,
   DeploymentStatus,
   MCPServerListResponse,
+  GitHubSource,
+  STDIOSource,
+  HTTPSource,
+  DockerSource,
+  MCPDeploymentConfig,
+  StandardMCPConfig,
+  MCPDeployment,
+  MCPIntegration,
 } from './mcp';

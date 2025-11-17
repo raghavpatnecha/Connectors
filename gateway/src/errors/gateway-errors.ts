@@ -151,3 +151,52 @@ export class AuthorizationError extends GatewayError {
     this.name = 'AuthorizationError';
   }
 }
+
+/**
+ * MCP Deployer Errors
+ */
+export class GitCloneError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly url: string,
+    public readonly reason: 'not_found' | 'auth_failure' | 'timeout' | 'network_error' | 'unknown',
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'GitCloneError';
+  }
+}
+
+export class DependencyInstallError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly packageManager: string,
+    public readonly repoPath: string,
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'DependencyInstallError';
+  }
+}
+
+export class InvalidMCPServerError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly repoPath: string,
+    public readonly reason: string
+  ) {
+    super(message);
+    this.name = 'InvalidMCPServerError';
+  }
+}
+
+export class DiskQuotaError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly required: number,
+    public readonly available: number
+  ) {
+    super(message);
+    this.name = 'DiskQuotaError';
+  }
+}

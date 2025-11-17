@@ -5,6 +5,8 @@
 import { HTTPClient } from './utils/http-client';
 import { validateConfig } from './utils/validation';
 import type { ConnectorsConfig, HealthStatus } from './types/config';
+import { ToolsAPI as ToolsAPIImpl } from './ToolsAPI';
+import { MCPRegistry as MCPRegistryImpl } from './MCPRegistry';
 
 /**
  * Placeholder interfaces for Wave 2 implementation
@@ -13,12 +15,6 @@ export interface ToolsAPI {
   select: (query: string, options?: unknown) => Promise<unknown>;
   list: (options?: unknown) => Promise<unknown>;
   invoke: (toolId: string, parameters: unknown) => Promise<unknown>;
-}
-
-export interface MCPRegistry {
-  get: (name: string) => unknown;
-  list: () => Promise<unknown>;
-  add: (request: unknown) => Promise<unknown>;
 }
 
 export interface OAuthManager {
@@ -56,6 +52,8 @@ export class Connectors {
   private readonly _tenantId?: string;
   private readonly _httpClient: HTTPClient;
   private readonly _config: ConnectorsConfig;
+  private _toolsAPI?: ToolsAPIImpl;
+  private _mcpRegistry?: MCPRegistryImpl;
 
   /**
    * Create a new Connectors SDK client
@@ -133,22 +131,22 @@ export class Connectors {
 
   /**
    * Tools API - select, list, and invoke tools
-   * @throws {Error} Not implemented in Wave 1
    */
-  get tools(): ToolsAPI {
-    throw new Error(
-      'ToolsAPI not implemented yet. This will be available in Wave 2 of the SDK implementation.'
-    );
+  get tools(): ToolsAPIImpl {
+    if (!this._toolsAPI) {
+      this._toolsAPI = new ToolsAPIImpl(this._httpClient, this._config);
+    }
+    return this._toolsAPI;
   }
 
   /**
    * MCP Registry - manage MCP servers
-   * @throws {Error} Not implemented in Wave 1
    */
-  get mcp(): MCPRegistry {
-    throw new Error(
-      'MCPRegistry not implemented yet. This will be available in Wave 2 of the SDK implementation.'
-    );
+  get mcp(): MCPRegistryImpl {
+    if (!this._mcpRegistry) {
+      this._mcpRegistry = new MCPRegistryImpl(this._httpClient, this._config);
+    }
+    return this._mcpRegistry;
   }
 
   /**
