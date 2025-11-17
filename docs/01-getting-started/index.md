@@ -6,7 +6,7 @@ Welcome to the **Connectors Platform** - the open-source integration platform fo
 
 ## What is Connectors Platform?
 
-The Connectors Platform enables AI agents to efficiently access **368 tools across 14 MCP servers** (GitHub, Google Workspace, LinkedIn, Reddit, Product Hunt) while achieving **99% token reduction** through intelligent semantic routing.
+The Connectors Platform enables AI agents to efficiently access **368 tools across 15 MCP servers** (GitHub, Google Workspace, LinkedIn, Reddit, Notion, Product Hunt) while achieving **99% token reduction** through intelligent semantic routing.
 
 ### The Problem We Solve
 
@@ -26,14 +26,18 @@ The Connectors Platform enables AI agents to efficiently access **368 tools acro
 - **GraphRAG**: Intelligent suggestions via Neo4j
 - **Result**: 759 tokens vs 77,698 (99.02% reduction)
 
-### 🔌 14 MCP Servers Operational
+### 🔌 15 MCP Servers Operational
 - ✅ **Code** - GitHub (repository management, issues, PRs, actions)
 - ✅ **Communication** - Gmail, LinkedIn, Reddit, Google Chat (email, social, messaging)
 - ✅ **Documents** - Google Docs, Sheets, Slides (document creation and editing)
-- ✅ **Productivity** - Google Calendar, Tasks, Forms, Product Hunt (scheduling, task management)
+- ✅ **Productivity** - Google Calendar, Tasks, Forms, Notion, Product Hunt (scheduling, task management, workspace collaboration)
 - ✅ **Search** - Google Search (web search and information retrieval)
 - ✅ **Storage** - Google Drive (file storage and management)
-- **Total**: 368 tools across 14 servers
+- **Total**: 368 tools across 15 servers
+
+**Integration Types:**
+- **Custom-Built**: 14 MCP servers (TypeScript + FastMCP, auto-generated from OpenAPI)
+- **Official Remote**: 1 server (Notion - using official `notionhq/notion-mcp-server`)
 
 ### 🔐 Multi-Tenant OAuth
 - Per-tenant encryption via Vault
@@ -72,12 +76,12 @@ AI Agent → Gateway → Semantic Router → GraphRAG → OAuth Proxy → MCP Se
 |--------|--------|----------|
 | Token Reduction | 95% | **99.02%** |
 | Latency | <100ms | **1ms** |
-| MCP Servers | 4 | **14** |
+| MCP Servers | 4 | **15** |
 | Security | Basic | **Production-grade** |
 
 **Deliverables:**
 - 50,000+ lines production code
-- 14 MCP servers operational (368 tools)
+- 15 MCP servers operational (14 custom-built + 1 official remote, 368 tools total)
 - Multi-tenant OAuth (2,000+ lines)
 - Production security (API auth, rate limiting, Cypher injection prevention)
 
@@ -85,7 +89,7 @@ AI Agent → Gateway → Semantic Router → GraphRAG → OAuth Proxy → MCP Se
 
 ## Who Should Use This?
 
-**AI Agent Developers:** Access 368 tools across 14 MCP servers without token bloat, no credential management
+**AI Agent Developers:** Access 368 tools across 15 MCP servers without token bloat, no credential management
 
 **Integration Providers:** Auto-generation from OpenAPI, official MCP protocol, <100ms performance
 

@@ -1,6 +1,32 @@
 # Integration Documentation Index
 
-**Connectors Platform** - 368 tools across 15 integrations
+**Connectors Platform** - 368 tools across 15 MCP servers
+
+---
+
+## Integration Architecture Types
+
+The Connectors Platform supports three types of integrations to maximize flexibility:
+
+### 1. **Custom-Built MCP Servers** (14 servers)
+Built in-house using TypeScript + FastMCP framework, auto-generated from OpenAPI specifications.
+
+**Location:** `integrations/*/` directories
+**Examples:** GitHub, Google Workspace (10 services), LinkedIn, Reddit
+**Advantages:** Full control, optimized for our gateway, consistent patterns
+
+### 2. **Official Remote MCP Servers** (1 server)
+Third-party official MCP implementations maintained by service providers.
+
+**Example:** Notion (using `notionhq/notion-mcp-server:latest`)
+**Location:** External Docker image
+**Advantages:** Official support, automatic updates, reduced maintenance
+
+### 3. **Direct API Integrations**
+Lightweight integrations calling APIs directly without MCP protocol overhead.
+
+**Example:** Product Hunt (GraphQL API)
+**Use Case:** Simple APIs with few endpoints
 
 ---
 
@@ -8,14 +34,16 @@
 
 ### By Category
 
-- [Communication](#communication) - 2 integrations
-- [Code](#code) - 1 integration
-- [Productivity](#productivity) - 12 integrations (Notion, Product Hunt + 10 Google Workspace)
-- [Storage](#storage) - Coming soon
+- [Communication](#communication) - 4 servers (Gmail, LinkedIn, Reddit, Google Chat)
+- [Code](#code) - 1 server (GitHub)
+- [Productivity](#productivity) - 5 servers (Notion, Product Hunt + 3 Google Workspace)
+- [Documents](#documents) - 3 servers (Google Docs, Sheets, Slides)
+- [Search](#search) - 1 server (Google Search)
+- [Storage](#storage) - 1 server (Google Drive)
 
 ### By Status
 
-- ✅ **Production Ready:** LinkedIn, Reddit, GitHub, Notion, Product Hunt, Google Workspace (10 services)
+- ✅ **Production Ready:** All 15 servers operational (GitHub, LinkedIn, Reddit, Notion, Product Hunt, Google Workspace 10 services)
 - 🚧 **In Development:** Slack
 - 📋 **Planned:** Dropbox, OneDrive, Salesforce
 
@@ -300,6 +328,10 @@ See [Development Guidelines](/CLAUDE.md) for details.
 
 ---
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 **Platform Version:** 1.0.0
-**Total Integrations:** 15 complete (LinkedIn, Reddit, GitHub, Notion, Product Hunt + 10 Google Workspace services) | 368 total tools
+**Total:** 15 MCP servers complete (14 custom-built + 1 official remote) | 368 total tools
+
+**Architecture Breakdown:**
+- Custom-Built MCP Servers: GitHub, LinkedIn, Reddit, Gmail, Drive, Calendar, Tasks, Docs, Sheets, Slides, Forms, Chat, Google Search, Product Hunt (14)
+- Official Remote Server: Notion (1)

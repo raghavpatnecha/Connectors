@@ -1,7 +1,7 @@
 # Connectors - AI Agent Integration Platform
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![MCP Servers: 14 Operational](https://img.shields.io/badge/MCP%20Servers-14%20Operational-brightgreen.svg)](integrations/)
+[![MCP Servers: 15 Operational](https://img.shields.io/badge/MCP%20Servers-15%20Operational-brightgreen.svg)](integrations/)
 [![Token Reduction: 99.02%](https://img.shields.io/badge/Token%20Reduction-99.02%25-success.svg)](#-the-problem-we-solve)
 [![Tools: 368 Total](https://img.shields.io/badge/Tools-368%20Total-blue.svg)](docs/04-integrations/)
 
@@ -11,7 +11,7 @@
 
 ## 🚨 The Problem We Solve
 
-**Traditional MCP**: 368 tools across 14 integrations = 77,698 tokens → Context exhausted
+**Traditional MCP**: 368 tools across 15 integrations = 77,698 tokens → Context exhausted
 **Connectors**: Semantic routing = 759 tokens → **99% reduction**, $7.49M saved at 1M queries/month
 
 [Detailed analysis →](docs/03-architecture/)
@@ -21,8 +21,8 @@
 ## ✨ Key Features
 
 - **99% Token Reduction** - Semantic routing: 759 tokens vs 77,698 (FAISS vector search)
-- **14 MCP Servers** - Production-ready connectors across code, communication, productivity, documents, search, and storage - [All integrations →](docs/04-integrations/)
-- **368 Tools** - Comprehensive coverage of GitHub, Google Workspace, LinkedIn, Reddit, and Product Hunt APIs
+- **15 MCP Servers** - Production-ready connectors across code, communication, productivity, documents, search, and storage - [All integrations →](docs/04-integrations/)
+- **368 Tools** - Comprehensive coverage of GitHub, Google Workspace, LinkedIn, Reddit, Notion, and Product Hunt APIs
 - **Enterprise OAuth** - Per-tenant Vault encryption, auto-refresh, multi-tenant isolation
 - **GraphRAG Discovery** - Neo4j-powered tool suggestions, <1ms selection
 - **Production Ready** - Docker + K8s, API authentication, rate limiting, comprehensive security
@@ -55,11 +55,26 @@ curl -X POST http://localhost:3000/api/v1/tools/select \
 | **Code** | GitHub | Repository management, issues, pull requests, actions |
 | **Communication** | Gmail, LinkedIn, Reddit, Google Chat | Email, social media, messaging |
 | **Documents** | Google Docs, Google Sheets, Google Slides | Document creation and editing |
-| **Productivity** | Google Calendar, Google Tasks, Google Forms, Product Hunt | Scheduling, task management, product discovery |
+| **Productivity** | Google Calendar, Google Tasks, Google Forms, Notion, Product Hunt | Scheduling, task management, workspace collaboration, product discovery |
 | **Search** | Google Search | Web search and information retrieval |
 | **Storage** | Google Drive | File storage and management |
 
-**Total: 14 MCP Servers, 368 Tools** - [Detailed tool breakdown →](docs/04-integrations/)
+**Total: 15 MCP Servers, 368 Tools** - [Detailed tool breakdown →](docs/04-integrations/)
+
+### Integration Architecture Types
+
+**Custom-Built MCP Servers** (14 servers)
+- Built using TypeScript + FastMCP
+- Auto-generated from OpenAPI specs
+- Source: `integrations/*/` directories
+- Examples: GitHub, Google Workspace (10 services), LinkedIn, Reddit
+
+**Official Remote MCP Server** (1 server)
+- Notion: Using official `notionhq/notion-mcp-server:latest`
+- Maintained by Notion team
+- Connected via Docker container
+
+**Note:** Product Hunt uses direct API integration pattern for lightweight access.
 
 ## 📊 Performance & Security
 
@@ -106,7 +121,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## 📈 Roadmap
 
-✅ **Phase 1** (Complete): Gateway, OAuth, 14 MCP servers, 99% token reduction, production security
+✅ **Phase 1** (Complete): Gateway, OAuth, 15 MCP servers, 99% token reduction, production security
 🚧 **Phase 2**: Additional integrations (Slack, Dropbox, Salesforce), enhanced monitoring
 📋 **Phase 3+**: Enterprise features, public marketplace, community contributions
 
@@ -123,7 +138,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 ## 🌟 Why Connectors?
 
 **AI Agents**: 99% token reduction • Semantic discovery • GraphRAG suggestions
-**MCP Standard**: 14 production servers • 368 tools • OpenAPI auto-generation
+**MCP Standard**: 15 production servers • 368 tools • Custom-built + official remote servers
 **Enterprise Ready**: Self-hosted • Multi-tenant OAuth • Kubernetes-native • Production security
 
 ---

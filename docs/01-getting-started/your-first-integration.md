@@ -206,7 +206,7 @@ from langchain.tools import Tool
 from connectors_client import ConnectorsClient
 
 client = ConnectorsClient(base_url='http://localhost:3000', tenant_id='my-team')
-tool = Tool(name="Connectors", func=lambda q: client.select_tools(q), description="368 tools across 14 MCP servers")
+tool = Tool(name="Connectors", func=lambda q: client.select_tools(q), description="368 tools across 15 MCP servers")
 ```
 
 ---
