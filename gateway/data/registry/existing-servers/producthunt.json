@@ -1,0 +1,114 @@
+{
+  "id": "producthunt-unified",
+  "name": "Product Hunt",
+  "description": "Product Hunt integration for discovering and tracking products",
+  "category": "productivity",
+  "version": "1.0.0",
+  "status": "active",
+  "authType": "api_token",
+  "baseUrl": "http://mcp-producthunt:3000",
+  "capabilities": {
+    "posts": true,
+    "comments": true,
+    "collections": true,
+    "topics": true,
+    "users": true,
+    "search": true
+  },
+  "tools": [
+    {
+      "name": "producthunt_get_post_details",
+      "description": "Get detailed information about a specific Product Hunt post",
+      "category": "posts",
+      "complexity": 50,
+      "keywords": ["product hunt", "post", "details", "product", "launch"]
+    },
+    {
+      "name": "producthunt_get_posts",
+      "description": "Get a list of Product Hunt posts with filters",
+      "category": "posts",
+      "complexity": 100,
+      "keywords": ["product hunt", "posts", "search", "filter", "trending", "featured"]
+    },
+    {
+      "name": "producthunt_get_topic",
+      "description": "Get detailed information about a specific Product Hunt topic",
+      "category": "topics",
+      "complexity": 40,
+      "keywords": ["product hunt", "topic", "category", "details"]
+    },
+    {
+      "name": "producthunt_search_topics",
+      "description": "Search for Product Hunt topics with filters",
+      "category": "topics",
+      "complexity": 80,
+      "keywords": ["product hunt", "topics", "search", "filter", "categories"]
+    },
+    {
+      "name": "producthunt_get_user",
+      "description": "Get user information by ID or username with optional posts",
+      "category": "users",
+      "complexity": 60,
+      "keywords": ["product hunt", "user", "profile", "maker", "details"]
+    },
+    {
+      "name": "producthunt_get_viewer",
+      "description": "Get authenticated user information",
+      "category": "users",
+      "complexity": 30,
+      "keywords": ["product hunt", "viewer", "authenticated", "current user", "me"]
+    },
+    {
+      "name": "producthunt_get_comment",
+      "description": "Get detailed information about a specific comment",
+      "category": "comments",
+      "complexity": 40,
+      "keywords": ["product hunt", "comment", "discussion", "feedback"]
+    },
+    {
+      "name": "producthunt_get_post_comments",
+      "description": "Get comments for a specific post with pagination",
+      "category": "comments",
+      "complexity": 70,
+      "keywords": ["product hunt", "comments", "discussion", "post", "feedback"]
+    },
+    {
+      "name": "producthunt_get_collection",
+      "description": "Get detailed information about a specific collection",
+      "category": "collections",
+      "complexity": 50,
+      "keywords": ["product hunt", "collection", "curated", "list"]
+    },
+    {
+      "name": "producthunt_get_collections",
+      "description": "Get a list of collections with filters",
+      "category": "collections",
+      "complexity": 90,
+      "keywords": ["product hunt", "collections", "curated", "lists", "filter"]
+    },
+    {
+      "name": "producthunt_check_status",
+      "description": "Check Product Hunt MCP server status and API connectivity",
+      "category": "server",
+      "complexity": 10,
+      "keywords": ["status", "health", "check", "api", "connectivity"]
+    }
+  ],
+  "rateLimits": {
+    "perHour": 6250,
+    "type": "complexity"
+  },
+  "metadata": {
+    "icon": "🚀",
+    "color": "#DA552F",
+    "website": "https://www.producthunt.com",
+    "apiDocs": "https://www.producthunt.com/v2/docs",
+    "tenantBased": true,
+    "requiresVault": true
+  },
+  "deployment": {
+    "dockerCompose": true,
+    "kubernetes": false,
+    "standalone": true
+  }
+}
