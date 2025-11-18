@@ -1,0 +1,29 @@
+# Kubernetes Service Template for MCP Servers
+# This is a reference template - actual services are generated dynamically
+# by K8sDeployer class
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-{{deploymentId}}-svc
+  namespace: mcp-servers
+  labels:
+    app: mcp-server
+    deployment-id: {{deploymentId}}
+    integration: {{name}}
+spec:
+  # Selector to match pods
+  selector:
+    app: mcp-server
+    deployment-id: {{deploymentId}}
+
+  # Port mapping
+  ports:
+  - protocol: TCP
+    port: 80           # Service port (external)
+    targetPort: 3000   # Container port (internal)
+    name: http
+
+  # ClusterIP for internal access only
+  # Gateway will route requests to: http://mcp-{deploymentId}-svc.mcp-servers.svc.cluster.local
+  type: ClusterIP

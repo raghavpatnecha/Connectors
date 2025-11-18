@@ -151,3 +151,111 @@ export class AuthorizationError extends GatewayError {
     this.name = 'AuthorizationError';
   }
 }
+
+/**
+ * MCP Deployer Errors
+ */
+export class GitCloneError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly url: string,
+    public readonly reason: 'not_found' | 'auth_failure' | 'timeout' | 'network_error' | 'unknown',
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'GitCloneError';
+  }
+}
+
+export class DependencyInstallError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly packageManager: string,
+    public readonly repoPath: string,
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'DependencyInstallError';
+  }
+}
+
+export class InvalidMCPServerError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly repoPath: string,
+    public readonly reason: string
+  ) {
+    super(message);
+    this.name = 'InvalidMCPServerError';
+  }
+}
+
+export class DiskQuotaError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly required: number,
+    public readonly available: number
+  ) {
+    super(message);
+    this.name = 'DiskQuotaError';
+  }
+}
+
+export class DockerBuildError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly deploymentId: string,
+    public readonly reason: 'connection_failed' | 'build_failed' | 'execution_failed' | 'timeout' | 'invalid_type' | 'unsupported_type' | 'dockerfile_generation_failed' | 'unknown',
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'DockerBuildError';
+  }
+}
+
+export class ImagePushError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly imageTag: string,
+    public readonly registry: string,
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'ImagePushError';
+  }
+}
+
+/**
+ * Kubernetes Deployment Errors
+ */
+export class K8sDeploymentError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly deploymentId: string,
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'K8sDeploymentError';
+  }
+}
+
+export class PodNotReadyError extends GatewayError {
+  constructor(
+    message: string,
+    public readonly deploymentName: string,
+    public readonly reason: 'timeout' | 'failed' | 'image_pull_error' | 'crash_loop'
+  ) {
+    super(message);
+    this.name = 'PodNotReadyError';
+  }
+}
+
+export class K8sConnectionError extends GatewayError {
+  constructor(
+    message: string,
+    cause?: Error
+  ) {
+    super(message, cause);
+    this.name = 'K8sConnectionError';
+  }
+}

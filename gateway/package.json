@@ -4,6 +4,9 @@
   "description": "AI Agent Integration Platform Gateway with Semantic Routing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "ts-node-dev --respawn src/server.ts",
@@ -18,7 +21,24 @@
     "benchmark": "ts-node scripts/benchmark-token-reduction.ts",
     "benchmark:verbose": "NODE_ENV=development ts-node scripts/benchmark-token-reduction.ts",
     "generate-embeddings": "ts-node scripts/generate-embeddings-demo.ts",
-    "generate-embeddings:production": "ts-node scripts/generate-embeddings-standalone.ts"
+    "generate-embeddings:production": "ts-node scripts/generate-embeddings-standalone.ts",
+    "sdk:build": "npm run build --workspace=@connectors/sdk",
+    "sdk:test": "npm run test --workspace=@connectors/sdk",
+    "sdk:test:coverage": "npm run test:coverage --workspace=@connectors/sdk",
+    "sdk:publish": "npm publish --workspace=@connectors/sdk",
+    "langchain:build": "npm run build --workspace=@connectors/langchain",
+    "langchain:test": "npm run test --workspace=@connectors/langchain",
+    "langchain:test:coverage": "npm run test:coverage --workspace=@connectors/langchain",
+    "langchain:publish": "npm publish --workspace=@connectors/langchain",
+    "openai:build": "npm run build --workspace=@connectors/openai-agents",
+    "openai:test": "npm run test --workspace=@connectors/openai-agents",
+    "openai:test:coverage": "npm run test:coverage --workspace=@connectors/openai-agents",
+    "openai:publish": "npm publish --workspace=@connectors/openai-agents",
+    "cli:build": "npm run build --workspace=@connectors/cli",
+    "cli:test": "npm run test --workspace=@connectors/cli",
+    "cli:test:coverage": "npm run test:coverage --workspace=@connectors/cli",
+    "cli:link": "npm link --workspace=@connectors/cli",
+    "cli:publish": "npm publish --workspace=@connectors/cli"
   },
   "keywords": [
     "mcp",
@@ -31,10 +51,12 @@
   "author": "Connectors Platform Team",
   "license": "MIT",
   "dependencies": {
+    "@kubernetes/client-node": "^0.21.0",
     "@modelcontextprotocol/sdk": "^1.21.1",
     "axios": "^1.13.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
+    "dockerode": "^4.0.2",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-rate-limit": "^7.1.5",
@@ -46,11 +68,13 @@
     "openai": "^4.47.1",
     "rate-limit-redis": "^4.2.0",
     "redis": "^4.6.13",
+    "simple-git": "^3.25.0",
     "winston": "^3.13.0"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
+    "@types/dockerode": "^3.3.31",
     "@types/express": "^5.0.5",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.7",
@@ -61,6 +85,8 @@
     "@typescript-eslint/parser": "^7.7.0",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
+    "nock": "^13.5.4",
+    "simple-git": "^3.25.0",
     "supertest": "^7.1.4",
     "ts-jest": "^29.1.2",
     "ts-node-dev": "^2.0.0",

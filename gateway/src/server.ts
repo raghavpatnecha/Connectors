@@ -24,6 +24,8 @@ import { logger } from './logging/logger';
 import { ToolSelectionError, OAuthError } from './errors/gateway-errors';
 import type { QueryContext } from './types/routing.types';
 import { createTenantOAuthRouter } from './routes/tenant-oauth';
+import { createMCPManagementRouter } from './routes/mcp-management';
+import { MCPDeployer } from './services/mcp-deployer';
 import {
   initializeRateLimitRedis,
   closeRateLimitRedis,
@@ -72,6 +74,7 @@ export class MCPGatewayServer {
   private readonly oauthProxy: OAuthProxy;
   private readonly integrationRegistry: IntegrationRegistry;
   private readonly vaultClient: VaultClient;
+  private readonly mcpDeployer: MCPDeployer;
 
   constructor() {
     this.app = express();
@@ -113,6 +116,9 @@ export class MCPGatewayServer {
       this.oauthProxy,
       this.semanticRouter
     );
+
+    // Initialize MCP deployer service
+    this.mcpDeployer = new MCPDeployer();
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -223,6 +229,10 @@ export class MCPGatewayServer {
     // Mount tenant OAuth configuration routes (use single VaultClient instance)
     const tenantOAuthRouter = createTenantOAuthRouter(this.vaultClient);
     apiV1.use('/', tenantOAuthRouter);
+
+    // Mount MCP management routes
+    const mcpManagementRouter = createMCPManagementRouter(this.mcpDeployer);
+    apiV1.use('/mcp', mcpManagementRouter);
 
     this.app.use('/api/v1', apiV1);
 
@@ -558,6 +568,9 @@ export class MCPGatewayServer {
       // Initialize all integrations (GitHub, Notion, LinkedIn, Reddit)
       await this.integrationRegistry.initialize();
 
+      // Initialize MCP deployer service
+      await this.mcpDeployer.initialize();
+
       // Start HTTP server
       this.app.listen(PORT, () => {
         const rateLimitConfig = getRateLimitConfig();
@@ -595,6 +608,7 @@ export class MCPGatewayServer {
     await this.integrationRegistry.close();
     await this.semanticRouter.close();
     await this.oauthProxy.close();
+    await this.mcpDeployer.close();
 
     // Close rate limiting Redis connection
     await closeRateLimitRedis();

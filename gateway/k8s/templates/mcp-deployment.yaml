@@ -1,0 +1,89 @@
+# Kubernetes Deployment Template for MCP Servers
+# This is a reference template - actual deployments are generated dynamically
+# by K8sDeployer class
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-{{deploymentId}}
+  namespace: mcp-servers
+  labels:
+    app: mcp-server
+    deployment-id: {{deploymentId}}
+    integration: {{name}}
+  annotations:
+    mcp.version: {{version}}
+    mcp.description: {{description}}
+spec:
+  replicas: 1  # Start with 1, auto-scale later with HPA
+  selector:
+    matchLabels:
+      app: mcp-server
+      deployment-id: {{deploymentId}}
+  template:
+    metadata:
+      labels:
+        app: mcp-server
+        deployment-id: {{deploymentId}}
+        integration: {{name}}
+    spec:
+      # Security context for the pod
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+
+      containers:
+      - name: mcp-server
+        image: {{imageTag}}
+
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+
+        # Environment variables
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "3000"
+        # Additional env vars from config...
+
+        # Resource limits to prevent resource exhaustion
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Liveness probe - restart if unhealthy
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Readiness probe - don't route traffic until ready
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        # Security context for the container
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+
+      # Always restart on failure
+      restartPolicy: Always
