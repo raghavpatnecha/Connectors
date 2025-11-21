@@ -28,6 +28,13 @@ const logger = createLogger({
 });
 
 /**
+ * SECURITY: Whitelist of valid OAuth token types
+ * Prevents token type injection attacks
+ */
+const VALID_TOKEN_TYPES = new Set(['Bearer', 'bearer', 'MAC', 'mac']);
+const DEFAULT_TOKEN_TYPE = 'Bearer';
+
+/**
  * OAuthProxy provides transparent OAuth credential injection for MCP requests
  *
  * Features:
@@ -158,10 +165,12 @@ export class OAuthProxy {
         );
       }
 
-      // 2. Inject auth header
+      // 2. Validate and inject auth header
+      // SECURITY FIX: Validate token type to prevent injection attacks
+      const validatedTokenType = this._validateTokenType(creds.tokenType, integration, tenantId);
       const headers = {
         ...req.headers,
-        'Authorization': `${creds.tokenType} ${creds.accessToken}`
+        'Authorization': `${validatedTokenType} ${creds.accessToken}`
       };
 
       // 3. Forward to MCP server
@@ -507,6 +516,49 @@ export class OAuthProxy {
       logger.error('OAuthProxy health check failed', { error });
       return false;
     }
+  }
+
+  /**
+   * Validate and normalize token type to prevent injection
+   * SECURITY FIX: Prevents OAuth token type injection attacks
+   *
+   * @param tokenType - Token type from credentials
+   * @param integration - Integration name for logging
+   * @param tenantId - Tenant ID for logging
+   * @returns Normalized token type
+   * @throws OAuthError if invalid
+   */
+  private _validateTokenType(
+    tokenType: string | undefined,
+    integration: string,
+    tenantId: string
+  ): string {
+    // Default to Bearer if not specified
+    if (!tokenType) {
+      return DEFAULT_TOKEN_TYPE;
+    }
+
+    // Normalize to title case for comparison (Bearer, MAC, etc.)
+    const normalized = tokenType.charAt(0).toUpperCase() + tokenType.slice(1).toLowerCase();
+
+    // Validate against whitelist
+    if (!VALID_TOKEN_TYPES.has(normalized) && !VALID_TOKEN_TYPES.has(tokenType)) {
+      logger.error('Invalid token type attempted', {
+        tokenType,
+        normalized,
+        integration,
+        tenantId,
+        allowed: Array.from(VALID_TOKEN_TYPES),
+      });
+
+      throw new OAuthError(
+        `Invalid token type: ${tokenType}. Allowed types: ${Array.from(VALID_TOKEN_TYPES).join(', ')}`,
+        integration,
+        tenantId
+      );
+    }
+
+    return normalized;
   }
 
   /**

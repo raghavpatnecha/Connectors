@@ -20,8 +20,9 @@
  */
 
 import { promises as fs } from 'fs';
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import * as path from 'path';
+import { logger } from '../logging/logger';
 
 // =============================================================================
 // Type Definitions
@@ -191,22 +192,45 @@ export class TenantOAuthParser {
 
   /**
    * Load YAML file using yq (ensures consistent parsing with bash scripts).
+   * SECURITY FIX: Uses spawnSync with array arguments to prevent command injection
    */
   private async _loadYaml(configPath: string): Promise<TenantOAuthConfig | null> {
     try {
-      // Use yq to convert YAML to JSON (same tool used in bash scripts)
-      const jsonStr = execSync(`yq eval -o=json '.' "${configPath}"`, {
+      // SECURITY: Use spawn with array args to prevent command injection
+      // Previously used execSync with string interpolation which was vulnerable
+      const result = spawnSync('yq', ['eval', '-o=json', '.', configPath], {
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+        shell: false, // Explicitly disable shell to prevent injection
       });
 
-      return JSON.parse(jsonStr) as TenantOAuthConfig;
+      // Check for errors
+      if (result.error) {
+        logger.warn('yq command error', {
+          error: result.error.message,
+          configPath,
+        });
+        throw result.error;
+      }
+
+      // Check exit status
+      if (result.status !== 0) {
+        logger.warn('yq command failed', {
+          stderr: result.stderr,
+          status: result.status,
+          configPath,
+        });
+        throw new Error(`yq command failed with status ${result.status}: ${result.stderr}`);
+      }
+
+      return JSON.parse(result.stdout) as TenantOAuthConfig;
     } catch (error) {
       // Fallback: try reading as JSON directly
       try {
         const content = await fs.readFile(configPath, 'utf-8');
         return JSON.parse(content) as TenantOAuthConfig;
       } catch {
+        logger.debug('Failed to parse config as JSON', { configPath });
         return null;
       }
     }
