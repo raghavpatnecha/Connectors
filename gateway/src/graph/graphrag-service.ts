@@ -41,6 +41,124 @@ const ALLOWED_RELATIONSHIP_TYPES = [
 ];
 
 /**
+ * SECURITY FIX: Parameterized Cypher queries by relationship type
+ * Prevents Cypher injection by avoiding string interpolation
+ */
+const RELATIONSHIP_QUERIES = {
+  OFTEN_USED_WITH: `
+    MATCH (t1:Tool {id: $fromToolId})
+    MATCH (t2:Tool {id: $toToolId})
+    MERGE (t1)-[r:OFTEN_USED_WITH]->(t2)
+    SET r.confidence = $confidence,
+        r.updatedAt = datetime()
+    RETURN t1, r, t2
+  `,
+  DEPENDS_ON: `
+    MATCH (t1:Tool {id: $fromToolId})
+    MATCH (t2:Tool {id: $toToolId})
+    MERGE (t1)-[r:DEPENDS_ON]->(t2)
+    SET r.confidence = $confidence,
+        r.updatedAt = datetime()
+    RETURN t1, r, t2
+  `,
+  ALTERNATIVE_TO: `
+    MATCH (t1:Tool {id: $fromToolId})
+    MATCH (t2:Tool {id: $toToolId})
+    MERGE (t1)-[r:ALTERNATIVE_TO]->(t2)
+    SET r.confidence = $confidence,
+        r.updatedAt = datetime()
+    RETURN t1, r, t2
+  `,
+  REPLACES: `
+    MATCH (t1:Tool {id: $fromToolId})
+    MATCH (t2:Tool {id: $toToolId})
+    MERGE (t1)-[r:REPLACES]->(t2)
+    SET r.confidence = $confidence,
+        r.updatedAt = datetime()
+    RETURN t1, r, t2
+  `,
+  PRECEDES: `
+    MATCH (t1:Tool {id: $fromToolId})
+    MATCH (t2:Tool {id: $toToolId})
+    MERGE (t1)-[r:PRECEDES]->(t2)
+    SET r.confidence = $confidence,
+        r.updatedAt = datetime()
+    RETURN t1, r, t2
+  `,
+  BELONGS_TO: `
+    MATCH (t1:Tool {id: $fromToolId})
+    MATCH (t2:Tool {id: $toToolId})
+    MERGE (t1)-[r:BELONGS_TO]->(t2)
+    SET r.confidence = $confidence,
+        r.updatedAt = datetime()
+    RETURN t1, r, t2
+  `
+} as const;
+
+type RelationshipQueryKey = keyof typeof RELATIONSHIP_QUERIES;
+
+/**
+ * SECURITY FIX: Parameterized batch relationship queries
+ * Prevents Cypher injection in batch operations
+ */
+const BATCH_RELATIONSHIP_QUERIES = {
+  OFTEN_USED_WITH: `
+    UNWIND $relationships AS rel
+    MATCH (t1:Tool {id: rel.from})
+    MATCH (t2:Tool {id: rel.to})
+    MERGE (t1)-[r:OFTEN_USED_WITH]->(t2)
+    SET r.confidence = rel.confidence,
+        r.updatedAt = datetime()
+    RETURN count(r) AS relationshipsCreated
+  `,
+  DEPENDS_ON: `
+    UNWIND $relationships AS rel
+    MATCH (t1:Tool {id: rel.from})
+    MATCH (t2:Tool {id: rel.to})
+    MERGE (t1)-[r:DEPENDS_ON]->(t2)
+    SET r.confidence = rel.confidence,
+        r.updatedAt = datetime()
+    RETURN count(r) AS relationshipsCreated
+  `,
+  ALTERNATIVE_TO: `
+    UNWIND $relationships AS rel
+    MATCH (t1:Tool {id: rel.from})
+    MATCH (t2:Tool {id: rel.to})
+    MERGE (t1)-[r:ALTERNATIVE_TO]->(t2)
+    SET r.confidence = rel.confidence,
+        r.updatedAt = datetime()
+    RETURN count(r) AS relationshipsCreated
+  `,
+  REPLACES: `
+    UNWIND $relationships AS rel
+    MATCH (t1:Tool {id: rel.from})
+    MATCH (t2:Tool {id: rel.to})
+    MERGE (t1)-[r:REPLACES]->(t2)
+    SET r.confidence = rel.confidence,
+        r.updatedAt = datetime()
+    RETURN count(r) AS relationshipsCreated
+  `,
+  PRECEDES: `
+    UNWIND $relationships AS rel
+    MATCH (t1:Tool {id: rel.from})
+    MATCH (t2:Tool {id: rel.to})
+    MERGE (t1)-[r:PRECEDES]->(t2)
+    SET r.confidence = rel.confidence,
+        r.updatedAt = datetime()
+    RETURN count(r) AS relationshipsCreated
+  `,
+  BELONGS_TO: `
+    UNWIND $relationships AS rel
+    MATCH (t1:Tool {id: rel.from})
+    MATCH (t2:Tool {id: rel.to})
+    MERGE (t1)-[r:BELONGS_TO]->(t2)
+    SET r.confidence = rel.confidence,
+        r.updatedAt = datetime()
+    RETURN count(r) AS relationshipsCreated
+  `
+} as const;
+
+/**
  * Validate relationship type against whitelist to prevent Cypher injection
  * @param type - Relationship type to validate
  * @throws InvalidRelationshipTypeError if type is not in whitelist
@@ -328,6 +446,7 @@ export class GraphRAGService {
 
   /**
    * Create relationship between tools
+   * SECURITY FIX: Uses parameterized queries instead of string interpolation
    */
   async createRelationship(payload: CreateRelationshipPayload): Promise<void> {
     const { fromToolId, toToolId, type, confidence } = payload;
@@ -335,18 +454,19 @@ export class GraphRAGService {
     // SECURITY: Validate relationship type to prevent Cypher injection
     validateRelationshipType(type);
 
+    // SECURITY FIX: Get parameterized query for this relationship type
+    const query = RELATIONSHIP_QUERIES[type as RelationshipQueryKey];
+
+    if (!query) {
+      throw new InvalidRelationshipTypeError(
+        `No query defined for relationship type: ${type}`,
+        type
+      );
+    }
+
     const session = this._connectionPool.getSession();
 
     try {
-      const query = `
-        MATCH (t1:Tool {id: $fromToolId})
-        MATCH (t2:Tool {id: $toToolId})
-        MERGE (t1)-[r:${type}]->(t2)
-        SET r.confidence = $confidence,
-            r.updatedAt = datetime()
-        RETURN t1, r, t2
-      `;
-
       await session.run(query, { fromToolId, toToolId, confidence });
 
       logger.info('Relationship created', {
@@ -384,6 +504,7 @@ export class GraphRAGService {
 
   /**
    * Batch create relationships (for initialization)
+   * SECURITY FIX: Uses parameterized queries instead of string interpolation
    */
   async batchCreateRelationships(
     relationships: Array<{ from: string; to: string; confidence: number }>,
@@ -392,19 +513,19 @@ export class GraphRAGService {
     // SECURITY: Validate relationship type to prevent Cypher injection
     validateRelationshipType(type);
 
+    // SECURITY FIX: Get parameterized query for this relationship type
+    const query = BATCH_RELATIONSHIP_QUERIES[type as RelationshipQueryKey];
+
+    if (!query) {
+      throw new InvalidRelationshipTypeError(
+        `No batch query defined for relationship type: ${type}`,
+        type
+      );
+    }
+
     const session = this._connectionPool.getSession();
 
     try {
-      const query = `
-        UNWIND $relationships AS rel
-        MATCH (t1:Tool {id: rel.from})
-        MATCH (t2:Tool {id: rel.to})
-        MERGE (t1)-[r:${type}]->(t2)
-        SET r.confidence = rel.confidence,
-            r.updatedAt = datetime()
-        RETURN count(r) AS relationshipsCreated
-      `;
-
       const result = await session.run(query, { relationships });
       const relationshipsCreated = result.records[0]?.get('relationshipsCreated') || 0;
 

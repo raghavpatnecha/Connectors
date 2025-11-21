@@ -6,6 +6,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import { createHash } from 'crypto';
 import { VaultClient } from '../auth/vault-client';
 import { logger } from '../logging/logger';
 import { AuthenticationError } from '../errors/gateway-errors';
@@ -279,10 +280,22 @@ export class APIKeyAuthenticator {
   }
 
   /**
+   * Hash API key for secure cache storage
+   * SECURITY FIX: Prevents plaintext API key storage in memory
+   * @private
+   */
+  private _hashAPIKey(apiKey: string): string {
+    return createHash('sha256').update(apiKey).digest('hex');
+  }
+
+  /**
    * Get API key from cache
+   * SECURITY FIX: Uses hashed keys instead of plaintext
    */
   private _getFromCache(apiKey: string): AuthContext | null {
-    const entry = this._cache.get(apiKey);
+    // SECURITY: Hash the API key before lookup
+    const hashedKey = this._hashAPIKey(apiKey);
+    const entry = this._cache.get(hashedKey);
 
     if (!entry) {
       return null;
@@ -290,7 +303,7 @@ export class APIKeyAuthenticator {
 
     // Check if expired
     if (entry.expiresAt < Date.now()) {
-      this._cache.delete(apiKey);
+      this._cache.delete(hashedKey);
       return null;
     }
 
@@ -299,9 +312,12 @@ export class APIKeyAuthenticator {
 
   /**
    * Add API key to cache
+   * SECURITY FIX: Stores hashed keys instead of plaintext
    */
   private _addToCache(apiKey: string, authContext: AuthContext): void {
-    this._cache.set(apiKey, {
+    // SECURITY: Hash the API key before storage
+    const hashedKey = this._hashAPIKey(apiKey);
+    this._cache.set(hashedKey, {
       authContext,
       expiresAt: Date.now() + CACHE_TTL_MS,
     });
