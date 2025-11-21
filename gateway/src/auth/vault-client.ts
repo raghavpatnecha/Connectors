@@ -64,6 +64,21 @@ export class VaultClient {
       return requestConfig;
     });
 
+    // SECURITY FIX: Add response interceptor to sanitize tokens from errors
+    this._client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        // Sanitize Vault token from error responses to prevent exposure in logs
+        if (error.config?.headers) {
+          error.config.headers = this._sanitizeHeaders(error.config.headers);
+        }
+        if (error.request?.headers) {
+          error.request.headers = this._sanitizeHeaders(error.request.headers);
+        }
+        return Promise.reject(error);
+      }
+    );
+
     logger.info('VaultClient initialized', {
       address: config.address,
       transitEngine: this._transitEngine,
@@ -515,6 +530,27 @@ export class VaultClient {
    */
   private _buildKVPath(tenantId: string, integration: string): string {
     return `${this._kvEngine}/data/${tenantId}/${integration}`;
+  }
+
+  /**
+   * Sanitize headers to remove sensitive tokens
+   * SECURITY FIX: Prevents Vault token exposure in error logs
+   * @private
+   */
+  private _sanitizeHeaders(headers: any): any {
+    if (!headers) return headers;
+
+    const sanitized = { ...headers };
+
+    // Redact all possible Vault token header variations
+    if (sanitized['X-Vault-Token']) {
+      sanitized['X-Vault-Token'] = '[REDACTED]';
+    }
+    if (sanitized['x-vault-token']) {
+      sanitized['x-vault-token'] = '[REDACTED]';
+    }
+
+    return sanitized;
   }
 
   /**

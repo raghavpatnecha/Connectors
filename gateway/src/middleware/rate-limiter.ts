@@ -18,6 +18,7 @@ import { logger } from '../logging/logger';
 // Rate limit configuration from environment variables
 const GLOBAL_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_GLOBAL_RPS || '1000', 10);
 const TENANT_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_TENANT_RPS || '100', 10);
+const ANONYMOUS_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_ANONYMOUS_RPS || '10', 10);
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const KEY_PREFIX = process.env.RATE_LIMIT_KEY_PREFIX || 'rl:';
 
@@ -169,22 +170,28 @@ export function createGlobalRateLimiter(): RateLimitRequestHandler {
  * Tenant rate limiter (per-tenant)
  * Ensures multi-tenancy fairness
  *
- * Default: 100 req/s per tenant
+ * Default: 100 req/s per tenant, 10 req/s for anonymous
  * Window: 1 minute
+ * SECURITY FIX: Applies limits to all requests, prevents bypass via missing tenantId
  */
 export function createTenantRateLimiter(): RequestHandler {
   const store = createRedisStore(`${KEY_PREFIX}tenant:`);
 
   const limiter = rateLimit({
     windowMs: 60000, // 1 minute window
-    max: TENANT_RATE_LIMIT,
+    max: (req: Request) => {
+      const tenantId = extractTenantId(req);
+      // SECURITY: Lower limit for anonymous requests (no tenantId)
+      // Prevents DDoS via tenantId omission
+      return tenantId ? TENANT_RATE_LIMIT : ANONYMOUS_RATE_LIMIT;
+    },
     standardHeaders: true,
     legacyHeaders: false,
     store,
     skip: (req: Request) => {
-      // Skip if no tenant ID (public endpoints)
-      const tenantId = extractTenantId(req);
-      return !tenantId || isExemptPath(req.path);
+      // SECURITY FIX: Only skip exempt paths (health checks, monitoring)
+      // DO NOT skip on missing tenantId - apply default limits instead
+      return isExemptPath(req.path);
     },
     handler: (req: Request, res: Response) => {
       (req as any).rateLimitScope = 'tenant';
@@ -192,7 +199,18 @@ export function createTenantRateLimiter(): RequestHandler {
     },
     keyGenerator: (req: Request) => {
       const tenantId = extractTenantId(req);
-      return tenantId || 'anonymous';
+      // If no tenant ID, use IP address for rate limiting
+      // This prevents bypass through tenantId omission
+      if (!tenantId) {
+        const ip = req.ip || 'unknown';
+        logger.warn('Request without tenant ID, using IP-based rate limiting', {
+          ip,
+          path: req.path,
+          method: req.method,
+        });
+        return `no-tenant:${ip}`;
+      }
+      return tenantId;
     },
   });
 
