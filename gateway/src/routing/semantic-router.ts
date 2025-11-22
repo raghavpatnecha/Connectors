@@ -18,12 +18,13 @@ import {
   CategoryEmbedding,
   RoutingMetrics
 } from '../types/routing.types';
+import { SemanticRouterConfig } from '../config/environment';
 
-// Configuration constants
-const MAX_TOOLS_PER_QUERY = 5;
-const CATEGORY_THRESHOLD = 0.7;
-const TOOL_THRESHOLD = 0.5;
-const MAX_CATEGORIES = 3;
+// Configuration constants (now loaded from environment)
+const MAX_TOOLS_PER_QUERY = SemanticRouterConfig.MAX_TOOLS_PER_QUERY;
+const CATEGORY_THRESHOLD = SemanticRouterConfig.CATEGORY_THRESHOLD;
+const TOOL_THRESHOLD = SemanticRouterConfig.TOOL_THRESHOLD;
+const MAX_CATEGORIES = SemanticRouterConfig.MAX_CATEGORIES;
 
 export class SemanticRouter {
   private readonly _categoryIndex: FAISSIndex;

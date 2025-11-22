@@ -22,6 +22,7 @@ import {
   RateLimitError,
   CredentialNotFoundError
 } from '../errors/oauth-errors';
+import { MutexMap } from '../utils/async-mutex';
 
 const logger = createLogger({
   defaultMeta: { service: 'oauth-proxy' }
@@ -51,6 +52,7 @@ export class OAuthProxy {
   private readonly _scheduler: RefreshScheduler;
   private readonly _mcpClient: AxiosInstance;
   private readonly _oauthConfigs: Map<string, OAuthClientConfig>;
+  private readonly _refreshMutexes: MutexMap<string>;
 
   constructor(
     vault: VaultClient,
@@ -60,6 +62,7 @@ export class OAuthProxy {
     this._vault = vault;
     this._oauthStorage = new TenantOAuthStorage(vault);
     this._oauthConfigs = oauthConfigs;
+    this._refreshMutexes = new MutexMap<string>();
 
     // Create MCP client
     this._mcpClient = axios.create({
@@ -205,6 +208,7 @@ export class OAuthProxy {
       }
 
       // 4. Handle auth errors (token expired despite our check)
+      // FIX: Use mutex to prevent multiple concurrent refreshes on 401
       if (error.response?.status === 401) {
         logger.warn('Received 401 Unauthorized, attempting token refresh', {
           tenantId,
@@ -215,7 +219,14 @@ export class OAuthProxy {
         // Only retry once to prevent infinite loops
         if (!req._retry) {
           try {
-            await this._forceRefresh(tenantId, integration);
+            // Use mutex to ensure only one refresh happens for this tenant:integration
+            const refreshKey = `${tenantId}:${integration}`;
+            await this._refreshMutexes.runExclusive(refreshKey, async () => {
+              // Mutex ensures only one refresh runs at a time for this tenant:integration
+              logger.debug('Refreshing token after 401 (mutex acquired)', { tenantId, integration });
+              await this._forceRefresh(tenantId, integration);
+            });
+
             return this.proxyRequest({ ...req, _retry: true });
           } catch (refreshError) {
             throw new TokenRefreshError(
@@ -334,8 +345,13 @@ export class OAuthProxy {
   /**
    * Force refresh of OAuth token
    * Used when token is expired or 401 received
+   *
+   * NOTE: Callers should use mutex to prevent concurrent refreshes
+   * This method assumes it's being called within a mutex lock
    */
   private async _forceRefresh(tenantId: string, integration: string): Promise<void> {
+    logger.debug('Starting forced token refresh', { tenantId, integration });
+
     const creds = await this._vault.getCredentials(tenantId, integration);
     const tokenResponse = await this._performRefresh(integration, creds.refreshToken, tenantId);
 
@@ -353,7 +369,7 @@ export class OAuthProxy {
     await this._vault.storeCredentials(tenantId, integration, newCreds);
     this._scheduler.scheduleRefresh(tenantId, integration, expiresAt);
 
-    logger.info('Forced OAuth token refresh', { tenantId, integration, expiresAt });
+    logger.info('Forced OAuth token refresh completed', { tenantId, integration, expiresAt });
   }
 
   /**
