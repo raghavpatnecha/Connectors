@@ -1,6 +1,32 @@
 /**
  * Custom error classes for gateway operations
+ *
+ * NOTE: OAuth-specific errors are defined in oauth-errors.ts
+ * and re-exported here for backward compatibility
  */
+
+import {
+  OAuthError as OAuthErrorBase,
+  RateLimitError as RateLimitErrorBase,
+  TokenRefreshError,
+  TokenExpiredError,
+  CredentialNotFoundError,
+  VaultError,
+  VaultEncryptionError,
+  InvalidOAuthConfigError
+} from './oauth-errors';
+
+// Re-export OAuth errors for backward compatibility
+export {
+  OAuthErrorBase as OAuthError,
+  RateLimitErrorBase as RateLimitError,
+  TokenRefreshError,
+  TokenExpiredError,
+  CredentialNotFoundError,
+  VaultError,
+  VaultEncryptionError,
+  InvalidOAuthConfigError
+};
 
 export class GatewayError extends Error {
   constructor(message: string, public readonly cause?: Error) {
@@ -67,31 +93,8 @@ export class CacheError extends GatewayError {
   }
 }
 
-export class OAuthError extends GatewayError {
-  constructor(
-    message: string,
-    public readonly integration: string,
-    public readonly tenantId: string,
-    cause?: Error
-  ) {
-    super(message, cause);
-    this.name = 'OAuthError';
-  }
-}
-
-export class RateLimitError extends GatewayError {
-  constructor(
-    message: string,
-    public readonly metadata: {
-      resetTime?: number;
-      remaining?: number;
-      limit?: number;
-    }
-  ) {
-    super(message);
-    this.name = 'RateLimitError';
-  }
-}
+// NOTE: OAuthError and RateLimitError are now imported from oauth-errors.ts
+// and re-exported above to avoid duplication
 
 export class MCPError extends GatewayError {
   constructor(

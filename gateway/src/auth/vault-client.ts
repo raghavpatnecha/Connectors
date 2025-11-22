@@ -17,6 +17,7 @@ import {
   CredentialNotFoundError
 } from '../errors/oauth-errors';
 import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker';
+import { VaultCircuitBreakerConfig } from '../config/environment';
 
 const logger = createLogger({
   defaultMeta: { service: 'vault-client' }
@@ -51,12 +52,12 @@ export class VaultClient {
     this._maxRetries = config.maxRetries || DEFAULT_MAX_RETRIES;
     this._vaultToken = config.token;
 
-    // Initialize circuit breaker for Vault operations
+    // Initialize circuit breaker for Vault operations (config from environment)
     this._circuitBreaker = new CircuitBreaker({
-      failureThreshold: 5,
-      successThreshold: 2,
-      resetTimeout: 60000, // 1 minute
-      windowDuration: 10000, // 10 seconds
+      failureThreshold: VaultCircuitBreakerConfig.FAILURE_THRESHOLD,
+      successThreshold: VaultCircuitBreakerConfig.SUCCESS_THRESHOLD,
+      resetTimeout: VaultCircuitBreakerConfig.RESET_TIMEOUT_MS,
+      windowDuration: VaultCircuitBreakerConfig.WINDOW_DURATION_MS,
       onOpen: () => {
         logger.error('Vault circuit breaker OPENED - failing fast', {
           failures: this._circuitBreaker.getFailureCount()

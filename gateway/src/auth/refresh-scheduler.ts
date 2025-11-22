@@ -9,14 +9,16 @@ import { VaultClient } from './vault-client';
 import { OAuthCredentials, RefreshJob, OAuthTokenResponse } from './types';
 import { TokenRefreshError } from '../errors/oauth-errors';
 import { MutexMap } from '../utils/async-mutex';
+import { RefreshSchedulerConfig } from '../config/environment';
 
 const logger = createLogger({
   defaultMeta: { service: 'refresh-scheduler' }
 });
 
-const REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes before expiry
-const CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
-const MAX_RETRY_ATTEMPTS = 3;
+// Configuration constants (now loaded from environment)
+const REFRESH_BUFFER_MS = RefreshSchedulerConfig.REFRESH_BUFFER_MS;
+const CHECK_INTERVAL_MS = RefreshSchedulerConfig.CHECK_INTERVAL_MS;
+const MAX_RETRY_ATTEMPTS = RefreshSchedulerConfig.MAX_RETRY_ATTEMPTS;
 
 /**
  * OAuth refresh callback function
