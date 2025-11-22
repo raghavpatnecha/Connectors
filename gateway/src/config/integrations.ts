@@ -20,6 +20,7 @@ import { SlidesIntegration, createSlidesIntegration } from '../integrations/slid
 import { FormsIntegration, createFormsIntegration } from '../integrations/forms-integration';
 import { ChatIntegration, createChatIntegration } from '../integrations/chat-integration';
 import { SearchIntegration, createSearchIntegration } from '../integrations/search-integration';
+import { TwitterIntegration, createTwitterIntegration } from '../integrations/twitter-integration';
 import { logger } from '../logging/logger';
 
 /**
@@ -94,6 +95,7 @@ export class IntegrationRegistry {
     this._registerForms();
     this._registerChat();
     this._registerSearch();
+    this._registerTwitter();
 
     // Initialize all enabled integrations
     await this._initializeAll();
@@ -601,6 +603,33 @@ export class IntegrationRegistry {
     }
 
     logger.info('Registered Search integration', metadata);
+  }
+
+  /**
+   * Register Twitter integration
+   */
+  private _registerTwitter(): void {
+    const metadata: IntegrationMetadata = {
+      id: 'twitter',
+      name: 'Twitter / X',
+      category: 'communication',
+      description: 'Twitter unified integration combining OAuth 1.0a API + session cookies + SocialData analytics (45 tools)',
+      enabled: process.env.TWITTER_ENABLED !== 'false',
+      serverUrl: process.env.TWITTER_SERVER_URL || 'http://localhost:3150',
+      rateLimit: parseInt(process.env.TWITTER_RATE_LIMIT || '15', 10),
+      requiresOAuth: true,
+      oauthProvider: 'twitter',
+      docsUrl: 'https://developer.twitter.com/en/docs'
+    };
+
+    this._integrations.set('twitter', metadata);
+
+    if (metadata.enabled) {
+      const instance = createTwitterIntegration(this._oauthProxy, this._semanticRouter);
+      this._instances.set('twitter', instance);
+    }
+
+    logger.info('Registered Twitter integration', metadata);
   }
 
   /**

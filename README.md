@@ -1,9 +1,9 @@
 # Connectors - AI Agent Integration Platform
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![MCP Servers: 15 Operational](https://img.shields.io/badge/MCP%20Servers-15%20Operational-brightgreen.svg)](integrations/)
+[![MCP Servers: 16 Operational](https://img.shields.io/badge/MCP%20Servers-16%20Operational-brightgreen.svg)](integrations/)
 [![Token Reduction: 99.02%](https://img.shields.io/badge/Token%20Reduction-99.02%25-success.svg)](#-the-problem-we-solve)
-[![Tools: 368 Total](https://img.shields.io/badge/Tools-368%20Total-blue.svg)](docs/04-integrations/)
+[![Tools: 413 Total](https://img.shields.io/badge/Tools-413%20Total-blue.svg)](docs/04-integrations/)
 
 **Open-source integration platform for AI agents that solves the MCP token bloat problem through semantic routing.**
 
@@ -11,8 +11,8 @@
 
 ## 🚨 The Problem We Solve
 
-**Traditional MCP**: 368 tools across 15 integrations = 77,698 tokens → Context exhausted
-**Connectors**: Semantic routing = 759 tokens → **99% reduction**, $7.49M saved at 1M queries/month
+**Traditional MCP**: 413 tools across 16 integrations = 82,000+ tokens → Context exhausted
+**Connectors**: Semantic routing = 800-1,200 tokens → **99% reduction**, $7.8M saved at 1M queries/month
 
 [Detailed analysis →](docs/03-architecture/)
 
@@ -22,8 +22,8 @@
 
 - **99% Token Reduction** - Semantic routing: 759 tokens vs 77,698 (FAISS vector search + Progressive loading) - [Architecture →](docs/03-architecture/progressive-loading.md)
 - **Simple SDK** - 3-line setup, semantic tool selection, TypeScript + Python with 100% feature parity - [SDK docs →](docs/sdk/)
-- **15 MCP Servers** - Production-ready connectors across code, communication, productivity, documents, search, and storage - [All integrations →](docs/04-integrations/)
-- **368 Tools** - Comprehensive coverage of GitHub, Google Workspace, LinkedIn, Reddit, Notion, and Product Hunt APIs
+- **16 MCP Servers** - Production-ready connectors across code, communication, productivity, documents, search, and storage - [All integrations →](docs/04-integrations/)
+- **413 Tools** - Comprehensive coverage of GitHub, Google Workspace, LinkedIn, Reddit, Twitter, Notion, and Product Hunt APIs
 - **Bring Your Own MCP** - Deploy custom servers from GitHub, Docker, STDIO, HTTP - [Deployment →](docs/deployment/mcp-add-overview.md)
 - **Framework Support** - OpenAI Agents + LangChain integrations - [Integrations →](docs/integrations/)
 - **Enterprise OAuth** - Per-tenant Vault encryption, auto-refresh, multi-tenant isolation - [Multi-tenant →](docs/02-guides/multi-tenant-setup.md)
@@ -104,21 +104,21 @@ pr = await github.call("createPullRequest", {
 | Category | Servers | Description |
 |----------|---------|-------------|
 | **Code** | GitHub | Repository management, issues, pull requests, actions |
-| **Communication** | Gmail, LinkedIn, Reddit, Google Chat | Email, social media, messaging |
+| **Communication** | Gmail, LinkedIn, Reddit, Twitter, Google Chat | Email, social media, messaging |
 | **Documents** | Google Docs, Google Sheets, Google Slides | Document creation and editing |
 | **Productivity** | Google Calendar, Google Tasks, Google Forms, Notion, Product Hunt | Scheduling, task management, workspace collaboration, product discovery |
 | **Search** | Google Search | Web search and information retrieval |
 | **Storage** | Google Drive | File storage and management |
 
-**Total: 15 MCP Servers, 368 Tools** - [Detailed tool breakdown →](docs/04-integrations/)
+**Total: 16 MCP Servers, 413 Tools** - [Detailed tool breakdown →](docs/04-integrations/)
 
 ### Integration Architecture Types
 
-**Custom-Built MCP Servers** (14 servers)
+**Custom-Built MCP Servers** (15 servers)
 - Built using TypeScript + FastMCP
 - Auto-generated from OpenAPI specs
 - Source: `integrations/*/` directories
-- Examples: GitHub, Google Workspace (10 services), LinkedIn, Reddit
+- Examples: GitHub, Google Workspace (10 services), LinkedIn, Reddit, Twitter
 
 **Official Remote MCP Server** (1 server)
 - Notion: Using official `notionhq/notion-mcp-server:latest`

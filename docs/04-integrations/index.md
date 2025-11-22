@@ -1,6 +1,6 @@
 # Integration Documentation Index
 
-**Connectors Platform** - 368 tools across 15 MCP servers
+**Connectors Platform** - 413 tools across 16 MCP servers
 
 ---
 
@@ -8,11 +8,11 @@
 
 The Connectors Platform supports three types of integrations to maximize flexibility:
 
-### 1. **Custom-Built MCP Servers** (14 servers)
+### 1. **Custom-Built MCP Servers** (15 servers)
 Built in-house using TypeScript + FastMCP framework, auto-generated from OpenAPI specifications.
 
 **Location:** `integrations/*/` directories
-**Examples:** GitHub, Google Workspace (10 services), LinkedIn, Reddit
+**Examples:** GitHub, Google Workspace (10 services), LinkedIn, Reddit, Twitter
 **Advantages:** Full control, optimized for our gateway, consistent patterns
 
 ### 2. **Official Remote MCP Servers** (1 server)
@@ -34,7 +34,7 @@ Lightweight integrations calling APIs directly without MCP protocol overhead.
 
 ### By Category
 
-- [Communication](#communication) - 4 servers (Gmail, LinkedIn, Reddit, Google Chat)
+- [Communication](#communication) - 5 servers (Gmail, LinkedIn, Reddit, Twitter, Google Chat)
 - [Code](#code) - 1 server (GitHub)
 - [Productivity](#productivity) - 5 servers (Notion, Product Hunt + 3 Google Workspace)
 - [Documents](#documents) - 3 servers (Google Docs, Sheets, Slides)
@@ -43,7 +43,7 @@ Lightweight integrations calling APIs directly without MCP protocol overhead.
 
 ### By Status
 
-- ✅ **Production Ready:** All 15 servers operational (GitHub, LinkedIn, Reddit, Notion, Product Hunt, Google Workspace 10 services)
+- ✅ **Production Ready:** All 16 servers operational (GitHub, LinkedIn, Reddit, Twitter, Notion, Product Hunt, Google Workspace 10 services)
 - 🚧 **In Development:** Slack
 - 📋 **Planned:** Dropbox, OneDrive, Salesforce
 
@@ -82,6 +82,24 @@ Comprehensive Reddit integration with browsing, searching, posting, and commenti
 **Categories:** Browse(8), Search(2), Posts(4), Comments(2), Subreddits(2), Users(3), Utils(1), Auth(5)
 
 📄 [Read Full Documentation](./communication/reddit.md)
+
+---
+
+### Twitter / X
+**Status:** ✅ Complete | **Tools:** 45 | **OAuth:** OAuth 1.0a Required
+
+Comprehensive Twitter/X integration combining 45 tools from 4 community implementations with OAuth 1.0a, session cookies, and SocialData analytics.
+
+**Key Features:**
+- OAuth 1.0a + session cookie fallback
+- SocialData API integration (20+ analytics tools)
+- Multi-tier rate limiting (Free/Basic/Pro)
+- Sentiment analysis, influence mapping
+- 45 tools across tweets, users, lists, analytics
+
+**Categories:** Tweets(10), Engagement(7), Users(10), Lists(5), Analytics(13)
+
+📄 [Read Full Documentation](./communication/twitter.md)
 
 ---
 
@@ -183,6 +201,7 @@ Production-ready suite with unified OAuth 2.0, Vault storage, multi-tenant isola
 |-------------|--------|-------|-------|-----|--------|----------|
 | **LinkedIn** | ✅ Complete | 18 | Yes | Hybrid | ~200MB | API + Browser |
 | **Reddit** | ✅ Complete | 27 | Yes | Snoowrap | ~150MB | Official API |
+| **Twitter** | ✅ Complete | 45 | Yes (OAuth 1.0a) | Custom | ~180MB | Official API + SocialData |
 | **GitHub** | ✅ Complete | 29 | Yes | @octokit/rest | ~200MB | Official API |
 | **Notion** | ✅ Complete | 19 | Yes | @notionhq/client | ~180MB | Official API |
 | **Product Hunt** | ✅ Complete | 3 | No (API Token) | axios | ~120MB | GraphQL API |
@@ -222,6 +241,7 @@ Production-ready suite with unified OAuth 2.0, Vault storage, multi-tenant isola
 | Notion | 2,945 tokens | ~760 tokens | 74% |
 | Product Hunt | 465 tokens | ~120 tokens | 74% |
 | Google Workspace (271 tools) | 42,000 tokens | ~2,400 tokens | 94% |
+| Twitter | 5,500 tokens | ~1,000 tokens | 82% |
 | **Platform Total** | **250,000+ tokens** | **1,000-3,000 tokens** | **95%+** |
 
 ### Latency Targets
@@ -328,10 +348,10 @@ See [Development Guidelines](/CLAUDE.md) for details.
 
 ---
 
-**Last Updated:** 2025-11-17
+**Last Updated:** 2025-11-22
 **Platform Version:** 1.0.0
-**Total:** 15 MCP servers complete (14 custom-built + 1 official remote) | 368 total tools
+**Total:** 16 MCP servers complete (15 custom-built + 1 official remote) | 413 total tools
 
 **Architecture Breakdown:**
-- Custom-Built MCP Servers: GitHub, LinkedIn, Reddit, Gmail, Drive, Calendar, Tasks, Docs, Sheets, Slides, Forms, Chat, Google Search, Product Hunt (14)
+- Custom-Built MCP Servers: GitHub, LinkedIn, Reddit, Twitter, Gmail, Drive, Calendar, Tasks, Docs, Sheets, Slides, Forms, Chat, Google Search, Product Hunt (15)
 - Official Remote Server: Notion (1)
