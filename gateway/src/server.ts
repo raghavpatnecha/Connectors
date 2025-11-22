@@ -483,6 +483,30 @@ export class MCPGatewayServer {
       noControlChars: true
     });
 
+    // CRITICAL FIX: Validate options object (fail-fast)
+    if (options.maxTools !== undefined) {
+      validateNumber(options.maxTools, 'options.maxTools', { min: 1, max: 100 });
+    }
+
+    if (options.tokenBudget !== undefined) {
+      validateNumber(options.tokenBudget, 'options.tokenBudget', { min: 100, max: 100000 });
+    }
+
+    if (options.allowedCategories !== undefined) {
+      validateArray(options.allowedCategories, 'options.allowedCategories', { maxLength: 20 });
+      options.allowedCategories.forEach((cat, idx) => {
+        validateCategory(cat, `options.allowedCategories[${idx}]`);
+      });
+    }
+
+    if (options.tenantId) {
+      validateString(options.tenantId, 'options.tenantId', {
+        minLength: 1,
+        maxLength: 256,
+        noControlChars: true
+      });
+    }
+
     // Build query context
     const context: QueryContext = {
       allowedCategories: options.allowedCategories,
@@ -571,6 +595,39 @@ export class MCPGatewayServer {
 
     if (queries.length > 10) {
       throw new ValidationError('queries', 'Maximum 10 queries allowed in batch mode');
+    }
+
+    // CRITICAL FIX: Validate all batch queries first (fail-fast)
+    for (let i = 0; i < queries.length; i++) {
+      const batchQuery = queries[i];
+
+      if (!batchQuery.use_case || typeof batchQuery.use_case !== 'string') {
+        throw new ValidationError(
+          `queries[${i}].use_case`,
+          'use_case must be a non-empty string'
+        );
+      }
+
+      validateString(batchQuery.use_case, `queries[${i}].use_case`, {
+        minLength: 1,
+        maxLength: 1000,
+        noControlChars: true
+      });
+
+      if (batchQuery.known_fields !== undefined) {
+        if (typeof batchQuery.known_fields !== 'string') {
+          throw new ValidationError(
+            `queries[${i}].known_fields`,
+            'known_fields must be a string'
+          );
+        }
+
+        validateString(batchQuery.known_fields, `queries[${i}].known_fields`, {
+          minLength: 1,
+          maxLength: 500,
+          noControlChars: true
+        });
+      }
     }
 
     // Process all queries in parallel
@@ -697,10 +754,30 @@ export class MCPGatewayServer {
 
   /**
    * Parse known_fields string (e.g., "category:productivity, limit:5")
+   *
+   * SECURITY: Input is validated in _processBatchQueries before calling this method
    */
   private _parseKnownFields(knownFields?: string): ParsedKnownFields {
     if (!knownFields) {
       return {};
+    }
+
+    // MEDIUM FIX: Additional validation for safety (defense in depth)
+    if (knownFields.length > 500) {
+      logger.warn('known_fields exceeds maximum length', {
+        length: knownFields.length
+      });
+      throw new ValidationError('known_fields', 'Maximum 500 characters allowed');
+    }
+
+    // Check format: must be key:value pairs separated by commas
+    // Allow alphanumeric keys and most printable characters in values
+    if (!/^[\w-]+:[^,]+(,[\w-]+:[^,]+)*$/.test(knownFields)) {
+      logger.warn('Invalid known_fields format', { knownFields });
+      throw new ValidationError(
+        'known_fields',
+        'Invalid format. Expected: "key1:value1,key2:value2" with alphanumeric keys'
+      );
     }
 
     const parsed: ParsedKnownFields = {};
@@ -709,6 +786,14 @@ export class MCPGatewayServer {
     for (const pair of pairs) {
       const [key, value] = pair.split(':').map(s => s.trim());
       if (key && value) {
+        // Limit key/value lengths
+        if (key.length > 50) {
+          throw new ValidationError('known_fields', `Key "${key}" exceeds maximum length of 50`);
+        }
+        if (value.length > 200) {
+          throw new ValidationError('known_fields', `Value for "${key}" exceeds maximum length of 200`);
+        }
+
         // Try to parse as number
         const numValue = parseInt(value, 10);
         parsed[key] = isNaN(numValue) ? value : numValue;

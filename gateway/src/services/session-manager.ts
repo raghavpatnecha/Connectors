@@ -28,8 +28,16 @@ export class SessionManager {
     instructions?: string;
   }> {
     try {
-      // If explicit ID provided, use it
+      // If explicit ID provided, validate and use it
       if (config.id) {
+        // MEDIUM FIX: Validate session ID format before use
+        if (!this.validateSessionId(config.id)) {
+          logger.error('Invalid session ID format', { sessionId: config.id });
+          throw new Error(
+            `Invalid session ID format. Expected UUID v4, got: ${config.id.substring(0, 20)}...`
+          );
+        }
+
         logger.debug('Using existing session ID', { sessionId: config.id });
 
         return {

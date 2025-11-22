@@ -141,9 +141,26 @@ export class ToolSchemaLoader {
         return {};
       }
 
-      // Check if instance has a method to get tool schemas
-      if (typeof instance.getToolSchemas === 'function') {
-        return await instance.getToolSchemas(toolIds);
+      // CRITICAL FIX: Type-safe method call with return validation
+      if (instance && typeof instance.getToolSchemas === 'function') {
+        try {
+          const result = await instance.getToolSchemas(toolIds);
+
+          // Validate return type
+          if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
+            return result as Record<string, FullToolSchema>;
+          }
+
+          logger.warn('getToolSchemas returned invalid type', {
+            integration,
+            resultType: typeof result
+          });
+        } catch (error) {
+          logger.error('getToolSchemas call failed', {
+            integration,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       }
 
       // Fallback: Try to fetch from MCP server directly

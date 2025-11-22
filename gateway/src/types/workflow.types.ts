@@ -1,6 +1,17 @@
 /**
  * Workflow-related type definitions
  * Connectors Platform - Types for workflow planning and batch tool selection
+ *
+ * NAMING CONVENTION (MEDIUM FIX #5):
+ * ================================
+ * - Internal types use camelCase (e.g., toolId, maxTools, tenantId)
+ * - API request/response fields use snake_case (e.g., tool_slug, main_tool_slugs, use_case)
+ * - Always map between them at API boundary (in server.ts)
+ *
+ * Examples:
+ * - ToolSelection.toolId (internal) → BatchToolResult.main_tool_slugs (API response)
+ * - ToolSelectionOptions.maxTools (internal) → options.max_tools (API request, if needed)
+ * - FullToolSchema.tool_slug (API response) - matches external MCP server format
  */
 
 import { ToolSelection } from './routing.types';

@@ -172,37 +172,48 @@ export class WorkflowPlanner {
 
   /**
    * Find matching template based on use case and tools
+   *
+   * MEDIUM FIX: Enhanced template matching with tool validation
    */
   private _findMatchingTemplate(
     useCase: string,
     mainTools: ToolSelection[]
   ): WorkflowGuidance | null {
     const lowerUseCase = useCase.toLowerCase();
+    const toolIds = mainTools.map(t => t.toolId.toLowerCase());
+    const toolCategories = mainTools.map(t => t.category.toLowerCase());
 
-    // YouTube trending
+    // YouTube trending - check both keywords AND tools
     if (
       (lowerUseCase.includes('youtube') || lowerUseCase.includes('video')) &&
-      (lowerUseCase.includes('trending') || lowerUseCase.includes('popular') || lowerUseCase.includes('search'))
+      (lowerUseCase.includes('trending') || lowerUseCase.includes('popular') || lowerUseCase.includes('search')) &&
+      (toolIds.some(id => id.includes('youtube')) || toolCategories.includes('youtube'))
     ) {
+      logger.debug('Matched YouTube trending template', { useCase, tools: toolIds });
       return this._workflowTemplates.get('youtube_trending') || null;
     }
 
-    // Notion creation
+    // Notion creation - check both keywords AND tools
     if (
       (lowerUseCase.includes('notion') || lowerUseCase.includes('page') || lowerUseCase.includes('database')) &&
-      (lowerUseCase.includes('create') || lowerUseCase.includes('add'))
+      (lowerUseCase.includes('create') || lowerUseCase.includes('add')) &&
+      (toolIds.some(id => id.includes('notion')) || toolCategories.includes('notion'))
     ) {
+      logger.debug('Matched Notion create template', { useCase, tools: toolIds });
       return this._workflowTemplates.get('notion_create') || null;
     }
 
-    // GitHub PR
+    // GitHub PR - check both keywords AND tools
     if (
       (lowerUseCase.includes('github') || lowerUseCase.includes('pull request') || lowerUseCase.includes('pr')) &&
-      (lowerUseCase.includes('create') || lowerUseCase.includes('open'))
+      (lowerUseCase.includes('create') || lowerUseCase.includes('open')) &&
+      (toolIds.some(id => id.includes('github')) || toolCategories.includes('github'))
     ) {
+      logger.debug('Matched GitHub PR template', { useCase, tools: toolIds });
       return this._workflowTemplates.get('github_pr') || null;
     }
 
+    logger.debug('No template match found, using dynamic plan', { useCase, tools: toolIds });
     return null;
   }
 
