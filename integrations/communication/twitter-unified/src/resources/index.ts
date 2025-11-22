@@ -108,9 +108,10 @@ export class TwitterResourceHandler {
     const accountAgeDays = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
     // Calculate average engagement (followers / following ratio)
-    const followerRatio = metrics.following_count > 0
-      ? (metrics.followers_count / metrics.following_count).toFixed(2)
-      : 'N/A';
+    const followerRatioNum = metrics.following_count > 0
+      ? (metrics.followers_count / metrics.following_count)
+      : 0;
+    const followerRatioStr = followerRatioNum > 0 ? followerRatioNum.toFixed(2) : 'N/A';
 
     // Calculate average tweets per day
     const avgTweetsPerDay = (metrics.tweet_count / accountAgeDays).toFixed(2);
@@ -130,12 +131,12 @@ export class TwitterResourceHandler {
         following: metrics.following_count,
         tweets: metrics.tweet_count,
         listed: metrics.listed_count,
-        follower_ratio: followerRatio,
+        follower_ratio: followerRatioStr,
         avg_tweets_per_day: avgTweetsPerDay
       },
       insights: {
         engagement_potential: metrics.followers_count > 1000 ? 'High' : metrics.followers_count > 100 ? 'Medium' : 'Growing',
-        account_type: followerRatio > 2 ? 'Influencer' : followerRatio < 0.5 ? 'Active Follower' : 'Balanced',
+        account_type: followerRatioNum > 2 ? 'Influencer' : followerRatioNum < 0.5 ? 'Active Follower' : 'Balanced',
         content_velocity: parseFloat(avgTweetsPerDay) > 3 ? 'Very Active' : parseFloat(avgTweetsPerDay) > 1 ? 'Active' : 'Moderate'
       },
       last_updated: new Date().toISOString()
@@ -173,7 +174,7 @@ export class TwitterResourceHandler {
     const users = mentions.includes?.users || [];
 
     // Map user data
-    const userMap = new Map(users.map((u: any) => [u.id, u]));
+    const userMap: Map<string, any> = new Map(users.map((u: any) => [u.id, u]));
 
     // Categorize mentions
     const categorized = {
@@ -316,7 +317,7 @@ export class TwitterResourceHandler {
       }
     );
 
-    const followerData = followers.data || [];
+    const followerData: any[] = followers.data || [];
 
     // Analyze follower demographics
     const insights = {
@@ -332,7 +333,7 @@ export class TwitterResourceHandler {
     followerData.forEach((follower: any) => {
       if (follower.verified) insights.verified_count++;
 
-      totalFollowerCount += follower.public_metrics?.followers_count || 0;
+      totalFollowerCount += (follower.public_metrics?.followers_count as number) || 0;
 
       if (follower.location) {
         const location = follower.location.split(',')[0].trim(); // Get primary location
@@ -340,7 +341,7 @@ export class TwitterResourceHandler {
       }
 
       // Track top followers (by follower count)
-      if (follower.public_metrics?.followers_count > 1000) {
+      if ((follower.public_metrics?.followers_count as number) > 1000) {
         insights.top_followers.push({
           username: follower.username,
           name: follower.name,
@@ -440,10 +441,10 @@ export class TwitterResourceHandler {
 
     // Calculate averages
     const avgMetrics = {
-      avg_likes: Math.round(analyzed.reduce((sum, t) => sum + t.metrics.likes, 0) / analyzed.length),
-      avg_retweets: Math.round(analyzed.reduce((sum, t) => sum + t.metrics.retweets, 0) / analyzed.length),
-      avg_replies: Math.round(analyzed.reduce((sum, t) => sum + t.metrics.replies, 0) / analyzed.length),
-      avg_engagement_rate: (analyzed.reduce((sum, t) => sum + t.metrics.engagement_rate, 0) / analyzed.length).toFixed(2)
+      avg_likes: Math.round(analyzed.reduce((sum: number, t: any) => sum + t.metrics.likes, 0) / analyzed.length),
+      avg_retweets: Math.round(analyzed.reduce((sum: number, t: any) => sum + t.metrics.retweets, 0) / analyzed.length),
+      avg_replies: Math.round(analyzed.reduce((sum: number, t: any) => sum + t.metrics.replies, 0) / analyzed.length),
+      avg_engagement_rate: (analyzed.reduce((sum: number, t: any) => sum + t.metrics.engagement_rate, 0) / analyzed.length).toFixed(2)
     };
 
     return {

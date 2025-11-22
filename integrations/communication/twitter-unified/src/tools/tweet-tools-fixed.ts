@@ -415,17 +415,15 @@ export class TweetToolHandlers {
     }
 
     if (media && media.length > 0) {
-      // Upload media first, get media_ids
-      const mediaIds = [];
-      for (const item of media) {
-        const uploadResult = await this.client.uploadMedia(
-          item.data,
-          item.mediaType,
-          tenantId
-        );
-        mediaIds.push(uploadResult.media_id_string);
-      }
-      payload.media = { media_ids: mediaIds };
+      // TODO: Implement media upload via Twitter API v2 /media/upload endpoint
+      // Requires chunked upload for large files
+      // For now, throw error with helpful message
+      throw new Error(
+        'Media upload not yet implemented. To post tweets with media:\n' +
+        '1. Use agent-twitter-client-mcp directly, or\n' +
+        '2. Upload media separately and pass media_ids\n' +
+        'Media upload requires chunked uploading via Twitter API v1.1 /media/upload endpoint.'
+      );
     }
 
     return await this.client.request(
@@ -439,22 +437,10 @@ export class TweetToolHandlers {
   async postTweetWithMedia(args: any, tenantId: string): Promise<any> {
     const { text, mediaPath, mediaType, altText } = args;
 
-    // Read file and upload
-    const mediaId = await this.client.uploadMediaFromPath(
-      mediaPath,
-      mediaType,
-      altText,
-      tenantId
-    );
-
-    return await this.client.request(
-      'POST',
-      '/tweets',
-      tenantId,
-      {
-        text,
-        media: { media_ids: [mediaId] }
-      }
+    // TODO: Implement media upload from file path
+    // This requires reading file, chunked upload to Twitter API v1.1
+    throw new Error(
+      'Media upload from file path not yet implemented. Use send_tweet with base64 media data or agent-twitter-client-mcp directly.'
     );
   }
 
@@ -578,16 +564,10 @@ export class TweetToolHandlers {
     };
 
     if (media && media.length > 0) {
-      const mediaIds = [];
-      for (const item of media) {
-        const uploadResult = await this.client.uploadMedia(
-          item.data,
-          item.mediaType,
-          tenantId
-        );
-        mediaIds.push(uploadResult.media_id_string);
-      }
-      payload.media = { media_ids: mediaIds };
+      // TODO: Implement media upload via Twitter API v2 /media/upload endpoint
+      throw new Error(
+        'Media upload not yet implemented. Use agent-twitter-client-mcp for media uploads or upload media separately and pass media_ids.'
+      );
     }
 
     return await this.client.request(

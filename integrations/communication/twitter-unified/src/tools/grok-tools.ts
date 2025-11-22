@@ -41,26 +41,32 @@ export class GrokToolHandlers {
   async grokChat(args: any, tenantId: string): Promise<any> {
     const { message, conversationId, includeWebSearch = true } = args;
 
-    // Check if Grok is available (requires Premium subscription)
-    // This uses agent-twitter-client's Grok interface
+    // Note: Grok API integration requires Premium subscription and agent-twitter-client library
+    // This is a placeholder implementation using Twitter API
+    // For full Grok support, use agent-twitter-client-mcp directly
 
     try {
-      const response = await this.client.grokRequest({
-        message,
-        conversationId,
-        includeWebSearch
-      });
+      const response = await this.client.request(
+        'POST',
+        '/grok/chat',
+        tenantId,
+        {
+          message,
+          conversation_id: conversationId,
+          include_web_search: includeWebSearch
+        }
+      );
 
       return {
-        response: response.text,
-        conversationId: response.conversationId,
-        webSearchResults: response.webSearchResults || [],
-        citations: response.citations || [],
-        rateLimitInfo: response.rateLimitInfo
+        response: response.data?.text || response.data,
+        conversationId: response.data?.conversation_id || conversationId,
+        webSearchResults: response.data?.web_search_results || [],
+        citations: response.data?.citations || [],
+        rateLimitInfo: response.rateLimit
       };
     } catch (error: any) {
       // Handle rate limits
-      if (error.message?.includes('Rate Limited')) {
+      if (error.message?.includes('Rate Limited') || error.message?.includes('429')) {
         return {
           error: 'Rate limit exceeded',
           message: 'You\'ve reached the Grok message limit. Non-premium accounts: 25 messages per 2 hours. Premium accounts have higher limits.',
@@ -69,7 +75,7 @@ export class GrokToolHandlers {
       }
 
       // Handle authentication issues
-      if (error.message?.includes('Premium required')) {
+      if (error.message?.includes('Premium required') || error.message?.includes('403')) {
         return {
           error: 'Premium subscription required',
           message: 'Grok access requires a Twitter Premium subscription. Visit https://twitter.com/i/premium_sign_up to upgrade.'
