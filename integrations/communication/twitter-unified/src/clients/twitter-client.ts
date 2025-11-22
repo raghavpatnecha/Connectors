@@ -6,13 +6,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { OAuthManager } from '../auth/oauth-manager';
 import { VaultClient, SessionCookies } from '../auth/vault-client';
-import { RateLimiter } from './rate-limiter';
+import { EndpointAwareRateLimiter } from './rate-limiter';
 import { logger, logAPICall } from '../utils/logger';
 
 export interface TwitterClientConfig {
   oauthManager: OAuthManager;
   vaultClient: VaultClient;
-  rateLimiter: RateLimiter;
+  rateLimiter: EndpointAwareRateLimiter;
   socialDataApiKey?: string;
 }
 
@@ -21,7 +21,7 @@ export class TwitterClient {
   private readonly _socialDataAxios: AxiosInstance;
   private readonly _oauthManager: OAuthManager;
   private readonly _vaultClient: VaultClient;
-  private readonly _rateLimiter: RateLimiter;
+  private readonly _rateLimiter: EndpointAwareRateLimiter;
   private readonly _socialDataApiKey?: string;
 
   constructor(config: TwitterClientConfig) {
@@ -62,7 +62,11 @@ export class TwitterClient {
     data?: any,
     params?: any
   ): Promise<T> {
-    await this._rateLimiter.acquire();
+    // Derive tool name from endpoint for rate limiting
+    const toolName = endpoint.includes('/tweets') ? 'tweet' :
+                     endpoint.includes('/dm') || endpoint.includes('/messages') ? 'dm' :
+                     'general';
+    await this._rateLimiter.acquire(toolName);
 
     const startTime = Date.now();
     const url = `https://api.twitter.com/2${endpoint}`;
@@ -111,7 +115,11 @@ export class TwitterClient {
     tenantId: string,
     data?: any
   ): Promise<T> {
-    await this._rateLimiter.acquire();
+    // Derive tool name from endpoint for rate limiting
+    const toolName = endpoint.includes('/tweets') ? 'tweet' :
+                     endpoint.includes('/dm') || endpoint.includes('/messages') ? 'dm' :
+                     'general';
+    await this._rateLimiter.acquire(toolName);
 
     const cookies = await this._vaultClient.getSessionCookies(tenantId);
 
@@ -157,7 +165,8 @@ export class TwitterClient {
       throw new Error('SocialData API key not configured');
     }
 
-    await this._rateLimiter.acquire();
+    // SocialData API uses general rate limiting
+    await this._rateLimiter.acquire('socialdata');
 
     const startTime = Date.now();
 

@@ -1,172 +1,205 @@
 /**
- * User Operation Tools
- * Profile, follow, followers, mutual connections, demographics
+ * User Operation Tools - CORRECTED VERSION
+ * Schemas match actual source code from reference repositories
+ * NO tenantId in schemas (handled by auth context)
  */
 
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { TwitterClient } from '../clients/twitter-client';
 
 export const USER_TOOLS: Tool[] = [
+  // Based on agent-twitter-client-mcp
   {
     name: 'get_user_profile',
-    description: 'Get user profile information including bio, followers, location',
+    description: 'Get a user\'s profile information including bio, followers, location, and verification status',
     inputSchema: {
       type: 'object',
       properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID or username' }
+        username: {
+          type: 'string',
+          description: 'Twitter username (without @)'
+        }
       },
-      required: ['tenantId', 'userId']
+      required: ['username']
     }
   },
+
+  // From mcp-twitter-server - MISSING from original!
+  {
+    name: 'get_user_info',
+    description: 'Get information about a Twitter user by username',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        username: {
+          type: 'string',
+          description: 'The username of the user'
+        }
+      },
+      required: ['username']
+    }
+  },
+
+  // From mcp-twitter-server - MISSING from original!
+  {
+    name: 'get_authenticated_user',
+    description: 'Get the authenticated user\'s own profile information without needing to specify username or ID',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        userFields: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Additional user fields to include (e.g., ["id", "username", "name", "description", "public_metrics", "verified", "profile_image_url", "created_at"])'
+        }
+      },
+      required: []
+    }
+  },
+
+  // Based on agent-twitter-client-mcp
   {
     name: 'follow_user',
     description: 'Follow a Twitter user',
     inputSchema: {
       type: 'object',
       properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID to follow' }
+        username: {
+          type: 'string',
+          description: 'Username of the user to follow'
+        }
       },
-      required: ['tenantId', 'userId']
+      required: ['username']
     }
   },
+
   {
     name: 'unfollow_user',
     description: 'Unfollow a Twitter user',
     inputSchema: {
       type: 'object',
       properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID to unfollow' }
-      },
-      required: ['tenantId', 'userId']
-    }
-  },
-  {
-    name: 'get_followers',
-    description: 'Get list of followers for a user',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID' },
-        maxResults: { type: 'number', description: 'Max results', minimum: 10, maximum: 1000 }
-      },
-      required: ['tenantId', 'userId']
-    }
-  },
-  {
-    name: 'get_following',
-    description: 'Get list of users that a user is following',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID' },
-        maxResults: { type: 'number', description: 'Max results', minimum: 10, maximum: 1000 }
-      },
-      required: ['tenantId', 'userId']
-    }
-  },
-  {
-    name: 'get_user_timeline',
-    description: 'Get tweets from a specific user\'s timeline',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID' },
-        maxResults: { type: 'number', description: 'Max tweets', minimum: 5, maximum: 100 }
-      },
-      required: ['tenantId', 'userId']
-    }
-  },
-  {
-    name: 'find_mutual_connections',
-    description: 'Find mutual followers between two users (requires SocialData API)',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId1: { type: 'string', description: 'First user ID' },
-        userId2: { type: 'string', description: 'Second user ID' }
-      },
-      required: ['tenantId', 'userId1', 'userId2']
-    }
-  },
-  {
-    name: 'analyze_follower_demographics',
-    description: 'Analyze follower demographics (location, activity, etc.) - requires SocialData API',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID' }
-      },
-      required: ['tenantId', 'userId']
-    }
-  },
-  {
-    name: 'bulk_user_profiles',
-    description: 'Get multiple user profiles at once (requires SocialData API)',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userIds: {
-          type: 'array',
-          description: 'Array of user IDs',
-          items: { type: 'string' },
-          maxItems: 100
+        username: {
+          type: 'string',
+          description: 'Username of the user to unfollow'
         }
       },
-      required: ['tenantId', 'userIds']
+      required: ['username']
     }
   },
+
+  // Based on agent-twitter-client-mcp
   {
-    name: 'user_growth_analytics',
-    description: 'Track user growth over time (requires SocialData API)',
+    name: 'get_followers',
+    description: 'Get a user\'s followers list',
     inputSchema: {
       type: 'object',
       properties: {
-        tenantId: { type: 'string', description: 'Tenant ID' },
-        userId: { type: 'string', description: 'User ID' },
-        period: { type: 'string', enum: ['7d', '30d', '90d'], description: 'Analysis period' }
+        userId: {
+          type: 'string',
+          description: 'User ID to get followers for'
+        },
+        count: {
+          type: 'number',
+          description: 'Number of followers to fetch (default: 100)',
+          minimum: 1,
+          maximum: 1000
+        }
       },
-      required: ['tenantId', 'userId']
+      required: ['userId']
+    }
+  },
+
+  // Based on agent-twitter-client-mcp
+  {
+    name: 'get_following',
+    description: 'Get a list of users that a user is following',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'string',
+          description: 'User ID to get following list for'
+        },
+        count: {
+          type: 'number',
+          description: 'Number of users to fetch (default: 100)',
+          minimum: 1,
+          maximum: 1000
+        }
+      },
+      required: ['userId']
     }
   }
 ];
 
 /**
- * User tool handlers
+ * User tool handlers - CORRECTED
+ * tenantId now passed as separate parameter (auth context)
  */
 export class UserToolHandlers {
   constructor(private client: TwitterClient) {}
 
-  async getUserProfile(args: any): Promise<any> {
-    const { tenantId, userId } = args;
-
-    // If username provided, use by/username endpoint
-    const endpoint = userId.match(/^\d+$/)
-      ? `/users/${userId}`
-      : `/users/by/username/${userId}`;
+  async getUserProfile(args: any, tenantId: string): Promise<any> {
+    const { username } = args;
 
     return await this.client.request(
       'GET',
-      endpoint,
+      `/users/by/username/${username}`,
       tenantId,
       undefined,
       {
-        'user.fields': 'created_at,description,location,public_metrics,verified'
+        'user.fields': 'created_at,description,location,public_metrics,verified,profile_image_url'
       }
     );
   }
 
-  async followUser(args: any): Promise<any> {
-    const { tenantId, userId } = args;
+  async getUserInfo(args: any, tenantId: string): Promise<any> {
+    const { username } = args;
 
+    return await this.client.request(
+      'GET',
+      `/users/by/username/${username}`,
+      tenantId,
+      undefined,
+      {
+        'user.fields': 'id,username,name,description,public_metrics,verified,profile_image_url,created_at'
+      }
+    );
+  }
+
+  async getAuthenticatedUser(args: any, tenantId: string): Promise<any> {
+    const { userFields } = args;
+
+    const params: any = {};
+
+    if (userFields && userFields.length > 0) {
+      params['user.fields'] = userFields.join(',');
+    } else {
+      params['user.fields'] = 'id,username,name,description,public_metrics,verified,profile_image_url,created_at';
+    }
+
+    return await this.client.request(
+      'GET',
+      '/users/me',
+      tenantId,
+      undefined,
+      params
+    );
+  }
+
+  async followUser(args: any, tenantId: string): Promise<any> {
+    const { username } = args;
+
+    // Look up user ID from username
+    const user = await this.client.request(
+      'GET',
+      `/users/by/username/${username}`,
+      tenantId
+    );
+    const targetUserId = user.data.id;
+
+    // Get authenticated user ID
     const me = await this.client.request('GET', '/users/me', tenantId);
     const myUserId = me.data.id;
 
@@ -174,25 +207,34 @@ export class UserToolHandlers {
       'POST',
       `/users/${myUserId}/following`,
       tenantId,
-      { target_user_id: userId }
+      { target_user_id: targetUserId }
     );
   }
 
-  async unfollowUser(args: any): Promise<any> {
-    const { tenantId, userId } = args;
+  async unfollowUser(args: any, tenantId: string): Promise<any> {
+    const { username } = args;
 
+    // Look up user ID from username
+    const user = await this.client.request(
+      'GET',
+      `/users/by/username/${username}`,
+      tenantId
+    );
+    const targetUserId = user.data.id;
+
+    // Get authenticated user ID
     const me = await this.client.request('GET', '/users/me', tenantId);
     const myUserId = me.data.id;
 
     return await this.client.request(
       'DELETE',
-      `/users/${myUserId}/following/${userId}`,
+      `/users/${myUserId}/following/${targetUserId}`,
       tenantId
     );
   }
 
-  async getFollowers(args: any): Promise<any> {
-    const { tenantId, userId, maxResults = 100 } = args;
+  async getFollowers(args: any, tenantId: string): Promise<any> {
+    const { userId, count = 100 } = args;
 
     return await this.client.request(
       'GET',
@@ -200,14 +242,14 @@ export class UserToolHandlers {
       tenantId,
       undefined,
       {
-        max_results: maxResults,
-        'user.fields': 'public_metrics,verified'
+        max_results: count,
+        'user.fields': 'public_metrics,verified,description'
       }
     );
   }
 
-  async getFollowing(args: any): Promise<any> {
-    const { tenantId, userId, maxResults = 100 } = args;
+  async getFollowing(args: any, tenantId: string): Promise<any> {
+    const { userId, count = 100 } = args;
 
     return await this.client.request(
       'GET',
@@ -215,69 +257,8 @@ export class UserToolHandlers {
       tenantId,
       undefined,
       {
-        max_results: maxResults,
-        'user.fields': 'public_metrics,verified'
-      }
-    );
-  }
-
-  async getUserTimeline(args: any): Promise<any> {
-    const { tenantId, userId, maxResults = 10 } = args;
-
-    return await this.client.request(
-      'GET',
-      `/users/${userId}/tweets`,
-      tenantId,
-      undefined,
-      {
-        max_results: maxResults,
-        'tweet.fields': 'created_at,public_metrics'
-      }
-    );
-  }
-
-  async findMutualConnections(args: any): Promise<any> {
-    const { tenantId, userId1, userId2 } = args;
-
-    return await this.client.socialDataRequest(
-      'POST',
-      '/twitter/mutual-connections',
-      {
-        user_id_1: userId1,
-        user_id_2: userId2
-      }
-    );
-  }
-
-  async analyzeFollowerDemographics(args: any): Promise<any> {
-    const { tenantId, userId } = args;
-
-    return await this.client.socialDataRequest(
-      'POST',
-      '/twitter/follower-demographics',
-      { user_id: userId }
-    );
-  }
-
-  async bulkUserProfiles(args: any): Promise<any> {
-    const { tenantId, userIds } = args;
-
-    return await this.client.socialDataRequest(
-      'POST',
-      '/twitter/bulk-users',
-      { user_ids: userIds }
-    );
-  }
-
-  async userGrowthAnalytics(args: any): Promise<any> {
-    const { tenantId, userId, period = '30d' } = args;
-
-    return await this.client.socialDataRequest(
-      'POST',
-      '/twitter/user-growth',
-      {
-        user_id: userId,
-        period
+        max_results: count,
+        'user.fields': 'public_metrics,verified,description'
       }
     );
   }

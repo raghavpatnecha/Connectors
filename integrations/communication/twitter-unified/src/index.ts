@@ -23,7 +23,7 @@ import express from 'express';
 import { VaultClient } from './auth/vault-client';
 import { OAuthManager } from './auth/oauth-manager';
 import { TwitterClient } from './clients/twitter-client';
-import { RateLimiter } from './clients/rate-limiter';
+import { EndpointAwareRateLimiter } from './clients/rate-limiter';
 import { ToolHandlerRegistry } from './tools';
 import { logger, logOAuthEvent } from './utils/logger';
 
@@ -88,7 +88,7 @@ class TwitterUnifiedMCP {
       this._vaultClient
     );
 
-    const rateLimiter = new RateLimiter({
+    const rateLimiter = new EndpointAwareRateLimiter({
       requestsPerMinute: parseInt(process.env.TWITTER_RATE_LIMIT_PER_MINUTE || '15', 10),
       requestsPerDay: parseInt(process.env.TWITTER_RATE_LIMIT_PER_DAY || '50', 10),
       requestsPerMonth: parseInt(process.env.TWITTER_RATE_LIMIT_PER_MONTH || '500', 10)
@@ -148,12 +148,19 @@ class TwitterUnifiedMCP {
         const { name, arguments: args } = request.params;
 
         try {
+          // Extract tenantId from args (it's now passed separately to handlers)
+          const { tenantId, ...toolArgs } = args || {};
+
+          if (!tenantId || typeof tenantId !== 'string') {
+            throw new Error('tenantId is required and must be a string');
+          }
+
           logger.info('Tool invocation', {
             tool: name,
-            tenantId: args?.tenantId
+            tenantId
           });
 
-          const result = await this._toolRegistry.handleTool(name, args || {});
+          const result = await this._toolRegistry.handleTool(name, toolArgs, tenantId as string);
 
           return {
             content: [

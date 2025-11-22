@@ -1,8 +1,13 @@
 /**
- * Rate Limiter for Twitter API
- * Implements token bucket algorithm with multiple time windows
+ * Endpoint-Specific Rate Limiter for Twitter API
+ * Based on mcp-twikit implementation
  *
- * Twitter API Rate Limits:
+ * Twitter API Rate Limits (per endpoint type):
+ * - Tweets: 300 per 15 minutes (from mcp-twikit)
+ * - DMs: 1,000 per 15 minutes (from mcp-twikit)
+ * - General: 15 per minute (default Twitter API limit)
+ *
+ * Also supports global tier-based limits:
  * - Free tier: 50 tweets/day, 500 reads/month
  * - Basic ($100/mo): 3,000 tweets/month, 10,000 reads/month
  * - Pro ($5,000/mo): 300,000 tweets/month, 1M reads/month
@@ -10,219 +15,283 @@
 
 import { logger } from '../utils/logger';
 
+type EndpointType = 'tweet' | 'dm' | 'general';
+
 interface RateLimitConfig {
+  // Global tier-based limits
   requestsPerMinute?: number;
   requestsPerDay?: number;
   requestsPerMonth?: number;
 }
 
-interface TokenBucket {
-  tokens: number;
-  capacity: number;
-  refillRate: number; // tokens per second
-  lastRefill: number;
+interface EndpointRateLimit {
+  timestamps: number[]; // Timestamps of recent requests
+  limit: number; // Max requests in window
+  window: number; // Window duration in milliseconds
 }
 
-export class RateLimiter {
-  private readonly _minuteBucket: TokenBucket;
-  private readonly _dayBucket: TokenBucket;
-  private readonly _monthBucket: TokenBucket;
-  private _requestCount: {
-    minute: number;
-    day: number;
-    month: number;
-  };
-  private _lastReset: {
+/**
+ * Endpoint-specific rate limiter with token bucket algorithm
+ * Implements both endpoint-specific and global tier-based limits
+ */
+export class EndpointAwareRateLimiter {
+  // Endpoint-specific limits (15 minute windows)
+  private readonly _endpointLimits: Map<EndpointType, EndpointRateLimit>;
+  private readonly _windowDuration = 15 * 60 * 1000; // 15 minutes in ms
+
+  // Global tier-based limits
+  private _globalMinuteTokens: number;
+  private _globalDayTokens: number;
+  private _globalMonthTokens: number;
+  private readonly _globalMinuteCapacity: number;
+  private readonly _globalDayCapacity: number;
+  private readonly _globalMonthCapacity: number;
+  private _lastGlobalReset: {
     minute: number;
     day: number;
     month: number;
   };
 
   constructor(config: RateLimitConfig = {}) {
-    const perMinute = config.requestsPerMinute || 15;
-    const perDay = config.requestsPerDay || 50;
-    const perMonth = config.requestsPerMonth || 500;
+    // Initialize endpoint-specific limits
+    this._endpointLimits = new Map([
+      ['tweet', { timestamps: [], limit: 300, window: this._windowDuration }],
+      ['dm', { timestamps: [], limit: 1000, window: this._windowDuration }],
+      ['general', { timestamps: [], limit: 900, window: this._windowDuration }] // 15min * 60req/min
+    ]);
+
+    // Initialize global tier-based limits
+    this._globalMinuteCapacity = config.requestsPerMinute || 15;
+    this._globalDayCapacity = config.requestsPerDay || 50;
+    this._globalMonthCapacity = config.requestsPerMonth || 500;
 
     const now = Date.now();
+    this._globalMinuteTokens = this._globalMinuteCapacity;
+    this._globalDayTokens = this._globalDayCapacity;
+    this._globalMonthTokens = this._globalMonthCapacity;
+    this._lastGlobalReset = { minute: now, day: now, month: now };
 
-    // Minute bucket
-    this._minuteBucket = {
-      tokens: perMinute,
-      capacity: perMinute,
-      refillRate: perMinute / 60, // tokens per second
-      lastRefill: now
-    };
-
-    // Day bucket
-    this._dayBucket = {
-      tokens: perDay,
-      capacity: perDay,
-      refillRate: perDay / (24 * 60 * 60), // tokens per second
-      lastRefill: now
-    };
-
-    // Month bucket (30 days)
-    this._monthBucket = {
-      tokens: perMonth,
-      capacity: perMonth,
-      refillRate: perMonth / (30 * 24 * 60 * 60), // tokens per second
-      lastRefill: now
-    };
-
-    this._requestCount = { minute: 0, day: 0, month: 0 };
-    this._lastReset = { minute: now, day: now, month: now };
-
-    logger.info('RateLimiter initialized', {
-      perMinute,
-      perDay,
-      perMonth
+    logger.info('EndpointAwareRateLimiter initialized', {
+      endpointLimits: {
+        tweet: '300/15min',
+        dm: '1000/15min',
+        general: '900/15min'
+      },
+      globalLimits: {
+        perMinute: this._globalMinuteCapacity,
+        perDay: this._globalDayCapacity,
+        perMonth: this._globalMonthCapacity
+      }
     });
   }
 
   /**
-   * Acquire a token (wait if needed)
-   * Checks all three buckets and waits for the longest required wait time
+   * Get endpoint type from tool name
    */
-  async acquire(): Promise<void> {
+  private _getEndpointType(toolName: string): EndpointType {
+    // Tweet operations
+    if (toolName.includes('tweet') || toolName.includes('post') ||
+        toolName === 'reply_to_tweet' || toolName === 'quote_tweet') {
+      return 'tweet';
+    }
+
+    // DM operations
+    if (toolName.includes('dm') || toolName.includes('message')) {
+      return 'dm';
+    }
+
+    // Everything else
+    return 'general';
+  }
+
+  /**
+   * Check if request is within endpoint-specific rate limit
+   */
+  private _checkEndpointLimit(endpointType: EndpointType): boolean {
+    const limit = this._endpointLimits.get(endpointType)!;
+    const now = Date.now();
+    const windowStart = now - limit.window;
+
+    // Remove timestamps outside the window
+    limit.timestamps = limit.timestamps.filter(ts => ts >= windowStart);
+
+    // Check if we're within the limit
+    return limit.timestamps.length < limit.limit;
+  }
+
+  /**
+   * Record a request for an endpoint
+   */
+  private _recordEndpointRequest(endpointType: EndpointType): void {
+    const limit = this._endpointLimits.get(endpointType)!;
+    limit.timestamps.push(Date.now());
+  }
+
+  /**
+   * Calculate wait time for endpoint limit
+   */
+  private _calculateEndpointWaitTime(endpointType: EndpointType): number {
+    const limit = this._endpointLimits.get(endpointType)!;
+    const now = Date.now();
+    const windowStart = now - limit.window;
+
+    // Find oldest timestamp in current window
+    const oldestInWindow = limit.timestamps.find(ts => ts >= windowStart);
+    if (!oldestInWindow) return 0;
+
+    // Wait until oldest timestamp falls out of window
+    return (oldestInWindow + limit.window) - now;
+  }
+
+  /**
+   * Reset global counters if needed
+   */
+  private _resetGlobalCounters(): void {
     const now = Date.now();
 
-    // Reset counters if needed
-    this._resetCounters(now);
+    if (now - this._lastGlobalReset.minute >= 60 * 1000) {
+      this._globalMinuteTokens = this._globalMinuteCapacity;
+      this._lastGlobalReset.minute = now;
+    }
 
-    // Refill all buckets
-    this._refillBucket(this._minuteBucket);
-    this._refillBucket(this._dayBucket);
-    this._refillBucket(this._monthBucket);
+    if (now - this._lastGlobalReset.day >= 24 * 60 * 60 * 1000) {
+      this._globalDayTokens = this._globalDayCapacity;
+      this._lastGlobalReset.day = now;
+    }
 
-    // Calculate wait times for each bucket
+    if (now - this._lastGlobalReset.month >= 30 * 24 * 60 * 60 * 1000) {
+      this._globalMonthTokens = this._globalMonthCapacity;
+      this._lastGlobalReset.month = now;
+    }
+  }
+
+  /**
+   * Acquire a token for a specific tool/endpoint
+   * Checks both endpoint-specific AND global tier-based limits
+   */
+  async acquire(toolName: string): Promise<void> {
+    const endpointType = this._getEndpointType(toolName);
+
+    // Reset global counters
+    this._resetGlobalCounters();
+
+    // Calculate wait times
     const waitTimes: number[] = [];
 
-    if (this._minuteBucket.tokens < 1) {
-      waitTimes.push(this._calculateWaitTime(this._minuteBucket));
-    }
-    if (this._dayBucket.tokens < 1) {
-      waitTimes.push(this._calculateWaitTime(this._dayBucket));
-    }
-    if (this._monthBucket.tokens < 1) {
-      waitTimes.push(this._calculateWaitTime(this._monthBucket));
+    // Check endpoint-specific limit
+    if (!this._checkEndpointLimit(endpointType)) {
+      const endpointWait = this._calculateEndpointWaitTime(endpointType);
+      if (endpointWait > 0) {
+        waitTimes.push(endpointWait);
+      }
     }
 
-    // Wait for the longest required time
+    // Check global limits
+    if (this._globalMinuteTokens < 1) {
+      waitTimes.push((60 - ((Date.now() - this._lastGlobalReset.minute) / 1000)) * 1000);
+    }
+    if (this._globalDayTokens < 1) {
+      waitTimes.push((24 * 60 * 60 - ((Date.now() - this._lastGlobalReset.day) / 1000)) * 1000);
+    }
+    if (this._globalMonthTokens < 1) {
+      waitTimes.push((30 * 24 * 60 * 60 - ((Date.now() - this._lastGlobalReset.month) / 1000)) * 1000);
+    }
+
+    // Wait if needed
     if (waitTimes.length > 0) {
       const maxWaitTime = Math.max(...waitTimes);
+
       logger.warn('Rate limit throttling', {
-        waitTimeMs: maxWaitTime.toFixed(0),
-        availableTokens: {
-          minute: this._minuteBucket.tokens.toFixed(2),
-          day: this._dayBucket.tokens.toFixed(2),
-          month: this._monthBucket.tokens.toFixed(2)
+        toolName,
+        endpointType,
+        waitTimeMs: Math.round(maxWaitTime),
+        endpointStatus: this._getEndpointStatus(endpointType),
+        globalStatus: {
+          minute: this._globalMinuteTokens,
+          day: this._globalDayTokens,
+          month: this._globalMonthTokens
         }
       });
 
       await new Promise(resolve => setTimeout(resolve, maxWaitTime));
 
-      // Refill again after waiting
-      this._refillBucket(this._minuteBucket);
-      this._refillBucket(this._dayBucket);
-      this._refillBucket(this._monthBucket);
+      // Reset counters after wait
+      this._resetGlobalCounters();
     }
 
-    // Consume token from all buckets
-    this._minuteBucket.tokens -= 1;
-    this._dayBucket.tokens -= 1;
-    this._monthBucket.tokens -= 1;
-
-    // Increment counters
-    this._requestCount.minute++;
-    this._requestCount.day++;
-    this._requestCount.month++;
+    // Consume tokens
+    this._recordEndpointRequest(endpointType);
+    this._globalMinuteTokens -= 1;
+    this._globalDayTokens -= 1;
+    this._globalMonthTokens -= 1;
   }
 
   /**
-   * Get current rate limit status
+   * Get endpoint status
    */
-  getStatus(): {
-    available: {
-      minute: number;
-      day: number;
-      month: number;
-    };
-    capacity: {
-      minute: number;
-      day: number;
-      month: number;
-    };
-    used: {
-      minute: number;
-      day: number;
-      month: number;
-    };
+  private _getEndpointStatus(endpointType: EndpointType): {
+    used: number;
+    limit: number;
+    remaining: number;
   } {
-    // Refill before reporting
-    this._refillBucket(this._minuteBucket);
-    this._refillBucket(this._dayBucket);
-    this._refillBucket(this._monthBucket);
+    const limit = this._endpointLimits.get(endpointType)!;
+    const now = Date.now();
+    const windowStart = now - limit.window;
+    const used = limit.timestamps.filter(ts => ts >= windowStart).length;
 
     return {
-      available: {
-        minute: Math.floor(this._minuteBucket.tokens),
-        day: Math.floor(this._dayBucket.tokens),
-        month: Math.floor(this._monthBucket.tokens)
+      used,
+      limit: limit.limit,
+      remaining: limit.limit - used
+    };
+  }
+
+  /**
+   * Get comprehensive rate limit status
+   */
+  getStatus(): {
+    endpoints: Record<EndpointType, { used: number; limit: number; remaining: number }>;
+    global: {
+      minute: { available: number; capacity: number };
+      day: { available: number; capacity: number };
+      month: { available: number; capacity: number };
+    };
+  } {
+    this._resetGlobalCounters();
+
+    return {
+      endpoints: {
+        tweet: this._getEndpointStatus('tweet'),
+        dm: this._getEndpointStatus('dm'),
+        general: this._getEndpointStatus('general')
       },
-      capacity: {
-        minute: this._minuteBucket.capacity,
-        day: this._dayBucket.capacity,
-        month: this._monthBucket.capacity
-      },
-      used: {
-        minute: this._requestCount.minute,
-        day: this._requestCount.day,
-        month: this._requestCount.month
+      global: {
+        minute: {
+          available: Math.floor(this._globalMinuteTokens),
+          capacity: this._globalMinuteCapacity
+        },
+        day: {
+          available: Math.floor(this._globalDayTokens),
+          capacity: this._globalDayCapacity
+        },
+        month: {
+          available: Math.floor(this._globalMonthTokens),
+          capacity: this._globalMonthCapacity
+        }
       }
     };
   }
 
   /**
-   * Refill a token bucket based on elapsed time
+   * Check if a request would be rate limited
    */
-  private _refillBucket(bucket: TokenBucket): void {
-    const now = Date.now();
-    const elapsed = (now - bucket.lastRefill) / 1000; // seconds
-    const tokensToAdd = elapsed * bucket.refillRate;
+  wouldBeRateLimited(toolName: string): boolean {
+    const endpointType = this._getEndpointType(toolName);
+    this._resetGlobalCounters();
 
-    bucket.tokens = Math.min(bucket.capacity, bucket.tokens + tokensToAdd);
-    bucket.lastRefill = now;
-  }
-
-  /**
-   * Calculate wait time needed for a bucket to have 1 token
-   */
-  private _calculateWaitTime(bucket: TokenBucket): number {
-    const tokensNeeded = 1 - bucket.tokens;
-    const secondsToWait = tokensNeeded / bucket.refillRate;
-    return secondsToWait * 1000; // convert to milliseconds
-  }
-
-  /**
-   * Reset counters based on time windows
-   */
-  private _resetCounters(now: number): void {
-    // Reset minute counter (every 60 seconds)
-    if (now - this._lastReset.minute >= 60 * 1000) {
-      this._requestCount.minute = 0;
-      this._lastReset.minute = now;
-    }
-
-    // Reset day counter (every 24 hours)
-    if (now - this._lastReset.day >= 24 * 60 * 60 * 1000) {
-      this._requestCount.day = 0;
-      this._lastReset.day = now;
-    }
-
-    // Reset month counter (every 30 days)
-    if (now - this._lastReset.month >= 30 * 24 * 60 * 60 * 1000) {
-      this._requestCount.month = 0;
-      this._lastReset.month = now;
-    }
+    return !this._checkEndpointLimit(endpointType) ||
+           this._globalMinuteTokens < 1 ||
+           this._globalDayTokens < 1 ||
+           this._globalMonthTokens < 1;
   }
 }
