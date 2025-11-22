@@ -16,6 +16,7 @@ import {
   VaultEncryptionError,
   CredentialNotFoundError
 } from '../errors/oauth-errors';
+import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker';
 
 const logger = createLogger({
   defaultMeta: { service: 'vault-client' }
@@ -42,12 +43,32 @@ export class VaultClient {
   private readonly _kvEngine: string;
   private readonly _maxRetries: number;
   private readonly _vaultToken: string;
+  private readonly _circuitBreaker: CircuitBreaker;
 
   constructor(config: VaultConfig) {
     this._transitEngine = config.transitEngine || DEFAULT_TRANSIT_ENGINE;
     this._kvEngine = config.kvEngine || DEFAULT_KV_ENGINE;
     this._maxRetries = config.maxRetries || DEFAULT_MAX_RETRIES;
     this._vaultToken = config.token;
+
+    // Initialize circuit breaker for Vault operations
+    this._circuitBreaker = new CircuitBreaker({
+      failureThreshold: 5,
+      successThreshold: 2,
+      resetTimeout: 60000, // 1 minute
+      windowDuration: 10000, // 10 seconds
+      onOpen: () => {
+        logger.error('Vault circuit breaker OPENED - failing fast', {
+          failures: this._circuitBreaker.getFailureCount()
+        });
+      },
+      onHalfOpen: () => {
+        logger.warn('Vault circuit breaker HALF_OPEN - testing recovery');
+      },
+      onClose: () => {
+        logger.info('Vault circuit breaker CLOSED - service recovered');
+      }
+    });
 
     // Create axios client WITHOUT token in static config to prevent logging
     this._client = axios.create({
@@ -554,28 +575,52 @@ export class VaultClient {
   }
 
   /**
-   * Retry operation with exponential backoff
+   * Retry operation with exponential backoff and circuit breaker
+   * FIX: Added circuit breaker to prevent cascading failures
    */
   private async _retryOperation<T>(
     operation: () => Promise<T>,
     attempt: number = 0
   ): Promise<T> {
-    try {
-      return await operation();
-    } catch (error) {
-      if (attempt >= this._maxRetries) {
-        throw error;
+    // Execute within circuit breaker
+    return this._circuitBreaker.execute(async () => {
+      try {
+        return await operation();
+      } catch (error) {
+        if (attempt >= this._maxRetries) {
+          throw error;
+        }
+
+        // Add jitter to prevent thundering herd
+        const baseDelay = Math.pow(2, attempt) * 100;
+        const jitter = Math.random() * 1000;
+        const delay = baseDelay + jitter;
+
+        logger.warn('Vault operation failed, retrying', {
+          attempt: attempt + 1,
+          maxRetries: this._maxRetries,
+          delay: Math.floor(delay),
+          circuitState: this._circuitBreaker.getState()
+        });
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this._retryOperation(operation, attempt + 1);
       }
+    });
+  }
 
-      const delay = Math.pow(2, attempt) * 100; // Exponential backoff
-      logger.warn('Vault operation failed, retrying', {
-        attempt: attempt + 1,
-        maxRetries: this._maxRetries,
-        delay
-      });
+  /**
+   * Get circuit breaker statistics for monitoring
+   */
+  getCircuitBreakerStats() {
+    return this._circuitBreaker.getStats();
+  }
 
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return this._retryOperation(operation, attempt + 1);
-    }
+  /**
+   * Check if Vault circuit breaker is healthy
+   */
+  isCircuitBreakerHealthy(): boolean {
+    const state = this._circuitBreaker.getState();
+    return state === CircuitState.CLOSED || state === CircuitState.HALF_OPEN;
   }
 }

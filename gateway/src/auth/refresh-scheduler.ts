@@ -8,6 +8,7 @@ import { createLogger } from 'winston';
 import { VaultClient } from './vault-client';
 import { OAuthCredentials, RefreshJob, OAuthTokenResponse } from './types';
 import { TokenRefreshError } from '../errors/oauth-errors';
+import { MutexMap } from '../utils/async-mutex';
 
 const logger = createLogger({
   defaultMeta: { service: 'refresh-scheduler' }
@@ -40,6 +41,7 @@ export class RefreshScheduler extends EventEmitter {
   private readonly _vault: VaultClient;
   private readonly _refreshCallback: RefreshCallback;
   private readonly _jobs: Map<string, RefreshJob>;
+  private readonly _refreshMutexes: MutexMap<string>;
   private _intervalId: NodeJS.Timeout | null = null;
   private _isRunning: boolean = false;
 
@@ -48,6 +50,7 @@ export class RefreshScheduler extends EventEmitter {
     this._vault = vault;
     this._refreshCallback = refreshCallback;
     this._jobs = new Map();
+    this._refreshMutexes = new MutexMap<string>();
   }
 
   /**
@@ -188,6 +191,8 @@ export class RefreshScheduler extends EventEmitter {
   /**
    * Process all pending jobs
    * Checks which jobs need to run and executes them
+   *
+   * FIX: Now uses mutex locking to prevent concurrent refreshes for same tenant:integration
    */
   private async _processJobs(): Promise<void> {
     const now = Date.now();
@@ -206,16 +211,26 @@ export class RefreshScheduler extends EventEmitter {
 
     logger.debug('Processing refresh jobs', { count: jobsToRun.length });
 
-    // Execute jobs concurrently
+    // Execute jobs concurrently, but with per-credential mutex locking
+    // This prevents multiple concurrent refreshes for the same tenant:integration
     await Promise.all(
       jobsToRun.map(job =>
-        this._executeRefresh(job.tenantId, job.integration, job.retryCount)
+        this._refreshMutexes.runExclusive(
+          this._buildJobId(job.tenantId, job.integration),
+          () => this._executeRefresh(job.tenantId, job.integration, job.retryCount)
+        )
       )
     );
+
+    // Clean up unused mutexes periodically
+    this._refreshMutexes.cleanup();
   }
 
   /**
    * Execute a refresh for a specific credential
+   *
+   * FIX: Protected by mutex in _processJobs to prevent concurrent execution
+   * for the same tenant:integration pair
    */
   private async _executeRefresh(
     tenantId: string,
@@ -224,6 +239,18 @@ export class RefreshScheduler extends EventEmitter {
   ): Promise<void> {
     const jobId = this._buildJobId(tenantId, integration);
     const job = this._jobs.get(jobId);
+
+    // Double-check job hasn't been removed by another concurrent operation
+    if (!job) {
+      logger.debug('Job already processed or removed', { tenantId, integration });
+      return;
+    }
+
+    // Check if already running (defensive check, mutex should prevent this)
+    if (job.status === 'running') {
+      logger.warn('Job already running (prevented race condition)', { tenantId, integration });
+      return;
+    }
 
     if (job) {
       job.status = 'running';

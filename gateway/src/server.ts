@@ -27,6 +27,17 @@ import { createTenantOAuthRouter } from './routes/tenant-oauth';
 import { createMCPManagementRouter } from './routes/mcp-management';
 import { MCPDeployer } from './services/mcp-deployer';
 import {
+  validateString,
+  validateNumber,
+  validateArray,
+  validateObject,
+  validateToolId,
+  validateIntegration,
+  validateCategory,
+  ValidationError,
+  logValidationError
+} from './utils/validation';
+import {
   initializeRateLimitRedis,
   closeRateLimitRedis,
   createGlobalRateLimiter,
@@ -329,56 +340,128 @@ export class MCPGatewayServer {
     try {
       const { query, context }: SelectToolsRequest = req.body;
 
-      if (!query || typeof query !== 'string') {
-        res.sendError(
-          'INVALID_QUERY',
-          'Query parameter is required and must be a string'
-        );
-        return;
-      }
+      // FIX: Comprehensive input validation
+      try {
+        // Validate query
+        const validatedQuery = validateString(query, 'query', {
+          minLength: 1,
+          maxLength: 1000,
+          noControlChars: true
+        });
 
-      // Build query context
-      const queryContext: QueryContext = {
-        allowedCategories: context?.allowedCategories || [],
-        tokenBudget: context?.tokenBudget || 5000,
-        tenantId: context?.tenantId,
-      };
+        // Validate context if provided
+        let validatedCategories: string[] = [];
+        let validatedTokenBudget: number = 5000;
+        let validatedTenantId: string | undefined;
+        let validatedMaxTools: number = 10;
 
-      // Select tools using semantic routing
-      const startTime = Date.now();
-      const selectedTools = await this.semanticRouter.selectTools(query, queryContext);
-      const selectionLatency = Date.now() - startTime;
+        if (context) {
+          validateObject(context, 'context', {
+            maxDepth: 2,
+            maxKeys: 10,
+            allowedKeys: ['allowedCategories', 'tokenBudget', 'tenantId', 'maxTools']
+          });
 
-      // Optimize token usage with progressive loading
-      const tokenBudget = queryContext.tokenBudget || 5000;
-      const optimized = this.tokenOptimizer.optimize(selectedTools, tokenBudget);
-      const tiered = await this.progressiveLoader.loadTiered(optimized, tokenBudget);
+          // Validate allowedCategories
+          if (context.allowedCategories) {
+            validatedCategories = validateArray(context.allowedCategories, 'allowedCategories', {
+              maxLength: 20
+            });
 
-      // Log performance metrics
-      logger.info('tool_selection_completed', {
-        query,
-        tools_selected: selectedTools.length,
-        tools_optimized: optimized.length,
-        token_budget: tokenBudget,
-        token_usage: tiered.totalTokens,
-        latency_ms: selectionLatency,
-        token_reduction_pct: ((tokenBudget - tiered.totalTokens) / tokenBudget) * 100,
-      });
+            // Validate each category
+            validatedCategories = validatedCategories.map((cat: any) =>
+              validateCategory(cat, 'category')
+            );
+          }
 
-      res.sendSuccess({
-        query,
-        tools: {
-          tier1: tiered.tier1,
-          tier2: tiered.tier2,
-          tier3: tiered.tier3,
-        },
-        performance: {
-          totalTools: selectedTools.length,
-          tokenUsage: tiered.totalTokens,
-          tokenBudget: queryContext.tokenBudget,
+          // Validate tokenBudget
+          if (context.tokenBudget !== undefined) {
+            validatedTokenBudget = validateNumber(context.tokenBudget, 'tokenBudget', {
+              min: 100,
+              max: 100000,
+              integer: true
+            });
+          }
+
+          // Validate maxTools
+          if (context.maxTools !== undefined) {
+            validatedMaxTools = validateNumber(context.maxTools, 'maxTools', {
+              min: 1,
+              max: 50,
+              integer: true
+            });
+          }
+
+          // Validate tenantId if provided
+          if (context.tenantId) {
+            validatedTenantId = validateString(context.tenantId, 'tenantId', {
+              maxLength: 256,
+              noControlChars: true
+            });
+          }
+        }
+
+        // Build query context with validated data
+        const queryContext: QueryContext = {
+          allowedCategories: validatedCategories,
+          tokenBudget: validatedTokenBudget,
+          tenantId: validatedTenantId,
+        };
+
+        // Select tools using semantic routing
+        const startTime = Date.now();
+        const selectedTools = await this.semanticRouter.selectTools(validatedQuery, queryContext);
+        const selectionLatency = Date.now() - startTime;
+
+        // Optimize token usage with progressive loading
+        const tokenBudget = queryContext.tokenBudget || 5000;
+        const optimized = this.tokenOptimizer.optimize(selectedTools, tokenBudget);
+        const tiered = await this.progressiveLoader.loadTiered(optimized, tokenBudget);
+
+        // Log performance metrics
+        logger.info('tool_selection_completed', {
+          query: validatedQuery,
+          tools_selected: selectedTools.length,
+          tools_optimized: optimized.length,
+          token_budget: tokenBudget,
+          token_usage: tiered.totalTokens,
           latency_ms: selectionLatency,
-        },
-      });
+          token_reduction_pct: ((tokenBudget - tiered.totalTokens) / tokenBudget) * 100,
+        });
+
+        res.sendSuccess({
+          query: validatedQuery,
+          tools: {
+            tier1: tiered.tier1,
+            tier2: tiered.tier2,
+            tier3: tiered.tier3,
+          },
+          performance: {
+            totalTools: selectedTools.length,
+            tokenUsage: tiered.totalTokens,
+            tokenBudget: queryContext.tokenBudget,
+            latency_ms: selectionLatency,
+          },
+        });
+      } catch (validationError) {
+        // Handle validation errors
+        if (validationError instanceof ValidationError) {
+          logValidationError(validationError, {
+            path: req.path,
+            method: req.method,
+            ip: req.ip
+          });
+
+          res.sendError(
+            'VALIDATION_ERROR',
+            validationError.message,
+            { field: validationError.field },
+            400
+          );
+          return;
+        }
+        throw validationError;
+      }
     } catch (error) {
       if (error instanceof ToolSelectionError) {
         logger.error('Tool selection failed', {
@@ -405,41 +488,76 @@ export class MCPGatewayServer {
     try {
       const { toolId, integration, parameters, tenantId }: InvokeToolRequest = req.body;
 
-      if (!toolId || !integration || !tenantId) {
-        res.sendError(
-          'MISSING_REQUIRED_FIELDS',
-          'toolId, integration, and tenantId are required'
-        );
-        return;
-      }
+      // FIX: Comprehensive input validation
+      try {
+        // Validate toolId
+        const validatedToolId = validateToolId(toolId, 'toolId');
 
-      // Invoke tool via OAuth proxy
-      const startTime = Date.now();
-      const result = await this.oauthProxy.proxyRequest({
-        tenantId,
-        integration,
-        method: 'POST',
-        path: `/tools/${toolId}/invoke`,
-        body: parameters,
-        headers: {},
-      });
-      const invocationLatency = Date.now() - startTime;
+        // Validate integration
+        const validatedIntegration = validateIntegration(integration, 'integration');
 
-      logger.info('tool_invocation_completed', {
-        toolId,
-        integration,
-        tenantId,
-        latency_ms: invocationLatency,
-        success: true,
-      });
+        // Validate tenantId
+        const validatedTenantId = validateString(tenantId, 'tenantId', {
+          minLength: 1,
+          maxLength: 256,
+          noControlChars: true
+        });
 
-      res.sendSuccess({
-        toolId,
-        result: result.data,
-        performance: {
+        // Validate parameters
+        let validatedParameters: Record<string, unknown> = {};
+        if (parameters !== undefined) {
+          validatedParameters = validateObject(parameters, 'parameters', {
+            maxDepth: 10,
+            maxKeys: 100
+          });
+        }
+
+        // Invoke tool via OAuth proxy
+        const startTime = Date.now();
+        const result = await this.oauthProxy.proxyRequest({
+          tenantId: validatedTenantId,
+          integration: validatedIntegration,
+          method: 'POST',
+          path: `/tools/${validatedToolId}/invoke`,
+          body: validatedParameters,
+          headers: {},
+        });
+        const invocationLatency = Date.now() - startTime;
+
+        logger.info('tool_invocation_completed', {
+          toolId: validatedToolId,
+          integration: validatedIntegration,
+          tenantId: validatedTenantId,
           latency_ms: invocationLatency,
-        },
-      });
+          success: true,
+        });
+
+        res.sendSuccess({
+          toolId: validatedToolId,
+          result: result.data,
+          performance: {
+            latency_ms: invocationLatency,
+          },
+        });
+      } catch (validationError) {
+        // Handle validation errors
+        if (validationError instanceof ValidationError) {
+          logValidationError(validationError, {
+            path: req.path,
+            method: req.method,
+            ip: req.ip
+          });
+
+          res.sendError(
+            'VALIDATION_ERROR',
+            validationError.message,
+            { field: validationError.field },
+            400
+          );
+          return;
+        }
+        throw validationError;
+      }
     } catch (error) {
       if (error instanceof OAuthError) {
         logger.error('OAuth error during tool invocation', {
