@@ -1,6 +1,6 @@
 /**
  * Twitter Unified MCP Tools Registry - CORRECTED VERSION
- * All 63 tools with accurate schemas matching source code
+ * All 62 tools with accurate schemas matching source code
  * Based on actual implementations from 4 reference repositories
  */
 
@@ -18,10 +18,10 @@ import { MODERATION_TOOLS, ModerationToolHandlers } from './moderation-tools';
 import { SOCIALDATA_ANALYTICS_TOOLS, SocialDataAnalyticsHandlers } from './socialdata-analytics-tools';
 
 /**
- * All Twitter tools (63 total)
+ * All Twitter tools (62 total)
  *
  * Breakdown:
- * - Tweet Operations: 16 tools (send_tweet, post_tweet_with_media, send_tweet_with_poll, etc.)
+ * - Tweet Operations: 15 tools (send_tweet, post_tweet_with_media, send_tweet_with_poll, etc.)
  * - Engagement: 6 tools (like, unlike, retweet, undo_retweet, etc.)
  * - User Operations: 7 tools (get_user_profile, follow, get_authenticated_user, etc.)
  * - List Management: 7 tools (create, delete, update, add/remove members, etc.)
@@ -31,7 +31,7 @@ import { SOCIALDATA_ANALYTICS_TOOLS, SocialDataAnalyticsHandlers } from './socia
  * - SocialData Analytics: 18 tools (advanced search, sentiment, trends, predictions, etc.)
  */
 export const ALL_TWITTER_TOOLS: Tool[] = [
-  ...TWEET_TOOLS,                    // 16 tools
+  ...TWEET_TOOLS,                    // 15 tools
   ...ENGAGEMENT_TOOLS,               // 6 tools
   ...USER_TOOLS,                     // 7 tools
   ...LIST_TOOLS,                     // 7 tools
@@ -71,7 +71,7 @@ export class ToolHandlerRegistry {
    * Handle tool invocation with tenantId from auth context
    */
   async handleTool(toolName: string, args: any, tenantId: string): Promise<any> {
-    // Tweet operations (16 tools)
+    // Tweet operations (15 tools)
     if (toolName === 'send_tweet') return this._tweetHandlers.sendTweet(args, tenantId);
     if (toolName === 'post_tweet_with_media') return this._tweetHandlers.postTweetWithMedia(args, tenantId);
     if (toolName === 'send_tweet_with_poll') return this._tweetHandlers.sendTweetWithPoll(args, tenantId);

@@ -1,6 +1,6 @@
 # Twitter MCP Integration - Implementation Summary
 
-**Status:** ✅ **COMPLETE** - All 63 tools corrected, compiled, and pushed
+**Status:** ✅ **COMPLETE** - All 62 tools corrected, compiled, and pushed
 **Date:** November 22, 2025
 **Branch:** `claude/mcp-server-integration-01VuRP3JsRJXhjnWZQvx9WKz`
 
@@ -24,11 +24,11 @@ This feedback was **critical** - it revealed:
 
 ## 📊 Final Implementation Stats
 
-### Tools: 63 Corrected Tools (from 4 source repos)
+### Tools: 62 Corrected Tools (from 4 source repos)
 
 | Category | Tools | Source Repo(s) |
 |----------|-------|----------------|
-| **Tweet Operations** | 16 | agent-twitter-client-mcp, mcp-twikit, twitter-mcp, mcp-twitter-server |
+| **Tweet Operations** | 15 | agent-twitter-client-mcp, mcp-twikit, twitter-mcp, mcp-twitter-server |
 | **Direct Messages** | 2 | mcp-twikit |
 | **Grok AI Integration** | 1 | agent-twitter-client-mcp |
 | **Moderation** | 6 | mcp-twitter-server |
@@ -36,7 +36,7 @@ This feedback was **critical** - it revealed:
 | **Engagement** | 6 | mcp-twitter-server |
 | **List Management** | 7 | mcp-twitter-server |
 | **SocialData Analytics** | 18 | mcp-twitter-server |
-| **TOTAL** | **63** | 4 repositories combined |
+| **TOTAL** | **62** | 4 repositories combined |
 
 ### MCP Protocol Features
 
@@ -61,12 +61,12 @@ This feedback was **critical** - it revealed:
 
 ### Architecture Components
 
-1. **Tool Registry** (`src/tools/index-fixed.ts`)
-   - Registers all 63 corrected tools
+1. **Tool Registry** (`src/tools/index.ts`)
+   - Registers all 62 corrected tools
    - Handler signature: `(args, tenantId)` with auth context
    - Categorized exports for all 8 tool categories
 
-2. **Endpoint-Specific Rate Limiting** (`src/clients/rate-limiter-fixed.ts`)
+2. **Endpoint-Specific Rate Limiting** (`src/clients/rate-limiter.ts`)
    - 300 tweets/15min (from mcp-twikit)
    - 1000 DMs/15min (from mcp-twikit)
    - 900 general requests/15min
@@ -146,10 +146,10 @@ fix(twitter): Fix TypeScript compilation errors
 
 ### README.md Updates
 
-- ✅ Updated from 45 → 63 tools
+- ✅ Updated from 45 → 62 tools (15 tweet operations, not 16)
 - ✅ Added MCP Features section (Prompts + Resources)
 - ✅ Updated rate limiting with endpoint-specific limits
-- ✅ Added tool source attribution for all 63 tools
+- ✅ Added tool source attribution for all 62 tools
 - ✅ Updated gateway integration examples
 
 ### Key Sections Added:
@@ -222,7 +222,7 @@ npm run build
 ## 🚀 Deployment Readiness
 
 ### Checklist
-- ✅ All 63 tools implemented and corrected
+- ✅ All 62 tools implemented and corrected
 - ✅ Schemas match actual source code
 - ✅ MCP Prompts implemented (5 templates)
 - ✅ MCP Resources implemented (6 dynamic sources)
@@ -247,7 +247,7 @@ npm run build
 
 | Before (Web Research) | After (Source Code Analysis) |
 |----------------------|------------------------------|
-| 45 tools | **63 tools** (+40%) |
+| 45 tools | **62 tools** (+38%) |
 | Generic schemas | **Exact schemas** from source |
 | No DM support | **2 DM tools** added |
 | No Grok AI | **Grok integration** added |
@@ -280,7 +280,7 @@ npm run build
 ### Short-term (Optional Enhancements)
 1. Implement media upload (chunked upload to Twitter API v1.1)
 2. Add full Grok integration with agent-twitter-client
-3. Add integration tests for all 63 tools
+3. Add integration tests for all 62 tools
 4. Set up monitoring with Prometheus/Grafana
 
 ### Long-term (Future Features)
@@ -295,7 +295,7 @@ npm run build
 
 **Twitter MCP Integration: COMPLETE**
 
-- ✅ 63 tools corrected to match actual source code
+- ✅ 62 tools corrected to match actual source code (15 tweet, 6 engagement, 7 user, 7 list, 2 DM, 1 Grok, 6 moderation, 18 analytics)
 - ✅ 5 MCP Prompts for workflow automation
 - ✅ 6 MCP Resources for real-time data
 - ✅ Endpoint-specific rate limiting implemented

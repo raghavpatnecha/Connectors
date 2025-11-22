@@ -1,8 +1,8 @@
 # Twitter Unified MCP Server
 
-**Comprehensive Twitter/X integration with 63 tools from 4 community implementations, featuring OAuth 1.0a, Grok AI, DMs, moderation, and SocialData analytics.**
+**Comprehensive Twitter/X integration with 62 tools from 4 community implementations, featuring OAuth 1.0a, Grok AI, DMs, moderation, and SocialData analytics.**
 
-[![Tools: 63](https://img.shields.io/badge/Tools-63-brightgreen.svg)](#-available-tools)
+[![Tools: 62](https://img.shields.io/badge/Tools-62-brightgreen.svg)](#-available-tools)
 [![Auth: OAuth 1.0a](https://img.shields.io/badge/Auth-OAuth%201.0a-blue.svg)](#-authentication)
 [![MCP: Prompts + Resources](https://img.shields.io/badge/MCP-Prompts%20%2B%20Resources-purple.svg)](#-mcp-features)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -11,7 +11,7 @@
 
 ## 🚀 Features
 
-- **63 Corrected Tools** - Schemas match actual source code from 4 implementations ([adhikasp/mcp-twikit](https://github.com/adhikasp/mcp-twikit), [EnesCinr/twitter-mcp](https://github.com/EnesCinr/twitter-mcp), [ryanmac/agent-twitter-client-mcp](https://github.com/ryanmac/agent-twitter-client-mcp), [crazyrabbitLTC/mcp-twitter-server](https://github.com/crazyrabbitLTC/mcp-twitter-server))
+- **62 Corrected Tools** - Schemas match actual source code from 4 implementations ([adhikasp/mcp-twikit](https://github.com/adhikasp/mcp-twikit), [EnesCinr/twitter-mcp](https://github.com/EnesCinr/twitter-mcp), [ryanmac/agent-twitter-client-mcp](https://github.com/ryanmac/agent-twitter-client-mcp), [crazyrabbitLTC/mcp-twitter-server](https://github.com/crazyrabbitLTC/mcp-twitter-server))
 - **5 MCP Prompts** - Pre-built workflow templates (compose tweet, analytics, content strategy, community management, hashtag research)
 - **6 MCP Resources** - Dynamic real-time data (account analytics, mentions, trends, follower insights, content performance, engagement summary)
 - **Grok AI Integration** - Real-time Twitter data access via Grok (unique to Twitter platform)
@@ -116,28 +116,27 @@ Enables advanced analytics tools (sentiment analysis, historical search, influen
 
 ---
 
-## 🛠️ Available Tools (63 Total)
+## 🛠️ Available Tools (62 Total)
 
-### 📝 Tweet Operations (16 tools)
+### 📝 Tweet Operations (15 tools)
 
 | Tool | Description | Source |
 |------|-------------|--------|
-| `send_tweet` | Post tweet with text, media (images/videos), polls | agent-twitter-client-mcp |
-| `get_tweet` | Retrieve specific tweet with full metrics | mcp-twitter-server |
-| `delete_tweet` | Delete your own tweet | mcp-twikit |
+| `send_tweet` | Post tweet with text, media (images/videos), and optional reply | agent-twitter-client-mcp |
+| `post_tweet_with_media` | Post tweet with media from local file path | mcp-twitter-server |
+| `send_tweet_with_poll` | Post tweet with poll (2-4 options, configurable duration) | agent-twitter-client-mcp |
+| `get_tweet_by_id` | Retrieve specific tweet by ID with full metrics | mcp-twitter-server |
+| `get_tweets_by_ids` | Get multiple tweets by their IDs (batch operation) | mcp-twitter-server |
 | `reply_to_tweet` | Reply to existing tweet with media support | agent-twitter-client-mcp |
-| `quote_tweet` | Quote tweet with your commentary | agent-twitter-client-mcp |
+| `delete_tweet` | Delete your own tweet | mcp-twikit |
 | `search_tweets` | Search tweets with advanced filters | twitter-mcp |
+| `quote_tweet` | Quote tweet with your commentary | agent-twitter-client-mcp |
 | `get_timeline` | Get your home timeline feed | mcp-twikit |
 | `get_latest_timeline` | Get latest timeline (bypasses algorithm) | mcp-twikit |
 | `get_user_tweets` | Get all tweets from specific user | mcp-twikit |
-| `create_thread` | Post connected tweet thread | agent-twitter-client-mcp |
-| `schedule_tweet` | Schedule tweet for later | agent-twitter-client-mcp |
-| `upload_media` | Upload images/videos for tweets | agent-twitter-client-mcp |
-| `create_poll` | Create tweet with poll (2-4 options, 1-7 days) | agent-twitter-client-mcp |
-| `get_poll_results` | Get poll voting results | agent-twitter-client-mcp |
-| `bookmark_tweet` | Save tweet to bookmarks | mcp-twitter-server |
-| `unbookmark_tweet` | Remove tweet from bookmarks | mcp-twitter-server |
+| `get_user_timeline` | Get user's timeline with filtering options | mcp-twitter-server |
+| `get_full_thread` | Get entire tweet thread with all replies | mcp-twitter-server |
+| `get_conversation_tree` | Get full conversation tree with nested replies | mcp-twitter-server |
 
 ### 💬 Direct Messages (2 tools)
 
@@ -351,11 +350,11 @@ Automatically registered in Connectors Platform gateway:
   id: 'twitter',
   name: 'Twitter / X',
   category: 'communication',
-  description: '63 comprehensive tools for Twitter (tweets, DMs, Grok AI, moderation, analytics)',
+  description: '62 comprehensive tools for Twitter (tweets, DMs, Grok AI, moderation, analytics)',
   serverUrl: 'http://localhost:3150',
   requiresOAuth: true,
   features: {
-    tools: 63,
+    tools: 62,
     prompts: 5,
     resources: 6,
     endpointRateLimiting: true
