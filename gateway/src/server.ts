@@ -27,6 +27,19 @@ import { createTenantOAuthRouter } from './routes/tenant-oauth';
 import { createMCPManagementRouter } from './routes/mcp-management';
 import { MCPDeployer } from './services/mcp-deployer';
 import {
+  BatchQuery,
+  ToolSelectionOptions,
+  SessionConfig,
+  ToolSelectionResponseData,
+  BatchToolResult,
+  ServiceContext,
+  ParsedKnownFields
+} from './types/workflow.types';
+import { ToolSchemaLoader } from './services/tool-schema-loader';
+import { WorkflowPlanner } from './services/workflow-planner';
+import { ConnectionStatusChecker } from './services/connection-status';
+import { SessionManager } from './services/session-manager';
+import {
   validateString,
   validateNumber,
   validateArray,
@@ -58,7 +71,19 @@ const CORS_ORIGINS = process.env.CORS_ORIGINS?.split(',') || ['*'];
  * Request interfaces
  */
 interface SelectToolsRequest {
-  query: string;
+  // Single mode: provide query
+  query?: string;
+
+  // Batch mode: provide queries array
+  queries?: BatchQuery[];
+
+  // Unified options for both modes
+  options?: ToolSelectionOptions;
+
+  // Session management
+  session?: SessionConfig;
+
+  // Legacy support: old context field
   context?: {
     allowedCategories?: string[];
     tokenBudget?: number;
@@ -333,151 +358,364 @@ export class MCPGatewayServer {
   }
 
   /**
-   * Tool selection endpoint
+   * Unified tool selection endpoint
    * POST /api/v1/tools/select
+   *
+   * Supports two modes:
+   * - Single query: { query: "...", options: {...} }
+   * - Batch queries: { queries: [{use_case: "..."}], options: {...} }
    */
   private async handleSelectTools(req: Request, res: Response): Promise<void> {
     try {
-      const { query, context }: SelectToolsRequest = req.body;
+      const { query, queries, options, session, context }: SelectToolsRequest = req.body;
 
-      // FIX: Comprehensive input validation
-      try {
-        // Validate query
-        const validatedQuery = validateString(query, 'query', {
-          minLength: 1,
-          maxLength: 1000,
-          noControlChars: true
-        });
+      // Merge legacy context with options
+      const mergedOptions: ToolSelectionOptions = {
+        ...context,
+        ...options
+      };
 
-        // Validate context if provided
-        let validatedCategories: string[] = [];
-        let validatedTokenBudget: number = 5000;
-        let validatedTenantId: string | undefined;
-        let validatedMaxTools: number = 10;
-
-        if (context) {
-          validateObject(context, 'context', {
-            maxDepth: 2,
-            maxKeys: 10,
-            allowedKeys: ['allowedCategories', 'tokenBudget', 'tenantId', 'maxTools']
-          });
-
-          // Validate allowedCategories
-          if (context.allowedCategories) {
-            validatedCategories = validateArray(context.allowedCategories, 'allowedCategories', {
-              maxLength: 20
-            });
-
-            // Validate each category
-            validatedCategories = validatedCategories.map((cat: any) =>
-              validateCategory(cat, 'category')
-            );
-          }
-
-          // Validate tokenBudget
-          if (context.tokenBudget !== undefined) {
-            validatedTokenBudget = validateNumber(context.tokenBudget, 'tokenBudget', {
-              min: 100,
-              max: 100000,
-              integer: true
-            });
-          }
-
-          // Validate maxTools
-          if (context.maxTools !== undefined) {
-            validatedMaxTools = validateNumber(context.maxTools, 'maxTools', {
-              min: 1,
-              max: 50,
-              integer: true
-            });
-          }
-
-          // Validate tenantId if provided
-          if (context.tenantId) {
-            validatedTenantId = validateString(context.tenantId, 'tenantId', {
-              maxLength: 256,
-              noControlChars: true
-            });
-          }
-        }
-
-        // Build query context with validated data
-        const queryContext: QueryContext = {
-          allowedCategories: validatedCategories,
-          tokenBudget: validatedTokenBudget,
-          tenantId: validatedTenantId,
-        };
-
-        // Select tools using semantic routing
-        const startTime = Date.now();
-        const selectedTools = await this.semanticRouter.selectTools(validatedQuery, queryContext);
-        const selectionLatency = Date.now() - startTime;
-
-        // Optimize token usage with progressive loading
-        const tokenBudget = queryContext.tokenBudget || 5000;
-        const optimized = this.tokenOptimizer.optimize(selectedTools, tokenBudget);
-        const tiered = await this.progressiveLoader.loadTiered(optimized, tokenBudget);
-
-        // Log performance metrics
-        logger.info('tool_selection_completed', {
-          query: validatedQuery,
-          tools_selected: selectedTools.length,
-          tools_optimized: optimized.length,
-          token_budget: tokenBudget,
-          token_usage: tiered.totalTokens,
-          latency_ms: selectionLatency,
-          token_reduction_pct: ((tokenBudget - tiered.totalTokens) / tokenBudget) * 100,
-        });
-
-        res.sendSuccess({
-          query: validatedQuery,
-          tools: {
-            tier1: tiered.tier1,
-            tier2: tiered.tier2,
-            tier3: tiered.tier3,
-          },
-          performance: {
-            totalTools: selectedTools.length,
-            tokenUsage: tiered.totalTokens,
-            tokenBudget: queryContext.tokenBudget,
-            latency_ms: selectionLatency,
-          },
-        });
-      } catch (validationError) {
-        // Handle validation errors
-        if (validationError instanceof ValidationError) {
-          logValidationError(validationError, {
-            path: req.path,
-            method: req.method,
-            ip: req.ip
-          });
-
-          res.sendError(
-            'VALIDATION_ERROR',
-            validationError.message,
-            { field: validationError.field },
-            400
-          );
-          return;
-        }
-        throw validationError;
+      // Validation: Must provide EITHER query OR queries (not both, not neither)
+      if (!query && !queries) {
+        res.sendError(
+          'MISSING_PARAMETER',
+          'Must provide either "query" or "queries"',
+          { hint: 'Single mode: {query: "..."}, Batch mode: {queries: [{use_case: "..."}]}' },
+          400
+        );
+        return;
       }
+
+      if (query && queries) {
+        res.sendError(
+          'INVALID_REQUEST',
+          'Cannot provide both "query" and "queries" - choose one mode',
+          undefined,
+          400
+        );
+        return;
+      }
+
+      // Detect mode
+      const isBatchMode = !!queries;
+
+      logger.info('Tool selection request', {
+        mode: isBatchMode ? 'batch' : 'single',
+        batchSize: queries?.length,
+        includeSchemas: mergedOptions.includeSchemas,
+        includeGuidance: mergedOptions.includeGuidance,
+        includeConnectionStatus: mergedOptions.includeConnectionStatus
+      });
+
+      // Initialize services (lazy loaded based on options)
+      const services: ServiceContext = {
+        schemaLoader: mergedOptions.includeSchemas
+          ? new ToolSchemaLoader(this.integrationRegistry, this.oauthProxy)
+          : null,
+        workflowPlanner: mergedOptions.includeGuidance
+          ? new WorkflowPlanner(this.semanticRouter)
+          : null,
+        connectionChecker: mergedOptions.includeConnectionStatus
+          ? new ConnectionStatusChecker(this.integrationRegistry, this.vaultClient)
+          : null,
+        sessionManager: session
+          ? new SessionManager()
+          : null,
+        session
+      };
+
+      // Process based on mode
+      let responseData: ToolSelectionResponseData;
+
+      if (isBatchMode) {
+        // BATCH MODE
+        responseData = await this._processBatchQueries(queries!, mergedOptions, services);
+      } else {
+        // SINGLE MODE
+        responseData = await this._processSingleQuery(query!, mergedOptions, services);
+      }
+
+      res.sendSuccess(responseData);
+
     } catch (error) {
       if (error instanceof ToolSelectionError) {
         logger.error('Tool selection failed', {
-          query: error.query,
           error: error.message,
         });
         res.sendError(
           'TOOL_SELECTION_FAILED',
           error.message,
-          { query: error.query },
+          undefined,
           500
+        );
+      } else if (error instanceof ValidationError) {
+        logValidationError(error, {
+          path: req.path,
+          method: req.method,
+          ip: req.ip
+        });
+        res.sendError(
+          'VALIDATION_ERROR',
+          error.message,
+          { field: error.field },
+          400
         );
       } else {
         throw error; // Pass to error handler
       }
     }
+  }
+
+  /**
+   * Process single query mode
+   */
+  private async _processSingleQuery(
+    query: string,
+    options: ToolSelectionOptions,
+    services: ServiceContext
+  ): Promise<ToolSelectionResponseData> {
+    const startTime = Date.now();
+
+    // Validate query
+    const validatedQuery = validateString(query, 'query', {
+      minLength: 1,
+      maxLength: 1000,
+      noControlChars: true
+    });
+
+    // Build query context
+    const context: QueryContext = {
+      allowedCategories: options.allowedCategories,
+      tokenBudget: options.tokenBudget || 5000,
+      tenantId: options.tenantId
+    };
+
+    // Select tools using semantic routing
+    const selectedTools = await this.semanticRouter.selectTools(validatedQuery, context);
+    const tokenBudget = context.tokenBudget || 5000;
+    const optimized = this.tokenOptimizer.optimize(selectedTools, tokenBudget);
+    const tiered = await this.progressiveLoader.loadTiered(optimized, tokenBudget);
+
+    // Build base response
+    const responseData: ToolSelectionResponseData = {
+      query: validatedQuery,
+      tools: {
+        tier1: tiered.tier1,
+        tier2: tiered.tier2,
+        tier3: tiered.tier3
+      },
+      performance: {
+        totalTools: selectedTools.length,
+        tokenUsage: tiered.totalTokens,
+        tokenBudget: context.tokenBudget,
+        latency_ms: Date.now() - startTime
+      }
+    };
+
+    // Add optional enrichments
+    if (services.workflowPlanner && options.includeGuidance) {
+      responseData.guidance = await services.workflowPlanner.generateWorkflowPlan(
+        validatedQuery,
+        selectedTools
+      );
+    }
+
+    if (services.schemaLoader && options.includeSchemas) {
+      const toolIds = selectedTools.map(t => t.toolId);
+      responseData.tool_schemas = await services.schemaLoader.loadToolSchemas(toolIds);
+    }
+
+    if (services.connectionChecker && options.includeConnectionStatus) {
+      const toolkits = [...new Set(selectedTools.map(t => t.category))];
+      responseData.toolkit_connection_statuses = await services.connectionChecker.getStatus(
+        toolkits,
+        options.tenantId
+      );
+    }
+
+    if (services.sessionManager && services.session) {
+      responseData.session = await services.sessionManager.handleSession(services.session);
+    }
+
+    // Add time info
+    responseData.time_info = {
+      current_time: new Date().toISOString(),
+      current_time_epoch_in_seconds: Math.floor(Date.now() / 1000),
+      message: 'This is time in UTC timezone. Get timezone from user if needed. Always use this time info to construct parameters for tool calls appropriately even when the tool call requires relative times like \'last week\', \'last month\', \'last 24 hours\', etc. Do not hallucinate the time or timezone.'
+    };
+
+    logger.info('Single query completed', {
+      query: validatedQuery,
+      toolsSelected: selectedTools.length,
+      tokenUsage: tiered.totalTokens,
+      latency_ms: Date.now() - startTime
+    });
+
+    return responseData;
+  }
+
+  /**
+   * Process batch queries mode
+   */
+  private async _processBatchQueries(
+    queries: BatchQuery[],
+    options: ToolSelectionOptions,
+    services: ServiceContext
+  ): Promise<ToolSelectionResponseData> {
+    const startTime = Date.now();
+
+    // Validate batch size
+    if (queries.length === 0) {
+      throw new ValidationError('queries', 'Queries array cannot be empty');
+    }
+
+    if (queries.length > 10) {
+      throw new ValidationError('queries', 'Maximum 10 queries allowed in batch mode');
+    }
+
+    // Process all queries in parallel
+    const results = await Promise.all(
+      queries.map((batchQuery, index) =>
+        this._processBatchItem(batchQuery, index + 1, options, services)
+      )
+    );
+
+    // Collect all tool slugs and toolkits
+    const allToolSlugs = new Set<string>();
+    const allToolkits = new Set<string>();
+
+    results.forEach(result => {
+      result.main_tool_slugs.forEach(slug => allToolSlugs.add(slug));
+      result.related_tool_slugs?.forEach(slug => allToolSlugs.add(slug));
+      result.toolkits.forEach(toolkit => allToolkits.add(toolkit));
+    });
+
+    const responseData: ToolSelectionResponseData = {
+      results
+    };
+
+    // Add optional enrichments
+    if (services.schemaLoader && options.includeSchemas) {
+      responseData.tool_schemas = await services.schemaLoader.loadToolSchemas(
+        Array.from(allToolSlugs)
+      );
+    }
+
+    if (services.connectionChecker && options.includeConnectionStatus) {
+      responseData.toolkit_connection_statuses = await services.connectionChecker.getStatus(
+        Array.from(allToolkits),
+        options.tenantId
+      );
+    }
+
+    if (services.sessionManager && services.session) {
+      responseData.session = await services.sessionManager.handleSession(services.session);
+    }
+
+    // Add time info
+    responseData.time_info = {
+      current_time: new Date().toISOString(),
+      current_time_epoch_in_seconds: Math.floor(Date.now() / 1000),
+      message: 'This is time in UTC timezone. Get timezone from user if needed.'
+    };
+
+    // Add next steps guidance for batch mode
+    if (options.includeConnectionStatus && responseData.toolkit_connection_statuses) {
+      const inactiveToolkits = responseData.toolkit_connection_statuses.filter(
+        t => !t.active_connection
+      );
+
+      if (inactiveToolkits.length > 0) {
+        responseData.next_steps_guidance = [
+          '1) CALL OAuth Setup: Use OAuth configuration endpoints to initiate connections for toolkits that are not active',
+          '2) Extract validated plan steps returned above, acknowledge each step, then execute sequentially. Check pitfalls during execution.'
+        ];
+      } else {
+        responseData.next_steps_guidance = [
+          'Extract validated plan steps returned above, acknowledge each step, then execute sequentially. Check pitfalls during execution.'
+        ];
+      }
+    }
+
+    logger.info('Batch queries completed', {
+      queryCount: queries.length,
+      uniqueTools: allToolSlugs.size,
+      uniqueToolkits: allToolkits.size,
+      latency_ms: Date.now() - startTime
+    });
+
+    return responseData;
+  }
+
+  /**
+   * Process individual batch query item
+   */
+  private async _processBatchItem(
+    batchQuery: BatchQuery,
+    index: number,
+    options: ToolSelectionOptions,
+    services: ServiceContext
+  ): Promise<BatchToolResult> {
+    // Parse known_fields if provided
+    const parsedFields = this._parseKnownFields(batchQuery.known_fields);
+
+    const context: QueryContext = {
+      allowedCategories: parsedFields.category
+        ? [parsedFields.category as string]
+        : options.allowedCategories,
+      tokenBudget: options.tokenBudget || 5000,
+      tenantId: options.tenantId
+    };
+
+    // Select tools
+    const selectedTools = await this.semanticRouter.selectTools(batchQuery.use_case, context);
+
+    // Extract main and related tools
+    const mainTools = selectedTools.slice(0, 2).map(t => t.toolId);
+    const relatedTools = selectedTools.slice(2).map(t => t.toolId);
+    const toolkits = [...new Set(selectedTools.map(t => t.category))];
+
+    const result: BatchToolResult = {
+      index,
+      use_case: batchQuery.use_case,
+      main_tool_slugs: mainTools,
+      related_tool_slugs: relatedTools,
+      toolkits
+    };
+
+    // Add guidance if requested
+    if (services.workflowPlanner && options.includeGuidance) {
+      result.guidance = await services.workflowPlanner.generateWorkflowPlan(
+        batchQuery.use_case,
+        selectedTools,
+        batchQuery.known_fields
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Parse known_fields string (e.g., "category:productivity, limit:5")
+   */
+  private _parseKnownFields(knownFields?: string): ParsedKnownFields {
+    if (!knownFields) {
+      return {};
+    }
+
+    const parsed: ParsedKnownFields = {};
+    const pairs = knownFields.split(',').map(s => s.trim());
+
+    for (const pair of pairs) {
+      const [key, value] = pair.split(':').map(s => s.trim());
+      if (key && value) {
+        // Try to parse as number
+        const numValue = parseInt(value, 10);
+        parsed[key] = isNaN(numValue) ? value : numValue;
+      }
+    }
+
+    return parsed;
   }
 
   /**
